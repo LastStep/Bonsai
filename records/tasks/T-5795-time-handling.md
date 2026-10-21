@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5795
 title: "Before 1.0: one system for time (stored with its zone, shown in local time, never typed by hand), planned with the director"
-status: running
+status: done
 lane: full
 done_when:
   - "an auditor's inventory of every time Bonsai and its packs write, print or read (field, format, zone, who writes it), and a researcher's survey of better ways, the director's 'time script' idea among them"
@@ -12,7 +12,7 @@ depends_on: []
 blocked_by:
 created: 2026-10-21
 started: 2026-10-21
-finished:
+finished: 2026-10-21
 labels:
   bonsai.ladder: []
   bonsai.allows: []

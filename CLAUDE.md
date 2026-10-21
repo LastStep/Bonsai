@@ -78,8 +78,11 @@ reports through `bonsai message`, the lanes and their pipelines, the lenses and 
   and audit jobs (listing files, sorting or counting things, checking a list against a source, filling a run report's
   rows), reporting facts and judging nothing; Fable for visual design. Every report says which model ran what.
 - **Run reports** (`base:run`), one per task, `records/runs/R-<date>-<task id>-<topic>.md`, opened before the first edit
-  and appended as the work goes: a log, not a summary, with a row for every run (model, start, end, minutes): those rows
-  are the hours the stop lines count. Past run reports, logs and tasks are left as they are (the director, 12 Oct).
+  and appended as the work goes: a log, not a summary, naming each run's message id and model. The hours the stop
+  lines count are `.bonsai/sessions.md`'s per-task rows, from the log; no time is typed by hand. **Every recorded time
+  is UTC** (the director, 21 Oct; `design/contract.md` section 23): take it from `bonsai now` (`--day` for a day;
+  until rc.2 is installed, `date -u`), and let Bonsai convert for display. Past run reports, logs and tasks are left as
+  they are (the director, 12 Oct).
 - **The landing rule**, the lock on `main`. The orchestrator fast-forwards a piece only when
   `.bonsai/local/ladder/<task>.json` in the main checkout reads `mode: local`, green, `git.sha` the branch's HEAD,
   `git.dirty` false, every rung of the floor and of the task's `bonsai.ladder` green, and its `ladder` record in the log

@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5717
 title: "Time, piece E: now told on each prompt and each subagent start"
-status: running
+status: done
 lane:
 done_when:
   - "a synchronous bonsai hook now on UserPromptSubmit and, by JSON additionalContext, SubagentStart, never blocking (plan step 5)"
@@ -12,7 +12,7 @@ depends_on: [T-5713]
 blocked_by:
 created: 2026-10-21
 started: 2026-10-21
-finished:
+finished: 2026-10-21
 labels:
   bonsai.ladder: []
   bonsai.allows: []

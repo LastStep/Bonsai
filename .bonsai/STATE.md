@@ -8,7 +8,7 @@ labels: {}
 # Bonsai: where it stands
 
 Rewritten, never appended (`base:state`). Last rewritten 21 Oct 2026 (a day session, the director present).
-**Step 5.7: the trial's analysis landed and the director read it (batch 4: "looks good overall"); time handling (`T-5795`) planned and approved (`records/plans/P-T-5795.md`, contract section 23), six pieces `T-5712`-`T-5717` before rc.2; batch 1 building.** `main` at `578a8724` plus
+**Step 5.7: the trial's analysis landed and the director read it (batch 4: "looks good overall"); **one system for time (`T-5795`) done**: every recorded time UTC, `bonsai now`, local display, the guard's `time-not-now`, "now" told each prompt and subagent (`records/plans/P-T-5795.md`, contract section 23; landed up to `1b2c67f8`).** `main` at `578a8724` plus
 this session's records commit, CI green. **21 Oct:** `T-5709` built: `records/trial-rc1.md` (the trial on rc.1, every
 claim sourced; a Haiku source check, 6 of 7 mismatches held and fixed), landed `578a8724` by CI on the branch (run
 39555994155); the README's first-project dry run on rc.1 done (a builder, after a runner was refused by BUG-013; the
@@ -225,13 +225,12 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | 5.7.7, the trial on rc.1 | `T-5707` | done | climb of main by rc.1 green; proposals; the pick B |
 | 5.7.8, the trial's feature | `T-5708` | done | `7afb9faa`; verifier PASS |
 | 5.7.9, the trial's analysis | `T-5709` | done | `578a8724`; `records/trial-rc1.md`; batch 4: "looks good overall" |
-| **One system for time** (the trial's rough 11; the director: "option 3", before 1.0) | `T-5795` | approved | plan `records/plans/P-T-5795.md` approved; pieces A `T-5712`, B `T-5713`, C `T-5714`, D `T-5715`, F `T-5716`, E `T-5717`, four batches (A+B, C+D, F, E); then the director's `bonsai update --allow-exec --yes` |
+| **One system for time** (the trial's rough 11; the director: "option 3", before 1.0) | `T-5795` | done | `T-5712`, `T-5713` (`97be0d99`), `T-5714`, `T-5716` (`f0ba50c9`), `T-5717` (`1b2c67f8`) landed; `T-5715` cut (UTC-only: the sessions table already UTC); verifiers PASS; the director's `bonsai update --allow-exec --yes` after rc.2 is installed |
 | rc.2's fixes (BUG-014 first; the notes' line; Go; CLAUDE.md's stale lines; ...) | `T-5710` | todo | the list in the task |
 | The README improved and demo videos (the director's added step) | `T-5711` | todo | before rc.2; to talk through first; research `~/bonsai-checks/T-5711/readme-research.md`; the dry run's README fixes in `records/trial-rc1.md` |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Next, in this order:** `T-5795`'s four batches (A+B, C+D, F, E), a fresh Opus verifier, the director's `bonsai
-update --allow-exec --yes` after E; then the README and demos talk (`T-5711`); rc.2's fixes
+**Next, in this order:** the README and demos talk (`T-5711`); rc.2's fixes
 (`T-5710`, each its own task, BUG-014 before 1.0); rc.2 (note 5.7.10: the director's tag, approval and WSL install;
 the stages the changes touched re-run as probes); the director's own trial on a fresh project; 5.7.6; batch 5. Every
 landing by CI on the branch; in a batch the one piece that changes protected files goes on top (rung 0 judges the
@@ -246,6 +245,8 @@ Windows runs by the orchestrator only, one at a time; load modest), plus the dir
 verifier, runner or auditor cannot yet write a scratch file by the Write tool (BUG-013; the sanctioned folder is not
 built): it returns its work in its final reply, or the orchestrator or a builder makes the scratch. Run reports' times
 come from the messages' `created` stamps, never estimates (5.6's M26 recurred on 19 Oct and was corrected).
+
+**Time (21 Oct, the director):** every recorded time is UTC (`date -u` until rc.2 brings `bonsai now`); Bonsai converts for display. The time line costs ~3.8 ms a call on WSL and 65-87 ms on Windows (mostly Git Bash's start; `--version` alone 53-84 ms).
 
 **Facts measured that later work rests on:** Claude Code 2.1.301-2.1.302. `--agent <role>` does not preload a role's
 `skills:`. On Windows the PowerShell tool ignores Read and Edit deny rules. Moving a pack's ref renames the plugin
@@ -266,7 +267,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
   the code.
-- **After piece E lands:** `bonsai update --allow-exec --yes` in the main checkout (the orchestrator gives the line); the README and demos talk; BUG-014's
+- **After rc.2 is installed:** `bonsai update --allow-exec --yes` in `~/Servers/Bonsai` (adds the two time lines); the README and demos talk; BUG-014's
   rule (which tags count as a pack's versions); then rc.2's tag, approval and WSL install; their own trial; their word
   for 1.0.
 

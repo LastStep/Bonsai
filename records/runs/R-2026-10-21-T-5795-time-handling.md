@@ -118,3 +118,45 @@ labels: {}
   T-5716 `f0ba50c9` sha256 `346cdc1dbd5abf3376020b750df8038df2081487c74fe1e4fa9eb78d5f0c09c3`; both green, clean,
   logged by `/usr/local/bin/bonsai`. T-5714, T-5716 written `done`. Proposed for after 1.0 (piece F): a check word
   `stamp-form` for pack documents' stamp fields an uncommitted change wrote.
+- Piece E `M-2026-10-21-03c7953b`: `d0dcd136`, climb green (sha256 `d2883d4e...5d28`; rung 3 4,844; rung 4 2,139); the line `"$b" hook now || exit 0` fails open on any exit; ~3.8 ms a call on WSL. Windows timing run by the orchestrator (script read first; `%USERPROFILE%\bonsai-checks\T-5717-timing` only); sessions A-C by a runner (sonnet) `M-2026-10-21-210f032b`; E told to rebase on main (`M-2026-10-21-54f37715`).
+- 15:54 Piece E's sessions (runner `M-2026-10-21-210f032b`'s report; `~/bonsai-checks/T-5717/session/`): A main PASS
+  (the model gave 10:23 from context, session 10:23:17-10:23:30 UTC); A subagent marked FAIL by the script's own check,
+  which looks for "Now:" in the Agent prompt and the prompt the script dictates contains the words "starts with Now:";
+  the prompt holds no time, and the subagent quoted `Now: 2026-10-21 10:23 UTC (local 15:53 +05:30)`: judged PASS by
+  the orchestrator (the time could reach it only from its own context). B marked FAIL: the prompt ran (the time line
+  did not block it, the model replied "hello"); the empty result came from the **stop gate**, which fails closed when
+  no bonsai is installed (by design, `CLAUDE.md` "The way back"), not from the time line: judged PASS for this piece.
+  C PASS (rc.1 at the place, exit 2 on `hook now`, the prompt ran).
+- 15:58 Windows timing of the time line (the orchestrator, `win-timing.sh` at `d0dcd136`, Windows Go and Git Bash):
+  the prompt and subagent lines print correctly; per call, mean of 200, three rounds: prompt 65.4 / 87.1 / 78.3 ms,
+  subagent 67.4 / 67.9 / 81.4 ms, against the floor `bonsai.exe --version` through the same shell 83.8 / 53.0 / 56.0
+  ms. Under the stop point (~98 ms) in every round, but not by much: almost all of it is starting Git Bash and the
+  program (the floor), and it varies run to run. Noted for the final verifier and the director.
+- Piece E rebased `M-2026-10-21-50515657`: `1b2c67f8`, climb green (sha256 `464ee184...49fb`; rung 3 4,883; rung 4 2,176). Pushed `T-5717`; the final verifier (E and the end check) briefed.
+- 16:18 Final verifier: **PASS**, `M-2026-10-21-2f0acef1` (opus, 16:00-16:18; a runner `M-2026-10-21-85b03638` did one
+  scratch update preview for it): piece E's lines never block (missing, older, panic, timeout); hostile payloads reach
+  no output; the guard's, stop gate's, start and recorder lines byte-identical (an update adds exactly two lines,
+  under "Runs code"); `isBonsaiHook` still exact. End check: every landed code commit matched to a green climb naming
+  `/usr/local/bin/bonsai` (T-5712 `3f9bba58`, T-5713 `97be0d99`, T-5714 `07ef4f7e`, T-5716 `f0ba50c9`, T-5717
+  `1b2c67f8`); no change to `bonsai.yaml`, the lock, `.claude/`, `.github/`; every piece's grants empty; section 23
+  matches. It read the session runner's two FAIL lines itself and agrees they do not hold. Open: step 7 (`CLAUDE.md`'s
+  run-time rows); the plan's "What it does not catch" line still names the dropped offset check; T-5717's run report
+  left two stale lines. **Key: the director's `bonsai update --allow-exec --yes` must wait until a build carrying
+  piece E is installed at `/usr/local/bin` (rc.2): rc.1's update would not add the lines.**
+- **Piece E landed.** CI run 39585017794 on `1b2c67f8` green on every job, both windows jobs among them (20 min), and
+  the verifier's PASS; `main` fast-forwarded `4e4c6d04..1b2c67f8` and pushed; branch deleted on GitHub; worktree
+  removed. Proof: T-5717 `1b2c67f8` sha256 `464ee184f03c89d7b29cd4d684049dbbc0039a793a31ceb6e2fb783d907749fb`, green,
+  clean, logged by `/usr/local/bin/bonsai`. T-5717 `done`.
+- Step 7: `CLAUDE.md`'s run report rule rewritten (message ids and models; the hours are the sessions table's per-task
+  rows; every recorded time UTC from `bonsai now`, `date -u` until rc.2 is installed) under T-5795's grant of
+  `CLAUDE.md`, the one running task while it ran; the grant emptied after. The plan's "What it does not catch" line
+  corrected for amendment 2.
+- **T-5795 done.** Five pieces landed (T-5712, T-5713, T-5714, T-5716, T-5717), one cut on the director's word
+  (T-5715); four verifier reports (plan FAIL then PASS; batch 2 PASS; E and the end check PASS). Facts lens count:
+  plan review 7 blocking held, 0 not; batch 2 0 blocking; E/end 0 blocking (the session harness's two FAIL lines judged
+  not to hold, by the orchestrator and the verifier separately). Proposed after 1.0: `stamp-form` for pack stamp fields;
+  the workflow pack's templates take the UTC lines in its next version (its tag the director's).
+- **For the director, after rc.2 is installed:** `bonsai update --allow-exec --yes` in `~/Servers/Bonsai` adds the two
+  time lines to Bonsai's own `.claude/settings.json`.
+- This run report's own times are local (IST), written before the rule; the hours for T-5795 are in
+  `.bonsai/sessions.md`. Processes left running: none (`ps -eo pid,etime,cmd`, only this session's `claude`).
