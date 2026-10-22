@@ -9,8 +9,8 @@ Require jq
 
 Set Shell "bash"
 Set FontFamily "DejaVu Sans Mono"
-Set FontSize 17
-Set Width 1600
+Set FontSize 22
+Set Width 1100
 Set Height 900
 Set Padding 30
 Set Margin 0

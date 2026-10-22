@@ -21,7 +21,7 @@ It checks `vhs`, `ttyd`, `ffmpeg`, `tmux`, `jq`, `claude`, `git`, `python3`, `/u
 base pack is fetched from GitHub), then, for each clip in order, makes the clip's project in a scratch folder
 (`/tmp/bonsai-film.XXXXXX`, with its own `BONSAI_HOME`, never `~/.bonsai`, never this repository), runs the tape, and
 prints where each mp4 is and which failed. It takes about 25 to 40 minutes (the Claude Code clips are most of it) and
-needs no answer from the person. The mp4s are 1600 x 900.
+needs no answer from the person. The mp4s of clips 06 to 11 are 1600 x 900; clips 01 to 05 are 1100 x 900 with a 22 pt font, so that their text still reads once the README scales them to 830 px wide.
 
 What may be changed is at the top of `film.sh`: `BONSAI` (the bonsai to show; a test build only for practice, whose
 path then shows in frames), `MODEL` (the tapes type `sonnet`), `PACK_SOURCE`, and `WORK` (the scratch folder: its
