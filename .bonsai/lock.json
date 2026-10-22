@@ -1,6 +1,6 @@
 {
   "format": "bonsai.lock/1",
-  "written_by": "dev",
+  "written_by": "1.0.0-rc.1",
   "packs": [
     {
       "id": "base",
@@ -683,8 +683,8 @@
       "id": "workflow",
       "source": "https://github.com/LastStep/bonsai-workflow.git",
       "version": "0.1.0",
-      "commit": "a42a4f4ca171aa1f5f6be41469dbe345b3f4d8b8",
-      "sha256": "287abe8c91a33f2c236d38f9a83e309f33fc98fee838fdd8c3155b6d3044b47c",
+      "commit": "612bc3330742b25f30329d128dddd6020e5d51eb",
+      "sha256": "62e06e810da70097ee93365b7c99b69d724d3e29a90c73257ead9f1ec3a7ddc6",
       "declares": {
         "lanes": [
           {
@@ -1024,56 +1024,6 @@
             }
           ]
         },
-        "deny": [
-          {
-            "rule": "Read(~/.trinetra/token)",
-            "why": "Agents cannot read the token kept in ~/.trinetra/token."
-          },
-          {
-            "rule": "Read(~/.trinetra/deploy_ed25519)",
-            "why": "Agents cannot read the deploy key kept in ~/.trinetra/deploy_ed25519."
-          },
-          {
-            "rule": "Read(~/.trinetra/salt)",
-            "why": "Agents cannot read the secret salt kept in ~/.trinetra/salt."
-          },
-          {
-            "rule": "Read(//mnt/c/Users/*/.trinetra/token)",
-            "why": "Agents in WSL cannot read the Windows home's .trinetra/token."
-          },
-          {
-            "rule": "Read(//mnt/c/Users/*/.trinetra/deploy_ed25519)",
-            "why": "Agents in WSL cannot read the Windows home's .trinetra/deploy_ed25519."
-          },
-          {
-            "rule": "Read(//mnt/c/Users/*/.trinetra/salt)",
-            "why": "Agents in WSL cannot read the Windows home's .trinetra/salt."
-          },
-          {
-            "rule": "Read(//wsl.localhost/*/home/*/.trinetra/token)",
-            "why": "Agents on Windows cannot read a WSL home's .trinetra/token through wsl.localhost."
-          },
-          {
-            "rule": "Read(//wsl.localhost/*/home/*/.trinetra/deploy_ed25519)",
-            "why": "Agents on Windows cannot read a WSL home's .trinetra/deploy_ed25519 through wsl.localhost."
-          },
-          {
-            "rule": "Read(//wsl.localhost/*/home/*/.trinetra/salt)",
-            "why": "Agents on Windows cannot read a WSL home's .trinetra/salt through wsl.localhost."
-          },
-          {
-            "rule": "Read(//wsl$/*/home/*/.trinetra/token)",
-            "why": "Agents on Windows cannot read a WSL home's .trinetra/token through wsl$."
-          },
-          {
-            "rule": "Read(//wsl$/*/home/*/.trinetra/deploy_ed25519)",
-            "why": "Agents on Windows cannot read a WSL home's .trinetra/deploy_ed25519 through wsl$."
-          },
-          {
-            "rule": "Read(//wsl$/*/home/*/.trinetra/salt)",
-            "why": "Agents on Windows cannot read a WSL home's .trinetra/salt through wsl$."
-          }
-        ],
         "needs": {
           "claude_code": "2.1.294"
         },
@@ -1201,7 +1151,7 @@
     ".claude/settings.json": {
       "kind": "keys",
       "pack": "base",
-      "sha256": "499c8ad14702c11ce430770412749040146a8d5de9285a318eac6bea0b88413e"
+      "sha256": "c4c67b22d8a55875773b8ba4d29c21c022a019d107c04e045d936446abb346cf"
     },
     "CLAUDE.md": {
       "kind": "block",

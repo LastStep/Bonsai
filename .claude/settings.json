@@ -154,18 +154,9 @@
       "Edit(//mnt/c/Users/*/Documents/PowerShell/**)",
       "Edit(~/Documents/WindowsPowerShell/**)",
       "Edit(//mnt/c/Users/*/Documents/WindowsPowerShell/**)",
-      "Read(~/.trinetra/token)",
-      "Read(~/.trinetra/deploy_ed25519)",
-      "Read(~/.trinetra/salt)",
-      "Read(//mnt/c/Users/*/.trinetra/token)",
-      "Read(//mnt/c/Users/*/.trinetra/deploy_ed25519)",
-      "Read(//mnt/c/Users/*/.trinetra/salt)",
-      "Read(//wsl.localhost/*/home/*/.trinetra/token)",
-      "Read(//wsl.localhost/*/home/*/.trinetra/deploy_ed25519)",
-      "Read(//wsl.localhost/*/home/*/.trinetra/salt)",
-      "Read(//wsl$/*/home/*/.trinetra/token)",
-      "Read(//wsl$/*/home/*/.trinetra/deploy_ed25519)",
-      "Read(//wsl$/*/home/*/.trinetra/salt)"
+      "Edit(//mnt/c/Users/*/.bonsai/**)",
+      "Edit(//wsl.localhost/*/home/*/.bonsai/**)",
+      "Edit(//wsl$/*/home/*/.bonsai/**)"
     ]
   },
   "hooks": {
@@ -328,14 +319,14 @@
   },
   "disableAllHooks": false,
   "enabledPlugins": {
-    "base@bonsai-bonsai-299659af": true,
-    "workflow@bonsai-bonsai-299659af": true
+    "base@bonsai-bonsai-106e3783": true,
+    "workflow@bonsai-bonsai-106e3783": true
   },
   "extraKnownMarketplaces": {
-    "bonsai-bonsai-299659af": {
+    "bonsai-bonsai-106e3783": {
       "source": {
         "source": "settings",
-        "name": "bonsai-bonsai-299659af",
+        "name": "bonsai-bonsai-106e3783",
         "plugins": [
           {
             "name": "base",
@@ -351,7 +342,7 @@
             "source": {
               "source": "github",
               "repo": "LastStep/bonsai-workflow",
-              "sha": "a42a4f4ca171aa1f5f6be41469dbe345b3f4d8b8"
+              "sha": "612bc3330742b25f30329d128dddd6020e5d51eb"
             }
           }
         ],
