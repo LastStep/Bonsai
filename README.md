@@ -163,7 +163,12 @@ flag and exit code as one document.
 
 ![A Claude Code session in a linked project: the guard refuses an edit of bonsai.yaml with its next step, the stop gate holds the session while the tests are red, Claude fixes the work and the climb goes green](docs/demos/session.gif)
 
-A real Claude Code session, sped up where nothing happens. How it was made: [`docs/demos/session.md`](docs/demos/session.md).
+A real Claude Code session, sped up where nothing happens. The full showcase, about three minutes with captions, is
+[`docs/demos/showcase.mp4`](docs/demos/showcase.mp4) (GitHub plays it when clicked).
+
+How it was made: a person filmed the [clip set](docs/demos/clips/README.md) in their own terminal on the installed
+Bonsai, with `film.sh`, and [`docs/demos/edit.sh`](docs/demos/edit.sh) cuts the clips into this GIF, the first picture
+and the showcase.
 
 ## What it is not
 
