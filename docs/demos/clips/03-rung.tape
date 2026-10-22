@@ -1,5 +1,5 @@
 # 03-rung: a rung is added to the ladder: refused until the person accepts it in their own terminal, then green.
-# Crop: the whole frame. Length: about 40 s.
+# Crop: the whole frame. Raw length: about 31 s.
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 03-rung), which makes the project, the scratch Bonsai home and
 # the environment first (CLIPS, CLIP_BIN, CLIP_PROJECT, CLIP_REF) and runs this tape from the project's folder. To run

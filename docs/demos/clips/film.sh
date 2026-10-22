@@ -11,7 +11,7 @@
 # writes its own files under ~/.claude (its session transcript and its folder-trust record); no plugin is touched,
 # the plugin folder is the scratch one.
 #
-# WHAT MAY BE CHANGED (these three lines; nothing else is meant to change):
+# WHAT MAY BE CHANGED (these four lines; nothing else is meant to change):
 BONSAI=${BONSAI:-/usr/local/bin/bonsai}   # the bonsai to show. A test build for practice: the frames then show its path
 MODEL=${MODEL:-sonnet}                    # Claude Code's model in the Claude clips (the tapes type it)
 PACK_SOURCE=${PACK_SOURCE:-https://github.com/LastStep/Bonsai}   # where `bonsai init` fetches the base pack
@@ -50,7 +50,7 @@ CLIP_REF=$(git ls-remote "$PACK_SOURCE" refs/heads/main | cut -f1)
 . "$CLIPS/lib.sh"
 [ -n "$WORK" ] || WORK=$(mktemp -d /tmp/bonsai-film.XXXXXX)
 mkdir -p "$WORK/plugin-cache" "$OUT/logs"
-export CLIPS CLIP_REF
+export CLIPS CLIP_REF PACK_SOURCE
 export CLIP_BIN="$BONSAI"
 export CLAUDE_CODE_PLUGIN_CACHE_DIR="$WORK/plugin-cache"
 export CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1

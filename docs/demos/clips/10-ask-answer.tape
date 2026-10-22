@@ -1,6 +1,6 @@
 # 10-ask-answer: Claude Code asks the person a question with bonsai ask; the person answers in their own shell, below the live view.
 # Crops: Claude alone = the left 64%; the right side (the view above, the person's shell below) = the right 36%; both =
-# the whole frame. Length: about 60 s of screen. The bottom right pane (Alt+d) is the person's terminal: it holds no agent
+# the whole frame. Raw length: about 88 s. The bottom right pane (Alt+d) is the person's terminal: it holds no agent
 # session, so bonsai takes its answer as the person's.
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 10-ask-answer), which makes the project (linked to Bonsai's base pack,

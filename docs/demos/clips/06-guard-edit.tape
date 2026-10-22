@@ -1,5 +1,5 @@
 # 06-guard-edit: Claude Code is asked to edit bonsai.yaml with its Edit tool, and the guard refuses (why, next step, rule).
-# Crops: Claude alone = the left 64% of the frame; the view alone = the right 36%; both = the whole frame. Length: about 40 s of screen.
+# Crops: Claude alone = the left 64% of the frame; the view alone = the right 36%; both = the whole frame. Raw length: about 78 s (the edit cuts it to the moment).
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 06-guard-edit), which makes the project (linked to Bonsai's base pack,
 # the packs' plugin installed, a red climb recorded, Claude Code's allow rules in .claude/settings.local.json) and the

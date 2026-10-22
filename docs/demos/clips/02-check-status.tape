@@ -1,5 +1,5 @@
 # 02-check-status: bonsai check and bonsai status on a linked project: every finding in one sentence, with its next step.
-# Crop: the whole frame. Length: about 20 s.
+# Crop: the whole frame. Raw length: about 13 s.
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 02-check-status), which makes the project, the scratch Bonsai home and
 # the environment first (CLIPS, CLIP_BIN, CLIP_PROJECT, CLIP_REF) and runs this tape from the project's folder. To run

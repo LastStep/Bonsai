@@ -1,5 +1,5 @@
 # 05-log: the log, every decision Bonsai made in order, read through jq (the climbs are made off camera first).
-# Crop: the whole frame. Length: about 20 s.
+# Crop: the whole frame. Raw length: about 19 s.
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 05-log), which makes the project, the scratch Bonsai home and
 # the environment first (CLIPS, CLIP_BIN, CLIP_PROJECT, CLIP_REF) and runs this tape from the project's folder. To run

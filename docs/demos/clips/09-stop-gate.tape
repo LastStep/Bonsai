@@ -1,6 +1,6 @@
 # 09-stop-gate: Claude Code fixes the failing tests and tries to stop; the stop gate holds it until the ladder is green and the work is committed.
-# Crops: Claude alone = the left 64%; the view alone = the right 36%; both = the whole frame. Length: the gate holds it
-# for a minute or three; the edit cuts the idle time. The session is started on the task (BONSAI_TASK), as a person does
+# Crops: Claude alone = the left 64%; the view alone = the right 36%; both = the whole frame. Raw length: about 205 s (the gate
+# holds it for a minute or three); the edit cuts the idle time. The session is started on the task (BONSAI_TASK), as a person does
 # to name the work, which is what lets the gate hold it.
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 09-stop-gate), which makes the project (linked to Bonsai's base pack,

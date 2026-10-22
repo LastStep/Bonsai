@@ -1,5 +1,5 @@
 # 04-ladder: the ladder red, with the failing test's own command and name, then the fix and the ladder green.
-# Crop: the whole frame. Length: about 40 s.
+# Crop: the whole frame. Raw length: about 27 s.
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 04-ladder), which makes the project, the scratch Bonsai home and
 # the environment first (CLIPS, CLIP_BIN, CLIP_PROJECT, CLIP_REF) and runs this tape from the project's folder. To run

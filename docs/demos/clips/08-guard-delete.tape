@@ -1,5 +1,5 @@
 # 08-guard-delete: Claude Code is asked to run a delete whose path is an empty variable, and the guard refuses it.
-# Crops: Claude alone = the left 64%; the view alone = the right 36%; both = the whole frame. Length: about 40 s of screen.
+# Crops: Claude alone = the left 64%; the view alone = the right 36%; both = the whole frame. Raw length: about 86 s (the edit cuts it to the moment).
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 08-guard-delete), which makes the project (linked to Bonsai's base pack,
 # the packs' plugin installed, a red climb recorded, Claude Code's allow rules in .claude/settings.local.json) and the

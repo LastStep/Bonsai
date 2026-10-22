@@ -1,5 +1,5 @@
 # lib.sh: the steps film.sh uses to make a clip's project off camera. Sourced by film.sh, never run alone. POSIX sh.
-# Needs CLIP_BIN (the bonsai to show), CLIP_REF (the pack's commit), CLIPS (this folder), and BONSAI_HOME already
+# Needs CLIP_BIN (the bonsai to show), CLIP_REF (the pack's commit), PACK_SOURCE (where it is fetched from), CLIPS (this folder), and BONSAI_HOME already
 # exported by film.sh for the clip. Each function takes the project's folder.
 
 # mk_base DIR RUNG: a git project linked to Bonsai's base pack with task T-0001 running and its run report, and a
@@ -11,7 +11,7 @@ mk_base() {
   rm -rf "$d"; mkdir -p "$d"; cd "$d" || return 1
   git init -q -b main
   git config user.name demo; git config user.email demo@example.invalid
-  "$CLIP_BIN" init --name demo --source https://github.com/LastStep/Bonsai --path packs/base --ref "$CLIP_REF" --yes || return 1
+  "$CLIP_BIN" init --name demo --source "$PACK_SOURCE" --path packs/base --ref "$CLIP_REF" --yes || return 1
   cat > words.py <<'PY'
 def count_words(text):
     """How many words are in text."""

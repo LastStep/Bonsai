@@ -1,6 +1,6 @@
 # 11-status-line: Claude Code's own bar shows Bonsai's status line (the task, its ladder, asks), live, beside the same line in the view.
-# Crops: the bottom bar of Claude's pane = the left 64%, the last three rows; the whole frame for the view too. Length:
-# about 30 s of screen. The status line is the person's own setting (bonsai writes none), set in this project's
+# Crops: the bottom bar of Claude's pane = the left 64%, the last three rows; the whole frame for the view too. Raw length:
+# about 46 s. The status line is the person's own setting (bonsai writes none), set in this project's
 # .claude/settings.local.json to: bonsai status --line
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 11-status-line), which makes the project (linked to Bonsai's base pack,
