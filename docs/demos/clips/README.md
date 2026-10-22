@@ -49,7 +49,23 @@ folder with `CLIPS`, `CLIP_BIN`, `CLIP_PROJECT`, `CLIP_REF` and `BONSAI_HOME` se
 
 ## The clips
 
-CLIPS_TABLE
+| Clip | What it shows | Raw length | Crop |
+|---|---|---|---|
+| `01-link` | A new project linked to Bonsai: the preview of every file and settings line, the person's `y`, then `bonsai status` | about 20 s | whole frame |
+| `02-check-status` | `bonsai check` (each finding in one sentence with its next step) and `bonsai status` on a project just linked | about 12 s | whole frame |
+| `03-rung` | A rung added to the ladder: the climb is refused (`config-looser`, with the person's next step), the person runs `bonsai update --yes`, the climb is green | about 30 s | whole frame |
+| `04-ladder` | The ladder red, with the failing tests' own names and the command to run, then the fix and the ladder green | about 26 s | whole frame |
+| `05-log` | The log: `bonsai logs`, then every record of the day through `jq` (two climbs, an ask and its answer) | about 16 s | whole frame |
+| `06-guard-edit` | Claude Code tries to edit `bonsai.yaml` with its Edit tool; the guard refuses (why, next step, rule `person-only`) | about 80 s, 10 s of it the moment | split screen |
+| `07-guard-update` | Claude Code runs `bonsai update --allow-exec --yes`; the guard refuses (`person-command`) | about 80 s, 15 s of it the moment | split screen |
+| `08-guard-delete` | Claude Code runs `rm -rf $DIR`; the guard refuses (`delete-unnamed`) | about 85 s, 10 s of it the moment | split screen |
+| `09-stop-gate` | Claude Code fixes the tests and tries to stop; the stop gate refuses (`stop-red`) and says what to do; Claude commits and climbs; the gate lets it end (`stop-proven`) | about 200 s, the moment 30 s | split screen |
+| `10-ask-answer` | Claude Code files a question with `bonsai ask`; the person answers it with `bonsai answer` in their own pane; Claude reads the answer. The status line shows `asks:1` while it is open | about 90 s | split screen, three panes |
+| `11-status-line` | Bonsai's status line in Claude Code's own bar (task, ladder), beside the same line in the live view | about 45 s | bottom of the left pane, or whole frame |
+
+"Raw length" is what the tape records, idle waits included (the tapes wait a fixed time for Claude); the edit cuts them
+to the 10 to 40 s of screen each clip holds. Claude's reply varies from take to take: if a clip misses its moment (the
+refusal or the gate is not in it), film that clip again.
 
 ## The split screen (clips 06 to 11)
 
@@ -61,7 +77,12 @@ side in two: the lower pane is the person's own shell. The tapes move between pa
 
 Crops, in pixels of the 1600 x 900 frame:
 
-CROPS
+- Claude Code alone: x 0, y 0, width 1010, height 900 (the left pane; the border sits at about x 1012).
+- The live view alone: x 1016, y 0, width 584, height 900. In clip 10 its upper half is the view and its lower half
+  (from about y 440) is the person's shell.
+- Both: the whole 1600 x 900 frame.
+- The plan name ("Claude Max") sits in Claude Code's header, third row from the top of the left pane, about x 120 to
+  400 and y 60 to 92 for as long as the header is on screen. Box it out in every Claude Code clip; check on a still frame.
 
 ## Files
 

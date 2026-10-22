@@ -21,7 +21,7 @@ Set PlaybackSpeed 1
 Hide
 Type "export PS1='$ '; cd $CLIP_PROJECT; clear"
 Enter
-Type `bonsai ladder --task T-0001 >/dev/null; sed -i 's/split(" ")/split()/' words.py; git commit -qam fix; bonsai ladder --task T-0001 >/dev/null; clear`
+Type `bonsai ladder --task T-0001 >/dev/null; sed -i 's/split(" ")/split()/' words.py; git commit -qam fix; bonsai ladder --task T-0001 >/dev/null; bonsai ask --type Answer --task T-0001 --key ship --title 'Ship it?' --why 'the tests are green' >/dev/null; bonsai answer agent:ship --words yes >/dev/null; clear`
 Enter
 Sleep 20s
 Show
@@ -31,6 +31,6 @@ Enter
 Type "bonsai logs"
 Enter
 Sleep 4s
-Type `bonsai logs --day $(date -u +%F) | jq -r '[.at[11:19], .event, (.decision // "-"), (.rule // "-")] | @tsv'`
+Type `bonsai logs --day $(date -u +%F) | jq -r '[.at[11:19], .event, (.task // "-"), (.kind // "-"), (if .ok == null then "-" else (.ok | tostring) end)] | @tsv'`
 Enter
 Sleep 6s
