@@ -106,9 +106,11 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    bonsai status
    ```
 
-   `check` says `no findings`, with a warning that the `base` plugin cannot be installed yet.
+   `check` says `no findings`, with a warning that the `base` plugin cannot be installed yet. It may also print a
+   `Notes` block (releases not read, no install record yet): notes are information, not findings.
 
-4. Open Claude Code in the folder, accept its question about trusting the folder, quit it, then run `bonsai update`.
+4. Open Claude Code in the folder, answer its question about trusting the folder (it starts on "No, exit", which
+   quits Claude Code: choose "Yes, I trust this folder"), quit it, then run `bonsai update`.
 
    > [!NOTE]
    > The trust question is Claude Code's; Bonsai never answers it for you. `update` then lists the `base` plugin as
@@ -133,9 +135,34 @@ the pack needs). On a new machine, give git your name first: `git config --globa
        timeout_s: 60
    ```
 
-   Write a task file in `work/tasks/`, named `<id>-<slug>.md` (`T-0001-first-proof.md`): its fields are printed by
-   `bonsai check --schema bonsai.task`, and the `base:task` skill has the template. Commit everything
-   (`git add -A && git commit -m "first rung"`: a climb needs a clean tree), then climb:
+   Write a task file in `work/tasks/`, named `<id>-<slug>.md` (`T-0001-first-proof.md`). This is the least a first
+   task needs; `bonsai check --schema bonsai.task` prints every field and the `base:task` skill has the full template:
+
+   ```markdown
+   ---
+   format: bonsai.task/1
+   id: T-0001
+   title: First proof
+   status: todo
+   lane: null
+   done_when:
+     - "README.md holds a line"
+   depends_on: []
+   blocked_by: null
+   created: 2026-10-22
+   started: null
+   finished: null
+   labels:
+     bonsai.ladder: []
+     bonsai.allows: []
+     bonsai.wants: []
+   ---
+
+   # First proof
+   ```
+
+   Run `bonsai check --write` once more: it clears the warning that the tables lag behind the new task. Commit
+   everything (`git add -A && git commit -m "first rung"`: a climb needs a clean tree), then climb:
 
    ```bash
    bonsai ladder --task T-0001
