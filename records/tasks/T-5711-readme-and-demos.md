@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5711
 title: "Before 1.0: the README improved, and demo videos showing how Bonsai works for a project"
-status: approved
+status: done
 lane: full
 done_when:
   - "talked through with the director when its turn comes (format, content, where the videos live), then planned and approved"
@@ -11,7 +11,7 @@ depends_on: []
 blocked_by:
 created: 2026-10-20
 started: 2026-10-22
-finished:
+finished: 2026-10-22
 labels:
   bonsai.ladder: []
   bonsai.allows: []

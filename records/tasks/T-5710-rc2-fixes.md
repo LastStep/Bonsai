@@ -42,4 +42,9 @@ Gathered on 20 Oct; rc.2 always follows (note 5.7.10). Each becomes its own task
     we can answer just A, B etc; currently we use words"): a Decide answered by the option's letter or number, written
     as the option's full text in `choice` (the format's field unchanged); the trial's ask 1 and 2 were answered with
     `--words "B"` because `--choice` needs the option's whole text.
-
+12. **From T-5711 (22 Oct):** BUG-097 (the ladder's leftovers line names other programs: a way to leave them out of a
+    printed climb); after fix 11 lands, the README's line "(rc.2 puts that first)" in step 6 rewritten to match; after
+    rc.2 is installed, the clip set filmed again where what is on screen changed (`sh docs/demos/clips/film.sh
+    ~/bonsai-clips <clip>`, then `sh docs/demos/edit.sh`), clip 10 among them (BUG-098); `~/bonsai-checks/bin/claude-here`
+    forces its own Bonsai home and plugin cache, so a dry run through it cannot see the stop gate judge a project
+    linked with another home (T-5724; a scratch tool's limit, for T-5793).

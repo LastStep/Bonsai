@@ -1,6 +1,6 @@
 ---
 title: Known bugs   # the bugs register; every field and how to fill it: skill workflow:bugs
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Known bugs
@@ -31,7 +31,7 @@ director".
 | **BUG-019** | The words Claude Code shows for "no bonsai is installed" are not Bonsai's | said (STATE only) | STATE "Placed for later, 5.6" |
 | **BUG-020** | bonsai unlink leaves the machine folder | cmd/bonsai unlink; 91d8a972 (said) | STATE "Placed for later, 5.6" |
 | **BUG-021** | install.json's keys are not settled (placed for 5.6) | install/ and internal/engine check of install.json; 91d8a972 (said) | STATE "Placed for later, 5.6" |
-| **BUG-022** | The Windows personal-memory warning is not built (placed for 5.6) | said (STATE only) | STATE "Placed for later, 5.6" |
+| **BUG-022** | The Windows personal-memory warning is not built (placed for 5.6). **22 Oct: may be stale:** the warning `personal-copy` exists (internal/engine/checkpersonal.go:14, :136; pointed by T-5722's builder); to close once read | said (STATE only) | STATE "Placed for later, 5.6" |
 | **BUG-023** | No per-id index of the machine records | said (STATE only) | STATE "Placed for later, 5.6" |
 | **BUG-025** | A pack's relative deny rule does not hold after a shell `cd` | Claude Code deny rules as written by the pack; 91d8a972 (said) | STATE "Placed for later, 5.5" |
 | **BUG-026** | The operating skill's line on an added rung says a person's step (since K1); the plan's text near line ~4031 does not | packs/base/skills/operating-bonsai/SKILL.md vs design/plan-5.md ~4031; 91d8a972 (said; skill since split, not re-read) | STATE "Placed for later, 5.5" |
@@ -79,6 +79,8 @@ director".
 | **BUG-094** | The trial builder's climbs took 6.4 and 6.5 minutes of wall time for about 2 minutes of rungs (the climb of main: 2.2 for 2.0); not explained; after 1.0 unless it recurs | .bonsai/local/ladder/T-5708.json, T-5707.json (pointed) | records/trial-rc1.md, rough 12 (T-5709) |
 | **BUG-095** | .bonsai/sessions.md files a helper briefed before its task read running under another task (the trial's proposals auditor under T-5705, its brief from auditor@T-5707); after 1.0 | .bonsai/sessions.md:429 (pointed) | records/trial-rc1.md, gaps (T-5709) |
 | **BUG-096** | A session started from inside another Claude Code session records that session's id in every log record's `remote` field (inherited `CLAUDE_CODE_BRIDGE_SESSION_ID`); after 1.0 | the README dry run's demo log (pointed, since removed) | M-2026-10-21-8afc2b72 (T-5709) |
+| **BUG-097** | The ladder's "leftovers not started by this run" lists other programs on the machine by name (Chrome and its crash handler in the director's clips 03-05), so a published climb's output can name what else the person runs | the ladder's leftovers line (internal/leftovers); the director's clips in ~/bonsai-clips (seen, 22 Oct) | T-5721's builder, T-5723's final cut |
+| **BUG-098** | The clip set's clip 10 (ask and answer) stalled on a Claude Code permission question before Claude read the answer, in the director's take; left out of the showcase | docs/demos/clips/10-ask-answer.tape; ~/bonsai-clips/10-ask-answer.mp4 (seen, 22 Oct) | T-5723's final cut |
 
 ## Fixed
 

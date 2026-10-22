@@ -36,3 +36,7 @@ labels: {}
 ## Processes left running
 
 None (the update's own; checked with `ps -eo pid,etime,cmd`).
+- 08:25 After the director's restart: T-5796 moved `running` again for one step, `bonsai update --yes`: exit 0,
+  base and workflow `installed` under the new marketplace; T-5796 back to `done`. CI on `6f8783ea`: eight jobs green,
+  the two windows jobs running.
+- 08:41 CI on `6f8783ea` (main): all ten jobs green, the two windows jobs among them.

@@ -1,19 +1,24 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-21
+updated: 2026-10-22
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 21 Oct 2026 (a day session, the director present).
-**Step 5.7: the trial's analysis landed and the director read it (batch 4: "looks good overall"); **one system for time (`T-5795`) done**: every recorded time UTC, `bonsai now`, local display, the guard's `time-not-now`, "now" told each prompt and subagent (`records/plans/P-T-5795.md`, contract section 23; landed up to `1b2c67f8`).** `main` at `578a8724` plus
-this session's records commit, CI green. **21 Oct:** `T-5709` built: `records/trial-rc1.md` (the trial on rc.1, every
-claim sourced; a Haiku source check, 6 of 7 mismatches held and fixed), landed `578a8724` by CI on the branch (run
-39555994155); the README's first-project dry run on rc.1 done (a builder, after a runner was refused by BUG-013; the
-director ran step 6's `bonsai update --yes`; the climb green; 13 fixes proposed, in the page); BUG-092 to BUG-096
-added; the director asked for README research (kept at `~/bonsai-checks/T-5711/readme-research.md`, for T-5711).
+Rewritten, never appended (`base:state`). Last rewritten 22 Oct 2026 (a day session, the director present).
+**Step 5.7: the README and demos (`T-5711`) done and landed** (22 Oct, `main` at `57fa4f97` plus this session's
+records commit, CI green): the README restructured (what you get, how it works, install folded, a first project with
+both dry runs' fixes and the `BONSAI_TASK` line), the How it works picture (light and dark SVG), **`docs/features.md`**
+(every capability in seven areas, with its limits and open bugs; the director asked for it), the clip set
+(`docs/demos/clips/`, eleven tapes and `film.sh`), the edit (`docs/demos/edit.sh`), and the media cut from the
+director's own filming on the installed rc.1 (`first-project.gif`, `session.gif`, `showcase.mp4`, 2 min 27 s). Plan
+`records/plans/P-T-5711.md` (four amendments, every one the director's word); options `records/options/OPT-0002-recordings.md`
+(B, as clips); run report `records/runs/R-2026-10-22-T-5711-readme-and-demos.md`. A facts verifier: FAIL (6), then PASS.
+**The workflow pack names no studio's files** (`T-5796`): its twelve Trinetra deny rules out (pack `612bc333`), this
+repo's pin moved and updated (`6f8783ea`), on the director's word. Earlier, **21 Oct:** the trial's analysis
+(`records/trial-rc1.md`), one system for time (`T-5795`) landed up to `1b2c67f8`.
 **20 Oct (a day session, the director present):** the team-work research moved to
 the studio's research folder (solo-to-team-ai) and its unpushed commit undone; CI on the branch (`T-5792`); 5.7.3,
 5.7.4, 5.7.1 and 5.7.2 landed (`11943f30`, `4ebee8cc`, `137e419f`, `4ec5c432`); V1 failed the release path once (the tag
@@ -56,9 +61,10 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
   read, the installers, the CLI look, the operating split, `workflow`'s changelog, prototype and correct skills; the
   end verifier `T-5611` (FAIL on records), then `T-5616`'s re-check. Tasks `T-5600`-`T-5617`, `T-5690`-`T-5699`; run
   reports `records/runs/R-2026-10-1[689]-T-56*.md`.
-- **Step 5.7, the release** (19-20 Oct): 5.7.0-5.7.4 done; rc.1 published, checked, installed; the trial's feature
-  landed (`T-5707`, `T-5708`). Left: the analysis (`T-5709`), the README and demos (`T-5711`), rc.2's fixes (`T-5710`),
-  rc.2, the director's own trial, 5.7.6, 1.0. Run reports `records/runs/R-2026-10-{19,20}-T-57*.md`.
+- **Step 5.7, the release** (19-22 Oct): 5.7.0-5.7.4 done; rc.1 published, checked, installed; the trial's feature
+  landed (`T-5707`, `T-5708`); its analysis (`T-5709`); one system for time (`T-5795`); the README and demos (`T-5711`).
+  Left: rc.2's fixes (`T-5710`), rc.2, the director's own trial, 5.7.6, 1.0. Run reports
+  `records/runs/R-2026-10-{19,20,21,22}-T-57*.md`.
 
 **Hours** (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min; 5.1 866 minutes; 5.2
 1,061; 5.3 about 2,013 (33 h 33 min); 5.4 about 2,372 (39 h 32 min); **5.5 about 78 h** with its planning and reviews (the end
@@ -74,6 +80,17 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 
 ## The director's decisions
 
+- **22 Oct (a day session):** "okay lets go ahead with the readme and demo"; the README **restructured**; demos of
+  **both kinds**; media in the repo, **"option 1 now, and then i want to record my screen and do a voice over as a
+  youtube video later"**; the session's story "a task, start to done"; the picture a drawn SVG; then **"i also want an
+  audit of all bonsai features, and a specific document on github which is linked on the readme ... with proper
+  transperance"** (one page, `docs/features.md`); on how the recordings are made (OPT-0002): **"lets do option 1. but i
+  also want to make sure that we record clips, and then we can edit and make a good video using them"**; the video
+  **in the repo**; **"remove the trinetra paths from the workflow pack. also close any unnessary monitors"** (and "Yes,
+  you do it" to moving this repo's pin); **"once done, push everything to main, from my side its approved"**; **"i want
+  you to take ownership of this task here of building the demo, and see it to completion"** (the orchestrator filmed
+  nothing itself: the director ran `film.sh` and the dry run's update in their own terminal); "once all done, wrap up
+  cleanly". Their answers in `~/bonsai-checks/T-5711/notes.md`.
 - **20 Oct:** **"in a previous conversation i discussed about converting bonsai for team development along with the
   studio, move that research item in the studio research folder, as we wont be focusing on that here"**; undo the
   commits of the files it made; **"then we just fully focus on the current planned bonsai release order"**; the aim
@@ -199,12 +216,12 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 
 ## GitHub
 
-- `LastStep/Bonsai`: `main` the only branch (a piece's branch lives on GitHub only until it lands). At `7afb9faa` and
-  the records commit after it, CI green. Tags: `v1.0.0-rc.1` (on `73919ddc`; a published pre-release, immutable) and
+- `LastStep/Bonsai`: `main` the only branch of ours (a piece's branch lives on GitHub only until it lands; a
+  dependabot branch is GitHub's). At `57fa4f97` and the records commit after it, CI green. Tags: `v1.0.0-rc.1` (on `73919ddc`; a published pre-release, immutable) and
   the old `v0.4.3`. `release.yml` **active**, on version tags only, publishing inside the `release` environment once the
   director approves; immutable releases on; rulesets `main-protection` and `pack-tags` (base-v*); no secret.
 - `LastStep/bonsai-workflow`: the ruleset `release-tags` (v*) and immutable releases on (batch 1).
-- `LastStep/bonsai-workflow`: **public**, `main` at `a42a4f4`, CI green on both sides.
+- `LastStep/bonsai-workflow`: **public**, `main` at `612bc333` (no studio walls, 22 Oct), CI green on both sides; this repo pins it there.
 - `LastStep/bonsai-test-pack`: public, `main` at H (`19e3ca5`).
 - The old website stays on GitHub Pages until the director turns Pages off.
 
@@ -227,10 +244,11 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | 5.7.9, the trial's analysis | `T-5709` | done | `578a8724`; `records/trial-rc1.md`; batch 4: "looks good overall" |
 | **One system for time** (the trial's rough 11; the director: "option 3", before 1.0) | `T-5795` | done | `T-5712`, `T-5713` (`97be0d99`), `T-5714`, `T-5716` (`f0ba50c9`), `T-5717` (`1b2c67f8`) landed; `T-5715` cut (UTC-only: the sessions table already UTC); verifiers PASS; the director's `bonsai update --allow-exec --yes` after rc.2 is installed |
 | rc.2's fixes (BUG-014 first; the notes' line; Go; CLAUDE.md's stale lines; ...) | `T-5710` | todo | the list in the task |
-| The README improved and demo videos (the director's added step) | `T-5711` | todo | before rc.2; to talk through first; research `~/bonsai-checks/T-5711/readme-research.md`; the dry run's README fixes in `records/trial-rc1.md` |
+| The README improved and demo videos (the director's added step) | `T-5711` (`T-5718`-`T-5724`) | done | landed `57fa4f97`; `T-5720` cut; facts verifier PASS (round 2); the director filmed the clips (`~/bonsai-clips`) |
+| The workflow pack names no studio's files | `T-5796` | done | pack `612bc333`, pin `6f8783ea` |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Next, in this order:** the README and demos talk (`T-5711`); rc.2's fixes
+**Next, in this order:** rc.2's fixes
 (`T-5710`, each its own task, BUG-014 before 1.0); rc.2 (note 5.7.10: the director's tag, approval and WSL install;
 the stages the changes touched re-run as probes); the director's own trial on a fresh project; 5.7.6; batch 5. Every
 landing by CI on the branch; in a batch the one piece that changes protected files goes on top (rung 0 judges the
@@ -240,7 +258,7 @@ workflow:builder` in its worktree (`claude-here` is scratch only), launcher `~/b
 `R-2026-10-19-T-5615` names them. Every known bug: `records/bugs.md`.
 
 **How work runs now:** agents by role, briefed with `bonsai message`; the shared rules
-`~/bonsai-checks/briefs/common-2026-10-21.md` (over `common-2026-10-20.md`, `common-2026-10-19-day.md`, `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
+`~/bonsai-checks/briefs/common-2026-10-22.md` (over `common-2026-10-21.md`, `common-2026-10-20.md`, `common-2026-10-19-day.md`, `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
 Windows runs by the orchestrator only, one at a time; load modest), plus the director's 19 Oct afternoon rules above. A
 verifier, runner or auditor cannot yet write a scratch file by the Write tool (BUG-013; the sanctioned folder is not
 built): it returns its work in its final reply, or the orchestrator or a builder makes the scratch. Run reports' times
@@ -267,7 +285,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 - **Whenever they like:** whether to allow deleting git's own lock files by exact name; whether the redactor's shared `=>` and
   `:=` limits go in a named part before the release; turn GitHub Pages off; the plan's text on 5.5.11's limits is looser than
   the code.
-- **After rc.2 is installed:** `bonsai update --allow-exec --yes` in `~/Servers/Bonsai` (adds the two time lines); the README and demos talk; BUG-014's
+- **After rc.2 is installed:** `bonsai update --allow-exec --yes` in `~/Servers/Bonsai` (adds the two time lines); film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips <clip>`, T-5710 item 12); BUG-014's
   rule (which tags count as a pack's versions); then rc.2's tag, approval and WSL install; their own trial; their word
   for 1.0.
 
