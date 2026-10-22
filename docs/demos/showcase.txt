@@ -17,7 +17,7 @@
 #        refused, log, ladder, green, red) or - for none. One line of plain words, under about 90 characters in the
 #        showcase and 70 in a GIF.
 #
-# The times are those of the practice clips of 22 Oct 2026 (a take differs: Claude's replies are its own). For a new
+# The times are those of the director's filming of 22 Oct 2026, on the installed rc.1 (a take differs: Claude's replies are its own). For a new
 # take, read the new times off work/stills/<clip>.png and work/<clip>.big (the header of edit.sh says how). The idle
 # stretches between changes are cut by the script, so only the moments need placing.
 
@@ -25,76 +25,76 @@
 card 4.5 | Bonsai | keeps Claude Code agents inside the lines you draw for a project | one Go program, nothing else to install
 
 chapter 2.2 | 1 | Link a project
-scene 01-link whole 0 auto 1.5 | 1 · link a project
-cap 0 6.1 - | bonsai init shows every file and setting it would write, and asks
-cap 6.1 12.8 - | the person's y: nothing is written before it
-cap 12.8 end - | bonsai status: what is linked, what only a person changes, what the hooks run
+scene 01-link whole 0 auto 1.9 | 1 · link a project
+cap 0 10.8 - | a new project, linked with bonsai init to a pack at one exact commit
+cap 10.8 16.6 - | it shows every file and setting it would write, and waits for the person's y
+cap 16.6 end - | after the person's y, bonsai status: what is linked, what only a person changes
 scene 02-check-status whole 0 auto 1.5 | 1 · link a project
-cap 0 6.4 - | bonsai check: every finding in one sentence, with its next step
+cap 0 6.4 - | bonsai check: no findings, then each warning and note with its next step
 cap 6.4 end - | bonsai status reads the same project
 
 chapter 2.2 | 2 | The guard
-scene 06-guard-edit claude 11 auto 1.15 | 2 · the guard
-cap 11 18.3 agent | Claude Code is asked to edit bonsai.yaml, the project's settings, with its Edit tool
-cap 18.3 end refused | the guard refuses: why, the next step, the rule (person-only). The file is untouched
-scene 07-guard-update claude 13 auto 1.25 | 2 · the guard
-cap 13 18 agent | a person's command, bonsai update --allow-exec --yes, run by an agent
-cap 18 end refused | refused (person-command): --allow-exec is a person's consent to run code, not an agent's
-scene 08-guard-delete claude 11 auto 1.25 | 2 · the guard
-cap 11 18.2 agent | rm -rf $DIR, with $DIR empty: a delete that names nothing
-cap 18.2 end refused | refused (delete-unnamed) before the shell sees it
+scene 06-guard-edit claude 11.5 28 1.15 | 2 · the guard
+cap 11.5 18.6 agent | Claude Code is asked to edit bonsai.yaml, the project's settings, with its Edit tool
+cap 18.6 end refused | the guard refuses: why, the next step, the rule (person-only). The file is untouched
+scene 07-guard-update claude 11 33 1.4 | 2 · the guard
+cap 11 27.5 agent | a person's command, bonsai update --allow-exec --yes, run by an agent
+cap 27.5 end refused | refused (person-command): --allow-exec is a person's consent to run code, not an agent's
+scene 08-guard-delete claude 11 25 1.25 | 2 · the guard
+cap 11 19.5 agent | rm -rf $DIR, with $DIR empty: a delete that names nothing
+cap 19.5 end refused | refused (delete-unnamed) before the shell sees it
 
 chapter 2.2 | 3 | The stop gate and the ladder
-scene 09-stop-gate claude 11 52 1.15 | 3 · the stop gate and the ladder
-cap 11 19.5 agent | the session is started on its task (BONSAI_TASK=T-0001) and asked to fix two failing tests
-cap 19.5 30 agent | Claude edits words.py and says it is done
-cap 30 36.3 red | the stop gate holds the session: the task's ladder is red (stop-red), and it says what to do
-cap 36.3 39 ladder | Claude commits and climbs the ladder: the tests run
-cap 39 end green | green: the proof is written, the gate lets the session end
+scene 09-stop-gate claude 11 38 1.15 | 3 · the stop gate and the ladder
+cap 11 17.8 agent | the session is started on its task (BONSAI_TASK=T-0001) and asked to fix two failing tests
+cap 17.8 23.5 agent | Claude edits words.py and says it is done
+cap 23.5 33.4 red | the stop gate holds the session: the task's ladder is red (stop-red), and it says what to do
+cap 33.4 34.6 ladder | Claude commits and climbs the ladder: the tests run
+cap 34.6 end green | green: the proof is written, the gate lets the session end
 
 chapter 2.2 | 4 | The person's steps
-scene 03-rung whole 0 auto 1.5 | 4 · the person's steps
-cap 0 6.8 - | a rung that checks the work is added to bonsai.yaml and committed
-cap 6.8 15.8 - | the climb is refused (config-looser): a new rung runs a command, so a person accepts it first
-cap 15.8 23.6 - | bonsai update --yes, in the person's own terminal, records it
-cap 23.6 end - | the climb is green
-scene 10-ask-answer whole 12 80 1.6 | 4 · the person's steps
-cap 12 23.5 - | Claude Code is told to ask before it touches anything
-cap 23.5 45 - | bonsai ask files the question; the status line shows asks:1 while it is open
-cap 45 53.5 - | the person reads it and answers in their own shell: bonsai answer
-cap 53.5 end - | Claude reads the answer
+scene 03-rung whole 0 auto 1.8 | 4 · the person's steps
+cap 0 8 - | a rung that checks the work is added to bonsai.yaml and committed
+cap 8 15.8 - | the climb is refused (config-looser): a new rung runs a command, so a person accepts it first
+cap 15.8 24 - | bonsai update --yes, in the person's own terminal, records it
+cap 24 end - | the climb is green
+scene 10-ask-answer whole 11 57 1.6 | 4 · the person's steps
+cap 11 20 - | Claude Code is told to ask before it touches anything
+cap 20 41.5 - | bonsai ask files the question; the status line shows asks:1 while it is open
+cap 41.5 49 - | the person reads the open question in their own pane
+cap 49 end - | the person answers with bonsai answer: the ask closes, asks:1 leaves the status line
 
 chapter 2.2 | 5 | The log
 scene 05-log whole 0 auto 1.5 | 5 · the log
-cap 0 8.5 - | everything Bonsai records is in one log, one JSON line each
-cap 8.5 end - | the day's records through jq: two climbs, the ask and its answer
-scene 11-status-line whole 17 30 1.5 | 5 · the log
-cap 17 end - | Bonsai's status line in Claude Code's own bar: the task, its ladder, open asks
+cap 0 6.4 - | everything Bonsai records is in one log, one JSON line each
+cap 6.4 end - | the day's records through jq: two climbs, the ask and its answer
+scene 11-status-line whole 17 29.5 1.5 | 5 · the log
+cap 17 end - | Bonsai's status line in Claude Code's own bar: the task and its ladder, red then green
 
 end 6 | Bonsai | github.com/LastStep/Bonsai | the README has a first project in six steps
 
 [first-project]
-gif 830 20 7
+gif 830 16 6
 scene 01-link whole 0 auto 1.5 | link
-cap 0 6.1 - | bonsai init shows what it would write, and asks
-cap 6.1 12.8 - | the person's y
-cap 12.8 end - | bonsai status
+cap 0 10.8 - | bonsai init, pointed at a pack
+cap 10.8 16.6 - | it shows what it would write, and asks
+cap 16.6 end - | the person's y, then bonsai status
 scene 02-check-status whole 0 6.3 1.5 | check
-cap 0 end - | bonsai check: each finding with its next step
+cap 0 end - | bonsai check: each warning with its next step
 scene 03-rung whole 0 auto 1.5 | rung
-cap 0 6.8 - | a rung is added to bonsai.yaml
-cap 6.8 15.8 - | the climb is refused: a person accepts a new rung first
-cap 15.8 23.6 - | bonsai update, in the person's own terminal
-cap 23.6 end - | green
+cap 0 8 - | a rung is added to bonsai.yaml
+cap 8 15.8 - | the climb is refused: a person accepts a new rung first
+cap 15.8 24 - | bonsai update, in the person's own terminal
+cap 24 end - | green
 
 [session]
 gif 1000 64 10
-scene 06-guard-edit claude 13 auto 1.15 | guard
-cap 13 18.3 - | Claude is asked to edit bonsai.yaml
-cap 18.3 end - | the guard refuses: why, next step, rule
-scene 09-stop-gate claude 13 52 1.15 | stop gate
-cap 13 19.5 - | started on its task; asked to fix two tests
-cap 19.5 30 - | Claude edits words.py and says it is done
-cap 30 36.3 - | the stop gate holds it: the ladder is red
-cap 36.3 39 - | it commits and climbs
-cap 39 end - | green: the gate lets the session end
+scene 06-guard-edit claude 11.5 28 1.15 | guard
+cap 11.5 18.6 - | Claude is asked to edit bonsai.yaml
+cap 18.6 end - | the guard refuses: why, next step, rule
+scene 09-stop-gate claude 11 38 1.15 | stop gate
+cap 11 17.8 - | started on its task; asked to fix two tests
+cap 17.8 23.5 - | Claude edits words.py and says it is done
+cap 23.5 33.4 - | the stop gate holds it: the ladder is red
+cap 33.4 34.6 - | it commits and climbs
+cap 34.6 end - | green: the gate lets it end the session

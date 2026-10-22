@@ -116,9 +116,11 @@ for n in $NAMES; do [ -f "$CLIPS/$n.mp4" ] || die "clip missing: $CLIPS/$n.mp4 (
 
 # analyze <name>: work/<name>.big (the seconds at which something appears) and work/<name>.box (the plan-name box:
 # "from to y h" while Claude Code's header is on screen, tracked by the mascot's pink in the column x 30-100, in
-# ten bands of 10 px from the top; a band is pink above V 148; at rest the mascot's top is band 4, y 40, and the
-# plan name's row is y 65-80, so the box is 25 px from 20 below the mascot's top, or the top 56 px once the header
-# has scrolled into the first band). One decode per clip.
+# ten bands of 10 px from the top; a band is pink above V 148; at rest the mascot's last band is 7 (its feet end at
+# y 79) and the plan name's row is y 65-80, so the box is y 60-85; once the header scrolls up, the mascot's feet
+# (which stay whole after its top is cut) say by how much: the box moves up by 10 px a band lost and grows to 35 px
+# tall, since a band is only that exact; the first version followed the mascot's top and missed the plan name when
+# the top was cut off). One decode per clip.
 analyze() {
   n=$1; src=$CLIPS/$n.mp4
   [ -f "$W/$n.big" ] && [ -f "$W/$n.box" ] && [ -f "$W/$n.len" ] && return 0
@@ -130,8 +132,12 @@ analyze() {
   rm -f "$W/$n.scene"
   # the bands: 30 bytes a frame (10 Y, 10 U, 10 V); the topmost pink band gives the mascot's top.
   od -An -v -tu1 -w30 "$W/$n.bands" | awk -v fps="$FPS" '
-    { top=-1; for (i=21; i<=30; i++) if ($i+0 > 148) { top=i-21; break }
-      if (top < 0) { y=-1; h=0 } else if (top == 0) { y=0; h=56 } else { y=top*10+20; h=25 }
+    { top=-1; bot=-1; for (i=21; i<=30; i++) if ($i+0 > 148) { if (top < 0) top=i-21; bot=i-21 }
+      if (top < 0) { y=-1; h=0 }
+      else {
+        off=(7-bot)*10; if (off < 0) off=0
+        if (off == 0) { y=60; h=25 } else { y=55-off; h=35; if (y < 0) { h=h+y; y=0 }; if (h <= 0) { y=-1; h=0 } }
+      }
       t=NR-1
       if (NR == 1) { cy=y; ch=h; from=0; next }
       if (y != cy || h != ch) { if (cy >= 0) printf "%.2f %.2f %d %d\n", from/fps, (t+0.5)/fps, cy, ch; cy=y; ch=h; from=t }
