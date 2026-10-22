@@ -65,6 +65,10 @@ folder with `CLIPS`, `CLIP_BIN`, `CLIP_PROJECT`, `CLIP_REF` and `BONSAI_HOME` se
 | `10-ask-answer` | Claude Code files a question with `bonsai ask`; the person answers it with `bonsai answer` in their own pane; Claude reads the answer. The status line shows `asks:1` while it is open | about 88 s | split screen, three panes |
 | `11-status-line` | Bonsai's status line in Claude Code's own bar (task, ladder), beside the same line in the live view | about 46 s | bottom of the left pane, or whole frame |
 
+The 22 Oct take of `10-ask-answer` stalled on a Claude Code permission question before Claude read the answer, so the
+showcase leaves it out; a later take should fix that (the tape asks Claude to wait in a shell loop, which Claude Code
+asks about).
+
 "Raw length" is what the tape records (the lengths of the last practice takes), idle waits included (the tapes wait a fixed time for Claude); the edit cuts them
 to the 10 to 40 s of screen each clip holds. Claude's reply varies from take to take: if a clip misses its moment (the
 refusal or the gate is not in it), film that clip again.

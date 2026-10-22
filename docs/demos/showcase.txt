@@ -58,11 +58,6 @@ cap 0 8 - | a rung that checks the work is added to bonsai.yaml and committed
 cap 8 15.8 - | the climb is refused (config-looser): a new rung runs a command, so a person accepts it first
 cap 15.8 24 - | bonsai update --yes, in the person's own terminal, records it
 cap 24 end - | the climb is green
-scene 10-ask-answer whole 11 57 1.6 | 4 · the person's steps
-cap 11 20 - | Claude Code is told to ask before it touches anything
-cap 20 41.5 - | bonsai ask files the question; the status line shows asks:1 while it is open
-cap 41.5 49 - | the person reads the open question in their own pane
-cap 49 end - | the person answers with bonsai answer: the ask closes, asks:1 leaves the status line
 
 chapter 2.2 | 5 | The log
 scene 05-log whole 0 auto 1.5 | 5 · the log
