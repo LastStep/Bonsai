@@ -19,6 +19,8 @@ to install.
 | **The recorder** | Keeps a log of each session in `.bonsai/local/log/`: prompts, tool calls, the guard's decisions | `bonsai logs` |
 | **The ladder** | Runs your project's checks, cheapest first, and writes the proof a session needs before it may end | `bonsai ladder --task T-0001` |
 
+Every capability, area by area, with its limits and the open bugs that touch it: [`docs/features.md`](docs/features.md).
+
 ## How it works
 
 <picture>
