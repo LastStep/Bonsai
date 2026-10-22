@@ -34,7 +34,8 @@ Three steps: download the release, check it (its SHA-256, then `gh attestation v
 workflow built it), and run its installer. You need `gh` 2.97 or newer, logged in. One line at a time:
 
 > [!NOTE]
-> These lines name 1.0.0, Bonsai's first release, which is not out yet; until it is, the download fails.
+> These lines install 1.0.0. For another release or a pre-release, put its version from the
+> [releases page](https://github.com/LastStep/Bonsai/releases) (`1.0.0-rc.1`) in place of `1.0.0` on every line.
 
 <details>
 <summary>Linux and WSL</summary>
