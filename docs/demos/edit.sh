@@ -5,7 +5,8 @@
 #
 #   sh docs/demos/edit.sh <clips folder> <out folder>
 #
-# Reads <clips folder>/NN-name.mp4 (the eleven clips, 1600 x 900, as film.sh names them) and writes into <out folder>:
+# Reads <clips folder>/NN-name.mp4 (the eleven clips as film.sh names them: clips 01 to 05 are 1100 x 900, 06 to 11 are 1600 x 900;
+# each whole-frame scene is cropped and scaled by its own clip's size, read with ffprobe) and writes into <out folder>:
 #   first-project.gif   the README's top picture: link, check, a rung refused, the person's update, green (30-45 s)
 #   session.gif         the README's "A real session": the guard refusing, the stop gate holding, then green (40-60 s)
 #   showcase.mp4        2-3 minutes, 1920 x 1080: a title card, the story in the order a person meets Bonsai, an end card
@@ -235,14 +236,17 @@ card() {
 
 # scene <out> <profile> <name> <layout> <in> <out|auto> <speed> <chapter> <caps file>: one cut clip, composed. Profile
 # show is 1920 x 1080 with a caption bar of 110 px; profile gif is 830 wide with a bar of 44 px. Layout whole: the
-# whole 1600 x 900 frame; claude: Claude Code's pane (the left 1010 px) and, in profile show, the picture with its lit
+# whole frame of the clip (its own width and height: 1100 x 900 or 1600 x 900), centred in the showcase; claude: Claude Code's pane (the left 1010 px) and, in profile show, the picture with its lit
 # step over the live view (the right pane's top 380 px) in a right column. The caps file: "from to lit|text" lines in
 # the clip's seconds; lit names the picture's step (- for none).
 scene() {
   o=$1; prof=$2; n=$3; layout=$4; in=$5; outp=$6; g=$7; chapter=$8; caps=$9
   analyze "$n"
   tag=$(plan "$n" "$in" "$outp")
-  tagx=1580; tagy=830; [ "$layout" = claude ] && { tagx=990; tagy=22; }   # a whole frame: bottom right, under the view
+  cw=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$CLIPS/$n.mp4" 2>/dev/null || true)
+  ch=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$CLIPS/$n.mp4" 2>/dev/null || true)
+  [ -n "$cw" ] && [ -n "$ch" ] || die "cannot read the size of clip $n" "check that the clip is a video"
+  tagx=$((cw-20)); tagy=$((ch-70)); [ "$layout" = claude ] && { tagx=990; tagy=22; }   # a whole frame: bottom right
   condense "$n" "$tag" "$tagx" "$tagy"
   map=$W/$tag.map
   D=$(awk -v g="$g" '{d=$4+($2-$1)/$3} END{printf "%.2f", d/g}' "$map")
@@ -270,7 +274,7 @@ scene() {
     tf "$chapter"; chap="drawtext=fontfile=$FONT:textfile=$TF:fontsize=24:fontcolor=$MUTED:x=w-tw-60:y=984,"
     case $layout in
       whole)
-        f="color=c=$BG:s=1920x1080:r=$FPS[bg];[0:v]setpts=PTS/$g,crop=1600:900:0:0[a];[bg][a]overlay=160:35:shortest=1[c]" ;;
+        f="color=c=$BG:s=1920x1080:r=$FPS[bg];[0:v]setpts=PTS/$g,crop=$cw:$ch:0:0[a];[bg][a]overlay=(W-w)/2:35:shortest=1[c]" ;;
       claude)
         f="color=c=$BG:s=1920x1080:r=$FPS[bg];[0:v]setpts=PTS/$g,split[v1][v2];[v1]crop=1010:900:0:0[a];[v2]crop=584:380:1016:0[b];[bg][a]overlay=30:35[c1]"
         if [ -f "$W/pic-none.png" ]; then
@@ -287,7 +291,7 @@ scene() {
     ff -i "$W/$tag.mp4" $( [ -f "$W/pic-none.png" ] && [ "$layout" = claude ] && printf '%s' "-i $W/pic-none.png $litf" ) -filter_complex "$f" -map '[out]' -t "$D" -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p "$o"
   else
     case $layout in
-      whole)  f="[0:v]setpts=PTS/$g,crop=1600:900:0:0,scale=$GIF_W:-2[a]" ;;
+      whole)  f="[0:v]setpts=PTS/$g,crop=$cw:$ch:0:0,scale=$GIF_W:-2[a]" ;;
       claude) f="[0:v]setpts=PTS/$g,crop=1010:900:0:0,scale=$GIF_W:-2[a]" ;;
     esac
     note=""

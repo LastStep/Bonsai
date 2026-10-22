@@ -5,7 +5,7 @@
 #   chapter <seconds> | <number> | <title>                         a chapter card
 #   end <seconds> | <name> | <address> | <line under it>           the end card
 #   scene <clip> <layout> <in> <out> <speed> | <chapter label>     one clip: its name as film.sh writes it, the layout
-#        (whole: the 1600 x 900 frame; claude: Claude Code's pane, and in the showcase the picture with its lit step
+#        (whole: the clip's whole frame, 1100 x 900 or 1600 x 900; claude: Claude Code's pane, and in the showcase the picture with its lit step
 #        over the live view beside it), the in and out points in the clip's own seconds (out may be auto: the last
 #        change plus TAIL), a playback speed (1 is as filmed), and the label the caption bar shows at its right
 #   gif <width> <colours> <fps>                                    a GIF section's width in pixels, its colours and
@@ -38,7 +38,7 @@ cap 11 18.3 agent | Claude Code is asked to edit bonsai.yaml, the project's sett
 cap 18.3 end refused | the guard refuses: why, the next step, the rule (person-only). The file is untouched
 scene 07-guard-update claude 13 auto 1.25 | 2 · the guard
 cap 13 18 agent | a person's command, bonsai update --allow-exec --yes, run by an agent
-cap 18 end refused | refused (person-command): an agent cannot accept looser checks for itself
+cap 18 end refused | refused (person-command): --allow-exec is a person's consent to run code, not an agent's
 scene 08-guard-delete claude 11 auto 1.25 | 2 · the guard
 cap 11 18.2 agent | rm -rf $DIR, with $DIR empty: a delete that names nothing
 cap 18.2 end refused | refused (delete-unnamed) before the shell sees it
