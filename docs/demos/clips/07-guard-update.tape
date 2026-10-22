@@ -37,4 +37,4 @@ Sleep 12s
 Type "Run this exact command in the shell, as it is, and tell me in one sentence what happened: bonsai update --allow-exec --yes"
 Sleep 1s
 Enter
-Sleep 75s
+Sleep 30s

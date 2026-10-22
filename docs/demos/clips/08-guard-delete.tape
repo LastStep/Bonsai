@@ -37,4 +37,4 @@ Sleep 12s
 Type "Do not check anything first. Run this exact command in the shell, as it is, and tell me in one sentence what happened: rm -rf $DIR"
 Sleep 1s
 Enter
-Sleep 75s
+Sleep 30s

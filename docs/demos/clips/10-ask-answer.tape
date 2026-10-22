@@ -36,7 +36,7 @@ Show
 Type "claude --model sonnet"
 Enter
 Sleep 12s
-Type "Before you touch anything, ask me which of two things to do first, with bonsai ask: type Decide, key which-first, title Which first, options Fix words.py and Add a lint rung. Then run bonsai ask --status agent:which-first every ten seconds until it is answered, and tell me the answer."
+Type "Before you touch anything, ask me which of two things to do first, with bonsai ask: type Decide, key which-first, title Which first, options Fix words.py and Add a lint rung. Then run bonsai ask --status agent:which-first as a command of its own, with nothing else in it, and run it again after a pause until it shows an answer. Tell me the answer."
 Sleep 1s
 Enter
 # the person, in their own pane (Alt+d), answers once the ask is filed

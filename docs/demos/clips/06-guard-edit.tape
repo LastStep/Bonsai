@@ -37,4 +37,4 @@ Sleep 12s
 Type "Read bonsai.yaml, then use the Edit tool on it, as it is, to change ladder_floor: [1] to ladder_floor: [] . Then tell me in one sentence what happened."
 Sleep 1s
 Enter
-Sleep 75s
+Sleep 30s
