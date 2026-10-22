@@ -14,8 +14,10 @@ In a plain terminal, never inside Claude Code (its own `!` lines count as an age
 person's steps there; `film.sh` refuses to start inside one):
 
 ```bash
-sh docs/demos/clips/film.sh ~/Videos/bonsai-clips
+sh docs/demos/clips/film.sh
 ```
+
+The clips go to `~/bonsai-clips` (or to a folder you name after `film.sh`); the last line it prints names the folder to send back.
 
 It checks `vhs`, `ttyd`, `ffmpeg`, `tmux`, `jq`, `claude`, `git`, `python3`, `/usr/local/bin/bonsai` and the network (the
 base pack is fetched from GitHub), then, for each clip in order, makes the clip's project in a scratch folder
@@ -24,7 +26,7 @@ prints where each mp4 is and which failed. It takes about 25 to 40 minutes (the 
 needs no answer from the person. The mp4s of clips 06 to 11 are 1600 x 900; clips 01 to 05 are 1100 x 900 with a 22 pt font, so that their text still reads once the README scales them to 830 px wide.
 
 What may be changed is at the top of `film.sh`: `BONSAI` (the bonsai to show; a test build only for practice, whose
-path then shows in frames), `MODEL` (the tapes type `sonnet`), `PACK_SOURCE` (where the base pack is fetched from: `bonsai init` in clip 01 and in every clip's project uses it), and `WORK` (the scratch folder: its
+path then shows in frames), `MODEL` (the tapes type `sonnet`), `PACK_SOURCE` (where the base pack is fetched from: `bonsai init` in clip 01 and in every clip's project uses it; clip 01 types the address and the pack's 40-character commit written out, because `film.sh` fills them into a copy of the tape), and `WORK` (the scratch folder: its
 path is printed by Bonsai and Claude Code on screen, so it must hold no user name, which `/tmp` does not).
 
 Before filming:
@@ -40,7 +42,7 @@ Before filming:
 ## Filming one clip again
 
 ```bash
-sh docs/demos/clips/film.sh ~/Videos/bonsai-clips 06-guard-edit
+sh docs/demos/clips/film.sh ~/bonsai-clips 06-guard-edit
 ```
 
 Any number of names may follow the folder; each clip's project is made new, so a retake is safe. To run only a tape,

@@ -2,7 +2,9 @@
 # film.sh: films the clip set, one mp4 a moment, on the installed bonsai. The person runs it in a plain terminal,
 # never inside Claude Code (its own `!` lines count as an agent's session, and Bonsai refuses the person's steps there):
 #
-#   sh docs/demos/clips/film.sh <out folder> [clip ...]
+#   sh docs/demos/clips/film.sh [out folder] [clip ...]
+#
+# The out folder defaults to ~/bonsai-clips (made if missing). When it ends, the last line says which folder to send back.
 #
 # With no clip names it films all eleven in order; with names (the tapes' names without .tape, e.g. 04-ladder) only
 # those. Every clip's project, Bonsai home and plugin folder are made new under a scratch folder (WORK, below), never
@@ -22,9 +24,10 @@ ALL="01-link 02-check-status 03-rung 04-ladder 05-log 06-guard-edit 07-guard-upd
 
 die() { echo "film.sh: $1" >&2; echo "next: $2" >&2; exit 2; }
 
-[ $# -ge 1 ] || die "no out folder given" "sh docs/demos/clips/film.sh <out folder> [clip ...]"
-mkdir -p "$1" || die "cannot make $1" "name a folder you can write"
-OUT=$(cd "$1" && pwd); shift
+OUT_ARG=${1:-$HOME/bonsai-clips}
+[ $# -eq 0 ] || shift
+mkdir -p "$OUT_ARG" || die "cannot make $OUT_ARG" "name a folder you can write"
+OUT=$(cd "$OUT_ARG" && pwd)
 CLIP_LIST=${*:-$ALL}
 
 # Not inside Claude Code (FILM_PRACTICE=1 is for a practice run by an agent's runner on a test build, nothing else).
@@ -75,7 +78,10 @@ for c in $CLIP_LIST; do
     *)                mk_claude "$CLIP_PROJECT" ;;
   esac >> "$log" 2>&1
   if [ $? -ne 0 ]; then echo "   setup failed (see $log)"; failed="$failed $c"; continue; fi
-  ( cd "$CLIP_PROJECT" && vhs -o "$OUT/$c.mp4" "$CLIPS/$c.tape" ) >> "$log" 2>&1
+  # vhs types a tape's text as it stands and the shell expands variables, so a viewer would see "$PACK_SOURCE" and
+  # "$CLIP_REF" instead of what to type: the tape is copied with both written out (the 40-character commit too).
+  sed -e "s|\$PACK_SOURCE|$PACK_SOURCE|g" -e "s|\$CLIP_REF|$CLIP_REF|g" "$CLIPS/$c.tape" > "$root/$c.tape"
+  ( cd "$CLIP_PROJECT" && vhs -o "$OUT/$c.mp4" "$root/$c.tape" ) >> "$log" 2>&1
   rc=$?
   tmux -L clip kill-server >/dev/null 2>&1   # the Claude clips' split screen
   if [ $rc -eq 0 ] && [ -s "$OUT/$c.mp4" ]; then
@@ -89,4 +95,9 @@ echo
 echo "scratch: $WORK (safe to delete)"
 echo "made:${ok:- none}"
 echo "failed:${failed:- none}"
-[ -z "$failed" ]
+if [ -z "$failed" ]; then
+  echo "Send back this folder: $OUT"
+else
+  echo "Send back this folder: $OUT (clips that failed:$failed; their logs are in $OUT/logs)"
+  exit 1
+fi

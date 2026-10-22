@@ -29,7 +29,10 @@ Type "git init -q -b main"
 Enter
 Sleep 500ms
 # Without --yes, init previews every file and settings line, then asks.
+# film.sh writes the address and the commit out in a copy of this tape, so the frame shows what to type.
 Type "bonsai init --name demo --source $PACK_SOURCE --path packs/base --ref $CLIP_REF"
+# long enough to read the address and the commit before Enter
+Sleep 3s
 Enter
 # the pack is fetched from GitHub first, which takes a while: that wait is not shown
 Hide
