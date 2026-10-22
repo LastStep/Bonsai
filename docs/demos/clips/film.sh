@@ -31,7 +31,10 @@ CLIP_LIST=${*:-$ALL}
 if [ -n "${CLAUDECODE:-}${CLAUDE_CODE_SESSION_ID:-}${BONSAI_TASK:-}" ] && [ "${FILM_PRACTICE:-}" != 1 ]; then
   die "this shell is inside a Claude Code session" "run it in a plain terminal"
 fi
-unset CLAUDECODE CLAUDE_CODE_SESSION_ID CLAUDE_CODE_BRIDGE_SESSION_ID CLAUDE_CODE_ENTRYPOINT BONSAI_TASK BONSAI_ROLE BONSAI_HOME
+# What a plain terminal does not have (a runner's practice shell has all of it; CLAUDE_CODE_CHILD_SESSION alone makes
+# bonsai believe there is no terminal to ask at).
+for v in $(env | sed -n 's/^\(CLAUDE_CODE_[A-Z_]*\)=.*/\1/p'); do unset "$v"; done
+unset CLAUDECODE CLAUDE_PID CLAUDE_EFFORT BONSAI_TASK BONSAI_ROLE BONSAI_HOME
 
 for t in vhs ttyd ffmpeg tmux jq claude git python3; do
   command -v "$t" >/dev/null 2>&1 || die "$t is not installed or not on the PATH" "install $t, then run again"

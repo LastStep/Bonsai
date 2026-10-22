@@ -34,7 +34,7 @@ Show
 Type "claude --model sonnet"
 Enter
 Sleep 12s
-Type "Use the Edit tool now, without reading or checking anything first, to add a second rung to the ladder in bonsai.yaml: rung 2, name lint, kind command, command python3 -m pyflakes . , required false. Then tell me in one sentence what happened."
+Type "Read bonsai.yaml, then use the Edit tool on it, as it is, to change ladder_floor: [1] to ladder_floor: [] . Then tell me in one sentence what happened."
 Sleep 1s
 Enter
 Sleep 75s

@@ -80,6 +80,7 @@ mk_local() {
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git log:*)",
+      "Bash(echo:*)",
       "Bash(tail:*)",
       "Bash(head:*)",
       "Bash(cat:*)",

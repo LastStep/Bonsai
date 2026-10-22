@@ -3,6 +3,7 @@
 # Needs CLIP_BIN and CLIP_PROJECT (film.sh sets them).
 cd "$CLIP_PROJECT" || exit 1
 W=$(tput cols)
+ESC=$(printf '\033')
 while :; do
   out=$(
     echo " bonsai status --line"
@@ -16,6 +17,8 @@ while :; do
       | sort_by(.at) | .[-16:] | .[]
       | " \(.at[11:19]) \(.event) \(.decision // "") \(.tool // "") \(.rule // "")"' 2>/dev/null | cut -c1-"$W"
   )
-  printf '\033[H%s\033[J' "$out"
+  printf '\033[H'
+  printf '%s\n' "$out" | sed "s/\$/$ESC[K/"
+  printf '\033[J'
   sleep 1
 done

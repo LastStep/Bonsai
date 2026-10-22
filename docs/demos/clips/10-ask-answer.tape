@@ -1,6 +1,6 @@
 # 10-ask-answer: Claude Code asks the person a question with bonsai ask; the person answers in their own shell, below the live view.
 # Crops: Claude alone = the left 64%; the right side (the view above, the person's shell below) = the right 36%; both =
-# the whole frame. Length: about 60 s of screen. Pane 3 (bottom right) is the person's terminal: it holds no agent
+# the whole frame. Length: about 60 s of screen. The bottom right pane (Alt+d) is the person's terminal: it holds no agent
 # session, so bonsai takes its answer as the person's.
 #
 # Run by film.sh (sh docs/demos/clips/film.sh <out folder> 10-ask-answer), which makes the project (linked to Bonsai's base pack,
@@ -39,9 +39,9 @@ Sleep 12s
 Type "Before you touch anything, ask me which of two things to do first, with bonsai ask: type Decide, key which-first, title Which first, options Fix words.py and Add a lint rung. Then run bonsai ask --status agent:which-first every ten seconds until it is answered, and tell me the answer."
 Sleep 1s
 Enter
-# the person, in their own pane (Alt+3), answers once the ask is filed
+# the person, in their own pane (Alt+d), answers once the ask is filed
 Sleep 25s
-Alt+3
+Alt+d
 Sleep 1s
 Type "# Claude asked me something: here is my answer"
 Enter
@@ -51,5 +51,5 @@ Sleep 6s
 Type `bonsai answer agent:which-first --choice "Fix words.py" --words "The bug first."`
 Enter
 Sleep 4s
-Alt+1
+Alt+a
 Sleep 45s

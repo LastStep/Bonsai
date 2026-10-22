@@ -36,7 +36,7 @@ Show
 Type "BONSAI_TASK=T-0001 claude --model sonnet"
 Enter
 Sleep 12s
-Type "Two tests in test_words.py fail: count_words miscounts text with more than one space between words. Fix words.py, then tell me when you are done."
+Type "Two tests in test_words.py fail: count_words miscounts text with more than one space between words. Fix words.py, then tell me when you are done. You may run the ladder and commit your work. If something stops you, do what it says."
 Sleep 1s
 Enter
 Sleep 200s
