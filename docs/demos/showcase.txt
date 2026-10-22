@@ -88,10 +88,10 @@ cap 23.6 end - | green
 
 [session]
 gif 1000 64 10
-scene 06-guard-edit claude 13 auto 1.3 | guard
+scene 06-guard-edit claude 13 auto 1.15 | guard
 cap 13 18.3 - | Claude is asked to edit bonsai.yaml
 cap 18.3 end - | the guard refuses: why, next step, rule
-scene 09-stop-gate claude 13 52 1.3 | stop gate
+scene 09-stop-gate claude 13 52 1.15 | stop gate
 cap 13 19.5 - | started on its task; asked to fix two tests
 cap 19.5 30 - | Claude edits words.py and says it is done
 cap 30 36.3 - | the stop gate holds it: the ladder is red
