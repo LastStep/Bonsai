@@ -9,7 +9,8 @@
 #        over the live view beside it), the in and out points in the clip's own seconds (out may be auto: the last
 #        change plus TAIL), a playback speed (1 is as filmed), and the label the caption bar shows at its right
 #   gif <width> <colours> <fps>                                    a GIF section's width in pixels, its colours and
-#        its frames a second (default 830 32 10: under 1 MB for 40 s of a 160-column terminal; GitHub shows a README
+#        its frames a second (default 830 32 10; first-project uses 830 20 7, 0.95 MB for 39 s of the practice clips, because the README's limit
+#        is 1 MB; fewer colours and frames cost less than a narrower picture; GitHub shows a README
 #        image at about 830 px wide, and the README's limits are 1 MB for the first and 5 MB for the second)
 #   cap <from> <to> <lit> | <caption>                              a caption of the scene above, in the clip's own
 #        seconds (to may be end); lit names the step the picture lights while it shows (agent, guard, allowed,
@@ -73,7 +74,7 @@ cap 17 end - | Bonsai's status line in Claude Code's own bar: the task, its ladd
 end 6 | Bonsai | github.com/LastStep/Bonsai | the README has a first project in six steps
 
 [first-project]
-gif 830 32 10
+gif 830 20 7
 scene 01-link whole 0 auto 1.5 | link
 cap 0 6.1 - | bonsai init shows what it would write, and asks
 cap 6.1 12.8 - | the person's y
