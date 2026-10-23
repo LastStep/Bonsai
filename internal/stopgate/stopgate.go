@@ -50,8 +50,8 @@
 //     R-<date>-<task id>[-<more>].md by the run kind's id pattern (stop-no-run-report): today's gate's first check,
 //     as contract §13 has the gate read "the run report from the session's own checkout, where the builder writes it";
 //     and each such report read as bonsai check reads it (engine.DocumentFindings: check's own reading, with the
-//     checkout's lock and the labels in force), none with a finding of check's on the file: format0-new, document,
-//     label or absolute-path (stop-bad-run-report, T-5731; the pi brief's B3). With no lock that reads, a report
+//     checkout's lock and the labels in force), none with a finding of check's on the file: format0-new, format0 (a
+//     format-0 report on the lock's list, changed), document, label or absolute-path (stop-bad-run-report, T-5731; the pi brief's B3). With no lock that reads, a report
 //     with no format: line passes, as check passes it; a missing field passes too (readers hold the lenient schema);
 //  6. the ladder result at main's .bonsai/local/ladder/<task id>.json (contract §11): there (stop-no-result), reading
 //     as bonsai.ladder/1 (stop-bad-result), made for the task (its task the named id and its workspace this one's:

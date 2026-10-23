@@ -740,7 +740,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `stop-task-unreadable` | deny | the stop gate: the main checkout's task folder, or a file in it, cannot be read |
 | `stop-bad-rungs` | deny | the stop gate: the task's bonsai.ladder (format 0's ladder) or the workspace's ladder_floor is not a list of rung numbers |
 | `stop-no-run-report` | deny | the stop gate: the session's checkout holds no run report for the task in its run folder (a file named R-YYYY-MM-DD-T-nnnn.md for the task) |
-| `stop-bad-run-report` | deny | the stop gate: a run report of the task in the session's checkout does not pass bonsai check: check makes a finding on the file itself (format0-new, document, label or absolute-path) |
+| `stop-bad-run-report` | deny | the stop gate: a run report of the task in the session's checkout does not pass bonsai check: check makes a finding on the file itself (format0-new, format0, document, label or absolute-path) |
 | `stop-no-result` | deny | the stop gate: the main checkout holds no ladder result for the task (.bonsai/local/ladder/T-nnnn.json for the task) |
 | `stop-bad-result` | deny | the stop gate: the ladder result cannot be read, or does not read as bonsai.ladder/1 |
 | `stop-other-task` | deny | the stop gate: the ladder result at the task's path was made for another task: its task is another id or null, or its workspace is another project's |
