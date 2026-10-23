@@ -24,7 +24,7 @@ labels: {}
 
 - Climb 1 (e448bc5d): rungs 0-2 green, rung 3 red on TestOperatingSkill (the skill line "bonsai ask --status" lacked its key); fixed to "<key>", test green alone. Climb 2 follows.
 
+## Left
+
 Nothing. Processes started: go test runs and the ladder climb, all finished; checked with ps. No process left running.
 Rebase on main at landing and regenerate docs/reference (it produced no diff here).
-
-## Left
