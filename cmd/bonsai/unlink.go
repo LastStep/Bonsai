@@ -37,9 +37,10 @@ checkout: a worktree's install record is its own, so run bonsai unlink in each c
 link commit takes Bonsai's files out but leaves Claude Code's record (installed_plugins.json, in Claude Code's own
 folder, outside git); to remove it, run claude plugin uninstall <pack>@<marketplace> --scope project in the checkout.
 Run again, it changes nothing; bonsai init links the project again.
-In an agent's session (CLAUDE_CODE_CHILD_SESSION set) it is a person's command, refused (exit 4, nothing read or
-written) but in a project in command mode under a running task whose bonsai.allows a person gave bonsai.yaml and
-.bonsai/lock.json: a person runs it in a terminal of their own.
+In an agent's session (an agent marker set: Claude Code's CLAUDE_CODE_CHILD_SESSION, AI_AGENT, pi's
+PI_CODING_AGENT and the others the reference lists under person-command) it is a person's command, refused (exit 4,
+nothing read or written) but in a project in command mode under a running task whose bonsai.allows a person gave
+bonsai.yaml and .bonsai/lock.json: a person runs it in a terminal of their own.
 `,
 	Flags: []Flag{
 		{Name: "--yes", Help: "write without asking"},

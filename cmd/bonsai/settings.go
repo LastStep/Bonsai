@@ -95,8 +95,10 @@ var settingsSetWord = &Word{
 	About: `Every value is checked first, then all are written or none. status_writes=command needs a status_command,
 given or already set; status_writes=agents drops status_command. A value already in force writes nothing (changed is
 then []). It asks nothing and takes no --yes: each key=value is the change, typed.
-In an agent's session (CLAUDE_CODE_CHILD_SESSION set) it refuses itself (person-command, exit 4) and writes nothing:
-a person types it in a terminal of their own, not inside Claude (its ! lines count as an agent's session).
+In an agent's session (an agent marker set: Claude Code's CLAUDE_CODE_CHILD_SESSION, AI_AGENT, pi's
+PI_CODING_AGENT and the others the reference lists under person-command) it refuses itself
+(person-command, exit 4) and writes nothing: a person types it in a terminal of their own, not inside Claude (its !
+lines count as an agent's session) or another agent.
 `,
 	Flags: settingsFlags("print the bonsai.settings/1 document (for programs) instead of plain text; changed lists the keys written"),
 	Exits: []Exit{

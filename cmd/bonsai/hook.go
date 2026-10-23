@@ -76,7 +76,8 @@ the step: a person runs bonsai update in the main checkout.
 A Bash, PowerShell or Monitor call is judged too: the delete check refuses a recursive or bulk delete that does not
 name what it deletes (git clean -x or -X and git stash --all among them) and a delete or move of a guarded path;
 bonsai settings set and labels are refused; and bonsai with --allow-exec, bonsai unlink, and a line that unsets or
-changes CLAUDE_CODE_CHILD_SESSION are a person's commands, allowed to an agent only under a person's grant in a
+changes an agent marker (CLAUDE_CODE_CHILD_SESSION, AI_AGENT, pi's PI_CODING_AGENT and the others the reference
+lists under person-command) are a person's commands, allowed to an agent only under a person's grant in a
 project in command mode (the commands refuse themselves too). It blocks whatever it cannot read or decide, and blocks
 itself after 5 s, before the hook's timeout could let the call through. When neither the session's folder nor the
 path is in a linked project, it allows and records nothing.

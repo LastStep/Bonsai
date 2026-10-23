@@ -1,10 +1,11 @@
 package main
 
 // Bonsai's own commands refusing an agent (design/plan-5.md, 5.3.6 note 8; the director's answer (ii) to step 5.3's second
-// question, 9 Oct: who may consent to code, and take the guard out). In an agent's session, which Claude Code marks by
-// setting CLAUDE_CODE_CHILD_SESSION in every process its Bash, PowerShell and Monitor tools and its hooks start (its
-// env-vars reference), so scripts, xargs and subprocesses inherit it, init, update and unlink refuse a person's
-// command:
+// question, 9 Oct: who may consent to code, and take the guard out). In an agent's session, which an agent marks by
+// setting one of the agent markers (format.AgentMarkers, their one home: Claude Code's CLAUDE_CODE_CHILD_SESSION, set
+// in every process its Bash, PowerShell and Monitor tools and its hooks start, AI_AGENT, pi's PI_CODING_AGENT and
+// the other agents'; T-5727) in every process its shell tool starts, so scripts, xargs and subprocesses inherit it,
+// init, update and unlink refuse a person's command:
 //   - --allow-exec, the consent to code that runs on this machine (init and update);
 //   - unlink, which takes Bonsai's guard and stop gate out of the project;
 //   - an update (or init in a linked project) that changes or takes out Bonsai's own guard line or stop gate's line
@@ -18,10 +19,11 @@ package main
 // The one exception, (ii): a project in command mode whose running task's bonsai.allows holds bonsai.yaml and
 // .bonsai/lock.json, which in command mode only a person's tap puts there (guard.PersonGrant, the guard's own
 // judgment of rule 7, its one home). The refusal (person-command, exit 4) names the next step: a person runs the
-// command in a terminal of their own. The variable counts when it holds any value, as interactive (engine.go) reads it
-// for the y/N question: Claude Code sets it to 1, and tests clear it to run as a person (testpack.Isolate). The guard's
-// rule 7 judges the same commands in a shell call, and a line that unsets the variable, as a second layer: a flag in a
-// variable, a script or xargs is hidden from it, but not from the command. A test build (engine.Stamped) skips this:
+// command in a terminal of their own, and the refusal names the marker it found. A marker counts when it holds any
+// value, as interactive (engine.go) reads them for the y/N question: Claude Code sets its own to 1, and tests clear
+// them all to run as a person (testpack.Isolate). The guard's rule 7 judges the same commands in a shell call, and a
+// line that unsets or assigns a marker, as a second layer: a flag in a variable, a script or xargs is hidden from it,
+// but not from the command. A test build (engine.Stamped) skips this:
 // its scratch root confines it (engine's confine), so builders' links to the test pack keep working.
 //
 // --allow-exec has one spelling: the word tables' parser takes --allow-exec alone and refuses --allow-exec=true and
@@ -32,26 +34,32 @@ import (
 	"path/filepath"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/guard"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// agentSession reports a session Claude Code started (CLAUDE_CODE_CHILD_SESSION holding a value) in a plain build: a
-// test build never counts one.
-func agentSession() bool {
-	return !engine.Stamped() && os.Getenv(guard.ChildSessionEnv) != ""
+// agentSession gives the agent marker (format.AgentMarkers) a plain build finds set, and the agent that sets it, or ""
+// for a person's terminal: a test build never counts one.
+func agentSession() (marker, agent string) {
+	if engine.Stamped() {
+		return "", ""
+	}
+	return format.AgentMarker(os.Getenv)
 }
 
-// personNext is the next step of a person's command refused to an agent: the command, run by a person.
-func personNext(command string) string {
-	return "a person runs it in a terminal of their own, not one Claude Code started: " + command
+// personNext is the next step of a person's command refused to an agent: the command, run by a person. agent is the
+// one whose marker was found (Claude Code, pi, an agent).
+func personNext(agent, command string) string {
+	return "a person runs it in a terminal of their own, not one " + agent + " started: " + command
 }
 
 // personCommand refuses a person's command in an agent's session, or gives nil when it may run: no agent's session,
 // or a person's grant in a project in command mode (guard.PersonGrant). shown is the command as typed, what says why
 // it is a person's, and command is what the person runs.
 func personCommand(dir, home, shown, what, command string) *engine.Error {
-	if !agentSession() {
+	marker, agent := agentSession()
+	if marker == "" {
 		return nil
 	}
 	why := guard.PersonGrant(home, dir, os.Getenv)
@@ -59,10 +67,10 @@ func personCommand(dir, home, shown, what, command string) *engine.Error {
 		return nil
 	}
 	return &engine.Error{Code: "person-command", Exit: engine.ExitState, Who: "person",
-		What: shown + " is a person's command (" + what + "), and this is an agent's session (" + guard.ChildSessionEnv +
+		What: shown + " is a person's command (" + what + "), and this is an agent's session (" + marker +
 			" is set): an agent may run it only in a project in command mode, under a running task whose bonsai.allows a " +
 			"person gave bonsai.yaml and .bonsai/lock.json, and " + engine.ASCII(why) + "; nothing was written",
-		Next: personNext(command)}
+		Next: personNext(agent, command)}
 }
 
 // The commands that change this machine's Bonsai home (spec section 4: "refused in an agent session, a tripwire,
@@ -74,11 +82,12 @@ func personCommand(dir, home, shown, what, command string) *engine.Error {
 // hookPlace and scratchRoot) skips the refusal only while Bonsai's home (BONSAI_HOME, else ~/.bonsai) lies inside its
 // stamped scratch root, so scripted runs on scratch homes work; with the home outside it, a test build refuses
 // (test-build), agent or not, so it never writes a real home's settings. A plain build never skips: in an agent's
-// session it refuses (person-command), and its sentence says where to type the command instead.
+// session (any agent marker set) it refuses (person-command), and its sentence names the marker and says where to
+// type the command instead.
 
 // personOnly refuses a command that changes this machine's Bonsai home when it may not run here, or gives nil:
 // shown is the command as typed (bonsai settings set), what says what it changes, and command is the line a person
-// types. It reads the variable, the home and the build's stamps as they are now.
+// types. It reads the agent markers, the home and the build's stamps as they are now.
 func personOnly(shown, what, command string) *engine.Error {
 	place, root := engine.TestBuild()
 	home, err := workspace.Home()
@@ -88,7 +97,7 @@ func personOnly(shown, what, command string) *engine.Error {
 	return personOnlyAt(place, root, home, os.Getenv, shown, what, command)
 }
 
-// personOnlyAt is personOnly with the stamps, the home and the variable given, for its tests.
+// personOnlyAt is personOnly with the stamps, the home and the variables given, for its tests.
 func personOnlyAt(place, root, home string, getenv func(string) string, shown, what, command string) *engine.Error {
 	if place != "" || root != "" {
 		if place != "" && root != "" && home != "" && filepath.IsAbs(root) && engine.FolderHolds(root, home) {
@@ -101,13 +110,17 @@ func personOnlyAt(place, root, home string, getenv func(string) string, shown, w
 				"scratchRoot); nothing was written",
 			Next: "set BONSAI_HOME to a folder inside " + engine.ASCII(filepath.ToSlash(root)) + ", or use the installed bonsai"}
 	}
-	if getenv(guard.ChildSessionEnv) == "" {
+	marker, agent := format.AgentMarker(getenv)
+	if marker == "" {
 		return nil
 	}
+	inside := "not inside " + agent
+	if marker == guard.ChildSessionEnv {
+		inside = "not inside Claude (its ! lines count as an agent's session)"
+	}
 	return &engine.Error{Code: "person-command", Exit: engine.ExitState, Who: "person",
-		What: shown + " is a person's command (" + what + "), and this is an agent's session (" + guard.ChildSessionEnv +
-			" is set): type it in a terminal of your own, not inside Claude (its ! lines count as an agent's session); " +
-			"nothing was written",
+		What: shown + " is a person's command (" + what + "), and this is an agent's session (" + marker +
+			" is set): type it in a terminal of your own, " + inside + "; nothing was written",
 		Next: command}
 }
 

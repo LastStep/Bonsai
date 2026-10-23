@@ -6,8 +6,8 @@ package main
 // same output: its word, in a file of its own, reuses changesRefused and the plan's Changes.
 //
 // The consent rule (spec §3): a command that writes prints its preview first. It writes with --yes; at a terminal
-// without --yes it asks y/N; without a terminal, in an agent session (CLAUDE_CODE_CHILD_SESSION set) or with --json
-// it never waits: it prints the preview and exits 4, naming the command with --yes.
+// without --yes it asks y/N; without a terminal, in an agent session (an agent marker set, format.AgentMarkers) or
+// with --json it never waits: it prints the preview and exits 4, naming the command with --yes.
 //
 // Code is consented to separately (spec §6; internal/engine/consent.go): a plan whose preview lists anything under
 // "Runs code" needs --allow-exec as well as --yes. Without --allow-exec it prints the preview and exits 4, naming
@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/engine"
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -31,7 +32,14 @@ import (
 // interactive reports whether a person can answer a y/N question: stdin and stdout are terminals and this is no
 // agent session. A variable, so tests stand in a terminal.
 var interactive = func() bool {
-	return os.Getenv("CLAUDE_CODE_CHILD_SESSION") == "" && isTerminal(os.Stdin) && isTerminal(os.Stdout)
+	return askable(os.Getenv) && isTerminal(os.Stdin) && isTerminal(os.Stdout)
+}
+
+// askable reports no agent marker (format.AgentMarkers) set in getenv: an agent is never asked y/N, whatever its
+// terminal, in a stamped build too.
+func askable(getenv func(string) string) bool {
+	marker, _ := format.AgentMarker(getenv)
+	return marker == ""
 }
 
 // stdin is where a y/N answer is read from (a variable for tests).
@@ -213,11 +221,11 @@ func runEngine(c *call) int {
 		if len(plan.Conflicts) > 0 {
 			next = "read each item under Runs code, and settle the conflicts: " + plan.ConflictNext(base)
 		}
-		if agentSession() {
+		if marker, agent := agentSession(); marker != "" {
 			// --allow-exec is a person's command here (agent.go): the next step is the person's.
-			next = "read each item under Runs code; " + personNext(base+" --yes")
+			next = "read each item under Runs code; " + personNext(agent, base+" --yes")
 			if len(plan.Conflicts) > 0 {
-				next = "read each item under Runs code; settle the conflicts, and " + personNext(plan.ConflictNext(base))
+				next = "read each item under Runs code; settle the conflicts, and " + personNext(agent, plan.ConflictNext(base))
 			}
 		}
 		n := len(plan.RunsCode)

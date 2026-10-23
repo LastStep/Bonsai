@@ -55,8 +55,10 @@ as labels/<namespace>.yaml. A namespace that is bonsai or a locked pack's is ref
 again, the same content is unchanged, and a newer version that only adds definitions is updated; anything else (a
 definition changed or removed, other content at the same or an older version) is refused (label-redefined): a
 definition may be added, never redefined, so a person detaches the namespace first.
-In an agent's session (CLAUDE_CODE_CHILD_SESSION set) it refuses itself (person-command, exit 4) and writes nothing:
-a person types it in a terminal of their own, not inside Claude (its ! lines count as an agent's session).
+In an agent's session (an agent marker set: Claude Code's CLAUDE_CODE_CHILD_SESSION, AI_AGENT, pi's
+PI_CODING_AGENT and the others the reference lists under person-command) it refuses itself
+(person-command, exit 4) and writes nothing: a person types it in a terminal of their own, not inside Claude (its !
+lines count as an agent's session) or another agent.
 `,
 	Flags: []Flag{{Name: "--json", Help: "print the bonsai.attach/1 document (for programs) instead of plain text"}},
 	Exits: []Exit{
@@ -79,8 +81,10 @@ var labelsDetachWord = &Word{
 	Args:    "<namespace> [flags]",
 	About: `It removes the workspace's machine folder's labels/<namespace>.yaml (detached), or does nothing when there is
 none (nothing). It runs in a checkout whose bonsai.yaml is gone too, so a project taken out can be unregistered.
-In an agent's session (CLAUDE_CODE_CHILD_SESSION set) it refuses itself (person-command, exit 4) and removes nothing:
-a person types it in a terminal of their own, not inside Claude (its ! lines count as an agent's session).
+In an agent's session (an agent marker set: Claude Code's CLAUDE_CODE_CHILD_SESSION, AI_AGENT, pi's
+PI_CODING_AGENT and the others the reference lists under person-command) it refuses itself
+(person-command, exit 4) and removes nothing: a person types it in a terminal of their own, not inside Claude (its !
+lines count as an agent's session) or another agent.
 `,
 	Flags: []Flag{{Name: "--json", Help: "print the bonsai.attach/1 document (for programs) instead of plain text"}},
 	Exits: []Exit{

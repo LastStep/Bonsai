@@ -55,10 +55,11 @@ A preview removes nothing.
 changed), and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) changed since the locked
 commit. The preview lists each under "Runs code"; all or nothing, so without --allow-exec as well as --yes nothing
 is written, at a terminal too. A removed hook line runs nothing.
-An agent's session (CLAUDE_CODE_CHILD_SESSION set, as Claude Code sets it for every command its tools run): --allow-exec
-is a person's command, refused (exit 4, nothing written) but in a project in command mode under a running task whose
-bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json; so is a run that changes or takes out Bonsai's own guard
-or stop line. A person runs it in a terminal of their own.
+An agent's session (an agent marker set, as each agent sets its own for every command its tools run: Claude Code's
+CLAUDE_CODE_CHILD_SESSION, AI_AGENT, pi's PI_CODING_AGENT and the others the reference lists under person-command):
+--allow-exec is a person's command, refused (exit 4, nothing written) but in a project in command mode under a running
+task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json; so is a run that changes or takes out
+Bonsai's own guard or stop line. A person runs it in a terminal of their own.
 `,
 	Exits: []Exit{
 		{Code: 0, Means: "updated (or nothing to change)"},

@@ -43,10 +43,11 @@ Runs code: Bonsai's own hook lines are the link's purpose, so --yes writes them.
 files they run and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) are the pack's code: the
 preview lists each under "Runs code", and nothing is written without --allow-exec as well as --yes, at a terminal
 too. With bonsai.yaml but no lock (a link again), each is judged against what is on disk.
-An agent's session (CLAUDE_CODE_CHILD_SESSION set, as Claude Code sets it for every command its tools run): --allow-exec
-is a person's command, refused (exit 4, nothing written) but in a project in command mode under a running task whose
-bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json; so is a run that changes or takes out Bonsai's own guard
-or stop line. A person runs it in a terminal of their own.
+An agent's session (an agent marker set, as each agent sets its own for every command its tools run: Claude Code's
+CLAUDE_CODE_CHILD_SESSION, AI_AGENT, pi's PI_CODING_AGENT and the others the reference lists under person-command):
+--allow-exec is a person's command, refused (exit 4, nothing written) but in a project in command mode under a running
+task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json; so is a run that changes or takes out
+Bonsai's own guard or stop line. A person runs it in a terminal of their own.
 `,
 	Exits: []Exit{
 		{Code: 0, Means: "linked (or nothing to change)"},
