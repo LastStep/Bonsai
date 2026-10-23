@@ -50,10 +50,16 @@ const gateLock = `{
   ],
   "files": {},
   "format0": {
-    "work/runs/R-2026-10-01-T-0901-legacy.md": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    "work/runs/R-2026-10-01-T-0901-legacy.md": "LEGACY-HASH"
   }
 }
 `
+
+// legacyPath and legacyRun are the legacy report the lock's format0 list holds, at its own hash.
+const (
+	legacyPath = "work/runs/R-2026-10-01-T-0901-legacy.md"
+	legacyRun  = "# R-2026-10-01-T-0901\n\nWhat changed.\n"
+)
 
 // goodRun is a format-1 run report of T-0901 that check accepts, mid-session: finished null, outcome running.
 const goodRun = "---\nformat: bonsai.run/1\nid: R-2026-10-11-T-0901\ntask: T-0901\nrole: builder\nmodel: a-model\n" +
@@ -65,7 +71,7 @@ const reportPath = "work/runs/R-2026-10-11-T-0901.md"
 func linkedProject(t *testing.T) string {
 	t.Helper()
 	root := project(t)
-	write(t, root, workspace.LockFile, gateLock)
+	write(t, root, workspace.LockFile, strings.Replace(gateLock, "LEGACY-HASH", workspace.HashLF([]byte(legacyRun)), 1))
 	if _, err := workspace.LoadLock(root); err != nil {
 		t.Fatalf("the test's lock does not read: %v", err)
 	}
@@ -121,7 +127,7 @@ func TestARunReportCheckAcceptsLetsTheGateGo(t *testing.T) {
 	t.Run("format 0 on the lock's format0 list", func(t *testing.T) {
 		root := linkedProject(t)
 		remove(t, root, reportPath)
-		write(t, root, "work/runs/R-2026-10-01-T-0901-legacy.md", "# R-2026-10-01-T-0901\n\nWhat changed.\n")
+		write(t, root, legacyPath, legacyRun)
 		code, stderr := gateFor(t, root, "T-0901")
 		allows(t, code, stderr, root)
 	})
@@ -130,6 +136,17 @@ func TestARunReportCheckAcceptsLetsTheGateGo(t *testing.T) {
 		code, stderr := gateFor(t, root, "T-0901")
 		allows(t, code, stderr, root)
 	})
+}
+
+// A format-0 report the lock's format0 list holds, changed since (still with no format: line), holds the gate: check's
+// format0 finding (contract section 2.3: a format-0 file is never rewritten).
+func TestAChangedFormat0RunReportHoldsTheGate(t *testing.T) {
+	root := linkedProject(t)
+	remove(t, root, reportPath)
+	write(t, root, legacyPath, legacyRun+"\nA line added later.\n")
+	code, stderr := gateFor(t, root, "T-0901")
+	blocks(t, code, stderr, root, RuleBadRunReport, "the run report "+legacyPath+" does not pass bonsai check (format0)",
+		"git checkout -- "+legacyPath)
 }
 
 // Every run report of the task is judged: a good one beside a bad one does not let the gate go, whichever sorts first;

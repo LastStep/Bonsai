@@ -266,17 +266,7 @@ func (r *CheckResult) checkLockedFiles() {
 	r.checkLocalPlugins()
 	for _, path := range sortedPaths(lock.Format0) {
 		raw, exists, _ := readFile(r.Root, path)
-		switch {
-		case !exists:
-			r.Format0Changed++
-			r.add("format0", path, "", path+" is a format-0 file the lock fixes, and it is gone", run("git checkout -- "+ShellArg(path)))
-		case workspace.HashLF(raw) != lock.Format0[path] && isFormat0(raw):
-			r.Format0Changed++
-			kind := format0Kind(r.Config, path)
-			r.add("format0", path, "", path+" is a format-0 file the lock fixes, and it changed (contract section 2.3: a format-0 file is "+
-				"never rewritten)", "to undo the change, run: git checkout -- "+ShellArg(path)+"; to change it, give it a format: line first "+
-				"(format: bonsai."+kind+"/1, with the fields bonsai check --schema bonsai."+kind+" lists)")
-		}
+		r.checkFormat0(path, raw, exists, lock.Format0[path], format0Kind(r.Config, path))
 	}
 	for _, lp := range lock.Packs {
 		s := state[lp.ID]
@@ -286,6 +276,23 @@ func (r *CheckResult) checkLockedFiles() {
 		r.Packs = append(r.Packs, PackState{ID: lp.ID, Version: lp.Version, Commit: lp.Commit, State: s})
 	}
 	r.checkRoles()
+}
+
+// checkFormat0 checks one file on the lock's format0 list (contract section 2.3: a format-0 file is never rewritten):
+// gone, or changed from want (its SHA-256 with line endings made LF) while it still has no format: line, is the
+// finding format0. kind is its format-0 kind (task, run or state). Its one home: check's walk of the lock's list, and
+// DocumentFindings, the stop gate's reading of a run report (T-5731).
+func (r *CheckResult) checkFormat0(path string, raw []byte, exists bool, want, kind string) {
+	switch {
+	case !exists:
+		r.Format0Changed++
+		r.add("format0", path, "", path+" is a format-0 file the lock fixes, and it is gone", run("git checkout -- "+ShellArg(path)))
+	case workspace.HashLF(raw) != want && isFormat0(raw):
+		r.Format0Changed++
+		r.add("format0", path, "", path+" is a format-0 file the lock fixes, and it changed (contract section 2.3: a format-0 file is "+
+			"never rewritten)", "to undo the change, run: git checkout -- "+ShellArg(path)+"; to change it, give it a format: line first "+
+			"(format: bonsai."+kind+"/1, with the fields bonsai check --schema bonsai."+kind+" lists)")
+	}
 }
 
 // folderName names a pack's folder in its repository for a person: the folder, or "(the repository's root)".
