@@ -4,7 +4,7 @@ package engine
 // read with git ls-remote (the network; no fetch, nothing written), and those that name a version newer than the
 // locked one. A release tag names the pack's version (spec §5: vX.Y.Z, or a prefix and vX.Y.Z such as base-v1.0.0 for
 // a repository of several packs); only tags with the prefix bonsai.yaml's ref has (or, for a ref that is a commit, no
-// prefix or the pack's id and a dash) count, so another pack's releases in the same repository are not taken for this
+// prefix, or the pack's id and a dash or a slash, and no prefix only for a pack at the repository's top) count, so another pack's releases in the same repository are not taken for this
 // one's.
 
 import (
@@ -54,13 +54,19 @@ func RemoteTags(source string, timeout time.Duration) ([]string, error) {
 var releaseTag = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^(.*?)v?([0-9]+\.[0-9]+\.[0-9]+)$`) })
 
 // NewerTags gives the tags that name a version newer than the locked one, oldest first: tags with ref's prefix when
-// ref is a release tag, else with none or "<id>-".
-func NewerTags(tags []string, ref, id, version string) []string {
+// ref is a release tag, else with "<id>-" or "<id>/", and also no prefix (bare v tags) when the pack is at its
+// repository's top (path ""); a pack kept in a subfolder (path set) never counts the repository's bare tags (BUG-014).
+func NewerTags(tags []string, ref, id, path, version string) []string {
 	locked, _, ok := ParseVersion(version)
 	if !ok {
 		return []string{}
 	}
-	prefixes := map[string]bool{"": true, id + "-": true, id + "/": true}
+	// A pack kept in a subfolder shares its repository with other tags (Bonsai's own v0.4.3): only its own name's
+	// count. A pack at the repository's top owns the bare v tags too.
+	prefixes := map[string]bool{id + "-": true, id + "/": true}
+	if path == "" {
+		prefixes[""] = true
+	}
 	if m := releaseTag().FindStringSubmatch(ref); m != nil {
 		prefixes = map[string]bool{m[1]: true}
 	}

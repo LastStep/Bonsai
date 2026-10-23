@@ -234,6 +234,10 @@ func TestReleaseLookalikeCheckFailsOnACopy(t *testing.T) {
 // block "defaults:\n  run:\n    shell: bash", and no other shell: line that could name another. GitHub runs an unnamed
 // shell on Linux as bash -e {0}, where a pipeline's status is its last command's; a named bash runs as
 // bash --noprofile --norc -eo pipefail {0}, so a failing gh before a pipe fails the step.
+// shellKey finds a shell key wherever a line holds one: at the line's start (block style), inside braces (flow
+// style), or quoted.
+var shellKey = regexp.MustCompile(`(^|[\s{,])["']?shell["']?\s*:`)
+
 func releaseShellProblems(content string) []string {
 	var out []string
 	if !strings.Contains(content, "\ndefaults:\n  run:\n    shell: bash\n") {
@@ -243,7 +247,7 @@ func releaseShellProblems(content string) []string {
 		if strings.TrimSpace(strings.SplitN(l, "#", 2)[0]) == "" {
 			continue
 		}
-		if strings.HasPrefix(strings.TrimSpace(l), "shell:") && l != "    shell: bash" {
+		if shellKey.MatchString(strings.SplitN(l, "#", 2)[0]) && l != "    shell: bash" {
 			out = append(out, fmt.Sprintf("release.yml:%d: a shell other than the workflow's default bash", i+1))
 		}
 	}
@@ -275,5 +279,20 @@ func TestReleaseShellCheckFailsOnCopies(t *testing.T) {
 	bad := strings.Replace(good, step, "      - name: Print the Go version\n        shell: sh\n        run: go version\n", 1)
 	if p := releaseShellProblems(bad); len(p) != 1 || !strings.Contains(p[0], "a shell other than") {
 		t.Errorf("a copy with shell: sh on a step: want one problem naming it, got %v", p)
+	}
+	// Flow style hides the key from a reader of block lines: a job's default, or a step's shell, in braces or quoted.
+	const job = "\njobs:\n"
+	if !strings.Contains(good, job) {
+		t.Fatal("release.yml has no jobs: block at the top level; update this test")
+	}
+	for _, c := range []struct{ name, line string }{
+		{"a flow-style job default", "  build:\n    defaults: {run: {shell: sh}}\n"},
+		{"a quoted key", "  build:\n    defaults:\n      run:\n        \"shell\": sh\n"},
+		{"a flow-style step", "  build:\n    steps:\n      - {run: go version, shell: sh}\n"},
+	} {
+		flow := strings.Replace(good, job, job+c.line, 1)
+		if p := releaseShellProblems(flow); len(p) != 1 || !strings.Contains(p[0], "a shell other than") {
+			t.Errorf("%s: want one problem naming it, got %v", c.name, p)
+		}
 	}
 }

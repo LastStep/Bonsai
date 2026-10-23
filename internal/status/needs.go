@@ -64,9 +64,9 @@ func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lo
 	if tags == nil {
 		tags = func(source string) ([]string, error) { return engine.RemoteTags(source, engine.PackTagsTimeout) }
 	}
-	refs := map[string]string{}
+	refs, paths := map[string]string{}, map[string]string{}
 	for _, p := range cfg.Packs {
-		refs[p.ID] = p.Ref
+		refs[p.ID], paths[p.ID] = p.Ref, p.Path
 	}
 	packs, plugins := []any{}, []any{}
 	installed, perr := engine.PluginsInstalled(r, o.Plugins)
@@ -97,7 +97,7 @@ func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lo
 			if list, err := tags(lp.Source); err != nil {
 				why = ascii(err.Error())
 			} else {
-				newer = engine.NewerTags(list, refs[lp.ID], lp.ID, lp.Version)
+				newer = engine.NewerTags(list, refs[lp.ID], lp.ID, paths[lp.ID], lp.Version)
 			}
 			nv := make([]any, len(newer))
 			for i, t := range newer {

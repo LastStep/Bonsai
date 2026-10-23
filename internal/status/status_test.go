@@ -618,6 +618,62 @@ func TestStatusFull(t *testing.T) {
 	}
 }
 
+// BUG-014: --full reads a pack kept in a subfolder of its repository (bonsai.yaml's path set) as releasing only under
+// its own name, so Bonsai's own v0.4.3 is not "a newer base"; the same tags are the releases of a pack at the top.
+func TestStatusFullSubfolderPackTags(t *testing.T) {
+	tmp := t.TempDir()
+	if r, err := filepath.EvalSymlinks(tmp); err == nil {
+		tmp = r
+	}
+	home := testpack.Isolate(t, tmp)
+	pack := testpack.Build(t, tmp)
+	testpack.Tag(t, pack.Source, "v0.1.0", pack.A)
+	root := testpack.Project(t, tmp, "sub")
+	p, err := engine.Build(engine.Request{Command: "init", Dir: root, Home: home, Version: "test", AllowExec: true,
+		Init: &engine.InitValues{Name: "sub", Source: pack.Source, Ref: "v0.1.0"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := engine.Apply(p); err != nil {
+		t.Fatal(err)
+	}
+	remote := func(string) ([]string, error) { return []string{"v0.1.0", "v0.4.3", "v1.0.0", "demo-pack-v0.2.0"}, nil }
+	newer := func() string {
+		doc, _ := BuildWith(root, "dev", Options{Full: true, Tags: remote, Plugins: fakeCLI{}, Claude: func() (string, error) { return "2.1.300", nil }})
+		v, _ := doc.Get("checks")
+		packs, _ := v.(schema.Object).Get("packs")
+		first := packs.([]any)[0].(schema.Object)
+		n, _ := first.Get("newer")
+		return schema.Show(n)
+	}
+	file := filepath.Join(root, "bonsai.yaml")
+	body, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Ref a commit, so the ref's own prefix does not decide: at the top the bare tags count.
+	at := strings.Replace(string(body), `ref: "v0.1.0"`, `ref: "main"`, 1)
+	if at == string(body) {
+		t.Fatalf("bonsai.yaml has no ref line to change:\n%s", body)
+	}
+	if err := os.WriteFile(file, []byte(at), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := newer(), `["demo-pack-v0.2.0","v0.4.3","v1.0.0"]`; got != want {
+		t.Errorf("a pack at the top: newer %s, want %s", got, want)
+	}
+	sub := strings.Replace(at, "path: null                        # the pack's folder inside", "path: packs/demo                  # the pack's folder inside", 1)
+	if sub == at {
+		t.Fatalf("bonsai.yaml has no path line to change:\n%s", at)
+	}
+	if err := os.WriteFile(file, []byte(sub), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := newer(), `["demo-pack-v0.2.0"]`; got != want {
+		t.Errorf("a pack in a subfolder: newer %s, want %s", got, want)
+	}
+}
+
 // status --active: the active task alone, the same answer as status --json's active_task; Bonsai not reading the
 // workspace is an error with its word.
 func TestStatusActive(t *testing.T) {

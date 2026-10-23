@@ -241,16 +241,43 @@ func TestRuleProblem(t *testing.T) {
 
 func TestNewerTags(t *testing.T) {
 	tags := []string{"v0.1.0", "v0.2.0", "v0.10.0", "base-v2.0.0", "base-v0.9.0", "nightly", "v1.0.0-rc1", "0.3.0"}
-	for _, c := range []struct{ ref, id, version, want string }{
-		{"v0.1.0", "demo", "0.1.0", "v0.2.0 0.3.0 v0.10.0"},
-		{"0123456789012345678901234567890123456789", "demo", "0.1.0", "v0.2.0 0.3.0 v0.10.0"},
-		{"base-v1.0.0", "base", "1.0.0", "base-v2.0.0"},
-		{"v0.10.0", "demo", "0.10.0", ""},
-		{"v1", "demo", "not a version", ""},
+	for _, c := range []struct{ ref, id, path, version, want string }{
+		{"v0.1.0", "demo", "", "0.1.0", "v0.2.0 0.3.0 v0.10.0"},
+		{"0123456789012345678901234567890123456789", "demo", "", "0.1.0", "v0.2.0 0.3.0 v0.10.0"},
+		{"base-v1.0.0", "base", "", "1.0.0", "base-v2.0.0"},
+		{"v0.10.0", "demo", "", "0.10.0", ""},
+		{"v1", "demo", "", "not a version", ""},
 	} {
-		if got := strings.Join(NewerTags(tags, c.ref, c.id, c.version), " "); got != c.want {
+		if got := strings.Join(NewerTags(tags, c.ref, c.id, c.path, c.version), " "); got != c.want {
 			t.Errorf("%s at %s: %q, want %q", c.id, c.ref, got, c.want)
 		}
+	}
+}
+
+// BUG-014: a pack kept in a subfolder of its repository (path set) counts only tags that start with its id; the
+// repository's other tags (Bonsai's own v0.4.3, v1.0.0) are not its releases. A pack at the top (path "") keeps
+// bare v tags.
+func TestNewerTagsSubfolderPack(t *testing.T) {
+	tags := []string{"v0.4.3", "v1.0.0", "base-v1.0.0", "base-v1.1.0", "base/v1.2.0", "other-v9.0.0", "nightly"}
+	commit := "0123456789012345678901234567890123456789"
+	for _, c := range []struct{ name, ref, path, want string }{
+		{"subfolder, ref a commit", commit, "packs/base", "base-v1.0.0 base-v1.1.0 base/v1.2.0"},
+		{"subfolder, ref a branch", "main", "packs/base", "base-v1.0.0 base-v1.1.0 base/v1.2.0"},
+		{"subfolder, ref its own tag", "base-v1.0.0", "packs/base", "base-v1.0.0 base-v1.1.0"},
+		{"top of the repository, ref a commit", commit, "", "v0.4.3 v1.0.0 base-v1.0.0 base-v1.1.0 base/v1.2.0"},
+		{"top of the repository, ref a branch", "main", "", "v0.4.3 v1.0.0 base-v1.0.0 base-v1.1.0 base/v1.2.0"},
+	} {
+		if got := strings.Join(NewerTags(tags, c.ref, "base", c.path, "0.2.0"), " "); got != c.want {
+			t.Errorf("%s: %q, want %q", c.name, got, c.want)
+		}
+	}
+	// The top-level pack (workflow's shape) reads the bare v tags as its releases.
+	bare := []string{"v0.1.0", "v0.1.1", "v0.4.3"}
+	if got := strings.Join(NewerTags(bare, commit, "workflow", "", "0.1.0"), " "); got != "v0.1.1 v0.4.3" {
+		t.Errorf("top-level pack: %q", got)
+	}
+	if got := strings.Join(NewerTags(bare, commit, "workflow", "packs/workflow", "0.1.0"), " "); got != "" {
+		t.Errorf("subfolder pack read bare tags: %q", got)
 	}
 }
 
