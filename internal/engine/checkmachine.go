@@ -43,7 +43,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// InstallFile is the home's record of the installed bonsai (spec §3, §10), written by Bonsai's installer (step 5.6).
+// InstallFile is the home's record of the installed bonsai (spec §3, §10), written by Bonsai's installer.
 const InstallFile = "install.json"
 
 // checkMachine checks this machine's record of the checkout and the bonsai on the PATH.
@@ -293,7 +293,7 @@ func (r *CheckResult) checkInstalled() {
 			"program is a person's install), then run: bonsai check")
 		return
 	case in == nil:
-		r.Notes = append(r.Notes, "no "+InstallFile+" in the Bonsai home yet (Bonsai's installer writes it from step 5.6): the bonsai "+
+		r.Notes = append(r.Notes, "no "+InstallFile+" in the Bonsai home yet (Bonsai's installer writes it): the bonsai "+
 			"on the PATH was not compared with an installed one")
 		return
 	}

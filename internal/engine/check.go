@@ -353,7 +353,7 @@ func (r *CheckResult) checkSettings(lf workspace.LockedFile, mark func(string, s
 		if !c.has(lp.Source, lp.Commit) {
 			r.add("cache", SettingsFile, "",
 				"Bonsai's lines in "+SettingsFile+" were not checked: the pack "+lp.ID+" at "+short(lp.Commit)+" is not in this machine's pack "+
-					"cache, and the lock (written before formats set 4) does not hold its hook lines",
+					"cache, and the lock (written by an older Bonsai) does not hold its hook lines",
 				"write the lock again with the pack's hook lines in it, run: bonsai update --yes")
 			return
 		}

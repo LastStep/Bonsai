@@ -203,19 +203,19 @@ error words.
 | `secret` | finding | agent | - | a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6) |
 | `settings-rule` | finding | person | - | a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own |
 | `hooks-off` | finding | person | - | disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them |
-| `settings-env` | finding | person | - | the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: PATH, BASH_ENV, ENV, CLAUDE_CODE_SHELL_PREFIX, CLAUDE_CODE_GIT_BASH_PATH, CLAUDE_PROJECT_DIR, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP, CLAUDE_CODE_CHILD_SESSION, or any name starting BONSAI_; the finding names the file and the name, never the value (step 5.3.6) |
+| `settings-env` | finding | person | - | the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: PATH, BASH_ENV, ENV, CLAUDE_CODE_SHELL_PREFIX, CLAUDE_CODE_GIT_BASH_PATH, CLAUDE_PROJECT_DIR, CLAUDE_CODE_STOP_HOOK_BLOCK_CAP, CLAUDE_CODE_CHILD_SESSION, or any name starting BONSAI_; the finding names the file and the name, never the value |
 | `plugin-version` | finding | person | - | a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5) |
 | `plugin` | finding | person | yes | plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5) |
 | `id-changed` | finding | person | yes | bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3) |
 | `bonsai-path` | finding | person | yes | the bonsai on the PATH is not the installed one that install.json records (spec section 3) |
-| `git-bash` | finding | person | yes | on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6) |
-| `git-user` | finding | person | yes | on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6) |
-| `machine-record` | finding | person | yes | a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6) |
+| `git-bash` | finding | person | yes | on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run |
+| `git-user` | finding | person | yes | on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write |
+| `machine-record` | finding | person | yes | a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here |
 | `claude-code-old` | warning | person | yes | Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7) |
 | `claude-code-unknown` | warning | person | yes | Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read) |
 | `same-id` | warning | person | yes | another checkout on this machine holds the same workspace id (contract section 3) |
 | `stranded` | warning | person | yes | a machine folder of this workspace in Bonsai's home is stranded under an old checkout path that holds no bonsai.yaml now (moved or gone), with settings or attached labels this checkout does not get; the next step gives a person's lines that bring them over and remove the old folder (contract section 3) |
-| `bonsai-newer` | warning | person | yes | the Bonsai home's record of Bonsai's releases (cache/release.json, which bonsai status --full reads at most daily) holds a release newer than the installed copy's version (install.json's, else the running bonsai's); its next step points at the install lines, which a person runs on each side (step 5.6.5) |
+| `bonsai-newer` | warning | person | yes | the Bonsai home's record of Bonsai's releases (cache/release.json, which bonsai status --full reads at most daily) holds a release newer than the installed copy's version (install.json's, else the running bonsai's); its next step points at the install lines, which a person runs on each side |
 | `personal-format` | warning | person | yes | the personal memory index (INDEX.md in the Bonsai home's personal/) or a note in its notes/ does not read as bonsai.memory/1, or the index's kind is not index |
 | `personal-budget` | warning | person | yes | the personal memory index or a personal note is over its cap (the memory caps on the reference page of lists) |
 | `personal-index` | warning | person | yes | a line of the personal memory index names a note that does not exist, or a note in personal/notes/ has no line in the index |
@@ -226,17 +226,17 @@ error words.
 | `plugin-missing` | warning | person | yes | Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has) |
 | `plugin-trust` | warning | person | yes | Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet |
 | `plugin-unchecked` | warning | person | yes | this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread) |
-| `cache` | warning | person | yes | a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked |
+| `cache` | warning | person | yes | a lock written before an older Bonsai names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked |
 | `tables` | warning | agent | - | a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
 | `local-unchecked` | warning | agent | - | git ls-files failed, so files from .bonsai/local/ in git's index were not looked for |
-| `own-hooks` | warning | person | yes | Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1) |
+| `own-hooks` | warning | person | yes | Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7) |
 
 ## Check words about the ladder's shape
 
 - Open list.
 - Defined in: format.LadderCheckWords (internal/format/check.go).
 - Printed in a project by: `bonsai check --schema bonsai.check`.
-- The code of a finding or a warning about the ladder in bonsai.yaml (plan-5 5.4.0; the checks are 5.4.2's), in the same open list as the check words above; who is who usually takes the next step.
+- The code of a finding or a warning about the ladder in bonsai.yaml, in the same open list as the check words above; who is who usually takes the next step.
 
 | Word | Kind | Who | Machine | Means |
 |---|---|---|---|---|
@@ -267,14 +267,14 @@ error words.
 | `pack-documents` | finding | agent | a document kind bonsai/pack.yaml declares is not well formed (contract section 7.3): a field the schema does not allow, a name of Bonsai's own or given twice, not exactly one of path and file, an id pattern Go does not read, a status twice, or a move or stamp naming a status the kind does not have |
 | `pack-protected` | finding | agent | a protected path bonsai/pack.yaml declares is not a well-formed glob: project-relative with forward slashes, no empty, . or .. segment, each segment one path.Match reads (** whole segments only) |
 | `pack-bash` | finding | agent | a hook command calls bash by name (spec section 3): a hook line in bonsai/pack.yaml, or a hook of the plugin itself |
-| `pack-runs` | finding | agent | a hook command in bonsai/pack.yaml names a file the pack writes (by its path in the project or its file name) that its runs does not list, so a change to that file would run unseen (step 5.1.1) |
+| `pack-runs` | finding | agent | a hook command in bonsai/pack.yaml names a file the pack writes (by its path in the project or its file name) that its runs does not list, so a change to that file would run unseen |
 
 ## Check words about the roles' limits
 
 - Open list.
 - Defined in: format.RoleCheckWords (internal/format/check.go).
 - Printed in a project by: `bonsai check --schema bonsai.check`.
-- The code of a finding about the limits a project sets for its packs' roles in bonsai.yaml (`packs[].roles`; set 8, the checks step 5.5.0's), in the same open list as the check words above; who is who usually takes the next step.
+- The code of a finding about the limits a project sets for its packs' roles in bonsai.yaml (`packs[].roles`), in the same open list as the check words above; who is who usually takes the next step.
 
 | Word | Kind | Who | Machine | Means |
 |---|---|---|---|---|
@@ -287,7 +287,7 @@ error words.
 - Open list.
 - Defined in: format.MessageCheckWords (internal/format/check.go).
 - Printed in a project by: `bonsai check --schema bonsai.check`.
-- The code of a warning about the messages between agents in `.bonsai/local/messages/` (set 8, the check step 5.5.10's), in the same open list; a warning never changes the exit code.
+- The code of a warning about the messages between agents in `.bonsai/local/messages/`, in the same open list; a warning never changes the exit code.
 
 | Word | Kind | Who | Machine | Means |
 |---|---|---|---|---|
@@ -298,14 +298,14 @@ error words.
 - Open list.
 - Defined in: format.PackRoleCheckWords (internal/format/check.go).
 - Printed in a project by: `bonsai check --schema bonsai.check`.
-- The code of a finding from `bonsai check --pack <folder>` about a pack's roles against its `agents/` folder and the form of its deny rules (set 8, the rules step 5.5.0's); every one is a finding.
+- The code of a finding from `bonsai check --pack <folder>` about a pack's roles against its `agents/` folder and the form of its deny rules; every one is a finding.
 
 | Word | Kind | Who | Means |
 |---|---|---|---|
 | `pack-role-file` | finding | agent | a role bonsai/pack.yaml declares has no agents/<name>.md in the plugin |
 | `pack-role-undeclared` | finding | agent | a file in the plugin's agents/ folder is not a role bonsai/pack.yaml declares |
 | `pack-role-turns` | finding | agent | a role file's maxTurns is not the max_turns bonsai/pack.yaml declares for it (missing on one side, or another number) |
-| `pack-deny-relative` | finding | agent | a deny rule in bonsai/pack.yaml on a project path is written without its leading / or //, so it would not hold after a shell cd (step 5.3.5): the finding names the form that holds |
+| `pack-deny-relative` | finding | agent | a deny rule in bonsai/pack.yaml on a project path is written without its leading / or //, so it would not hold after a shell cd: the finding names the form that holds |
 
 ## Check words later steps build
 
@@ -363,7 +363,7 @@ error words.
 - Closed list.
 - Defined in: format.TestFileConventions (internal/format/ladder.go).
 - Printed in a project by: `bonsai check --schema bonsai.workspace`.
-- Which files are a project's test files for each tests form: what new tests must fail on the base reads (5.4.5), and git integrity's changed-test-file finding (5.4.6). Patterns are project-relative globs with forward slashes (`**` is a whole segment); a path matching any is a test file.
+- Which files are a project's test files for each tests form: what new tests must fail on the base reads, and git integrity's changed-test-file finding. Patterns are project-relative globs with forward slashes (`**` is a whole segment); a path matching any is a test file.
 
 | Form | Patterns | Means |
 |---|---|---|
@@ -399,7 +399,7 @@ error words.
 - Open list.
 - Defined in: format.MessageFlags (internal/format/message.go).
 - Printed in a project by: `bonsai check --schema bonsai.messages`.
-- What `bonsai messages` noticed about a thread, in `threads[].flags` (set 8); it reports and never acts, and a reader shows a word it does not know as other.
+- What `bonsai messages` noticed about a thread, in `threads[].flags`; it reports and never acts, and a reader shows a word it does not know as other.
 
 | Word | Means |
 |---|---|
@@ -425,7 +425,7 @@ error words.
 - Closed list.
 - Defined in: format.RoleLimits (internal/format/agents.go), held to every schema that lists them.
 - Printed in a project by: `bonsai check --schema bonsai.pack` (roles[]), `bonsai check --schema bonsai.workspace` (packs[].roles).
-- The three limits of a role (set 8): pack.yaml gives each a default and a max, bonsai.yaml may set its own, a brief any value up to the max in force; each a whole number, or null for none.
+- The three limits of a role: pack.yaml gives each a default and a max, bonsai.yaml may set its own, a brief any value up to the max in force; each a whole number, or null for none.
 
 | Word | Means |
 |---|---|
@@ -438,7 +438,7 @@ error words.
 - Closed list.
 - Defined in: format.HelperLimits (internal/format/agents.go).
 - Printed in a project by: none.
-- Bonsai's own limits for an agent of a type no linked pack declares, where no linked pack declares a helper either (set 8); where one does, such an agent runs on the limits of the declared helper with the smallest default actions.
+- Bonsai's own limits for an agent of a type no linked pack declares, where no linked pack declares a helper either; where one does, such an agent runs on the limits of the declared helper with the smallest default actions.
 
 | Limit | Default | Max |
 |---|---|---|
@@ -488,12 +488,12 @@ error words.
 | Kind | Where | What | Written by | Default | Never cleaned | Cleaned | Takes a rule |
 |---|---|---|---|---|---|---|---|
 | `log` | .bonsai/local/log/ | the log, one file per session | the recorder, from the hooks, one line at a time | 30 days after a file's last line | an open session's file, or one holding an ended session or subagent run with no row yet in .bonsai/sessions.md | at a session's end, after its session_end line, within a budget of 1 second, oldest first; what the budget leaves waits for the next end | yes |
-| `asks` | .bonsai/local/asks/ | questions for a person and their answers | bonsai ask and bonsai answer (and the ladder runner from step 5.4, as its Bless), one day file a day | kept | a day file holding an open ask, or the answer or withdrawal of an ask whose filing stays (else it would read open again) | at a session's end, within the same budget; by default nothing, as the default keeps | yes |
-| `ladder` | .bonsai/local/ladder/ | ladder results, one per task | the ladder runner (step 5.4), one file per task | 7 days after the result's finished | the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done) | at a session's end, and by the ladder runner after each run | yes |
+| `asks` | .bonsai/local/asks/ | questions for a person and their answers | bonsai ask and bonsai answer (and the ladder runner, as its Bless), one day file a day | kept | a day file holding an open ask, or the answer or withdrawal of an ask whose filing stays (else it would read open again) | at a session's end, within the same budget; by default nothing, as the default keeps | yes |
+| `ladder` | .bonsai/local/ladder/ | ladder results, one per task | the ladder runner, one file per task | 7 days after the result's finished | the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done) | at a session's end, and by the ladder runner after each run | yes |
 | `run` | the run reports' folder (documents.run) | run reports, committed history | the agent that did the work, in the run report format | kept | any, by Bonsai: past a rule, bonsai check lists them and a person deletes them | never, by Bonsai | yes |
 | `sessions` | .bonsai/sessions.md | rows of the sessions table | bonsai check --write, from the log | kept | rows of a task that is not done or cut (none is never protected), and rows whose span is still in the log (the next write would add them again) | in bonsai check --write, the only writer of the table | yes |
-| `messages` | .bonsai/local/messages/ | messages between agents (set 8) | bonsai message (step 5.5.10), one file per message, one folder per recipient, created new and never overwritten | 30 days after a thread's last message | an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it | at a session's end, with the log, within the same budget (step 5.5.10) | yes |
-| `agents` | .bonsai/local/agents/ | each agent's state (set 8) | the guard (step 5.5.11): one folder per session, one file per agent with one line a call, and a tie file per brief | 30 days after a session folder's last line | a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept | at a session's end, with the log, within the same budget (step 5.5.11) | yes |
+| `messages` | .bonsai/local/messages/ | messages between agents | bonsai message, one file per message, one folder per recipient, created new and never overwritten | 30 days after a thread's last message | an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it | at a session's end, with the log, within the same budget | yes |
+| `agents` | .bonsai/local/agents/ | each agent's state | the guard: one folder per session, one file per agent with one line a call, and a tie file per brief | 30 days after a session folder's last line | a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept | at a session's end, with the log, within the same budget | yes |
 | `tasks` | .bonsai/tasks.md | the tasks table | bonsai check --write, from the task files | a rebuild: nothing to clean | - | never: the table is rebuilt whole | no |
 
 ## Bonsai's document kinds
@@ -519,7 +519,7 @@ Values, in order: `pack`, `once`.
 - Closed list.
 - Defined in: workspace.PathPlaceholders (internal/workspace/pack.go).
 - Printed in a project by: `bonsai check --schema bonsai.pack` (files[].path).
-- What a files entry's path in a pack's bonsai/pack.yaml may start with, as its first segment only, and what the engine writes in its place when it links the pack (set 8; plan-5 5.5.0); no other `<...>` may appear in a path, and the lock records the path it resolved to.
+- What a files entry's path in a pack's bonsai/pack.yaml may start with, as its first segment only, and what the engine writes in its place when it links the pack; no other `<...>` may appear in a path, and the lock records the path it resolved to.
 
 | Word | Means |
 |---|---|
@@ -606,7 +606,7 @@ Values, in order: `pack`, `once`.
 - Closed list.
 - Defined in: engine.claudeKeyOrder (internal/engine/settings.go).
 - Printed in a project by: none.
-- The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295 (step 5.1.7); a key Bonsai adds goes where Claude Code would put it. The order is the value.
+- The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295; a key Bonsai adds goes where Claude Code would put it. The order is the value.
 
 Values, in order: `$schema`, `respectGitignore`, `cleanupPeriodDays`, `env`, `includeCoAuthoredBy`, `includeGitInstructions`, `permissions`, `model`, `enableAllProjectMcpServers`, `enabledMcpjsonServers`, `disabledMcpjsonServers`, `hooks`, `disableAllHooks`, `enabledPlugins`, `extraKnownMarketplaces`, `outputStyle`, `spinnerTipsEnabled`, `alwaysThinkingEnabled`, `autoMemoryEnabled`.
 
@@ -615,7 +615,7 @@ Values, in order: `$schema`, `respectGitignore`, `cleanupPeriodDays`, `env`, `in
 - Closed list.
 - Defined in: engine.claudePermissionsOrder (internal/engine/settings.go).
 - Printed in a project by: none.
-- The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295 (step 5.1.7); a key Bonsai adds goes where Claude Code would put it. The order is the value.
+- The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295; a key Bonsai adds goes where Claude Code would put it. The order is the value.
 
 Values, in order: `allow`, `deny`, `ask`, `defaultMode`, `additionalDirectories`.
 
@@ -624,7 +624,7 @@ Values, in order: `allow`, `deny`, `ask`, `defaultMode`, `additionalDirectories`
 - Closed list.
 - Defined in: engine.claudeMarketplaceOrder (internal/engine/settings.go).
 - Printed in a project by: none.
-- The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295 (step 5.1.7); a key Bonsai adds goes where Claude Code would put it. The order is the value.
+- The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295; a key Bonsai adds goes where Claude Code would put it. The order is the value.
 
 Values, in order: `source`, `name`, `plugins`, `owner`.
 
@@ -653,9 +653,9 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `ask` | an ask was filed, resolved or answered; the target is its key and the kind its op |
 | `event` | an outside event, written by bonsai log append with its labels (contract section 8.4) |
 | `clean` | a generated file Bonsai deleted; the target is its project-relative path and the reason the rule that cleaned it (contract section 8.5) |
-| `message` | a message between agents was written by bonsai message (set 8, bonsai.message/1); the target is its id, the text its kind, its recipient and a report's status, and the task its task, so who said what survives a cleaned file |
-| `spawn` | an agent was started (set 8; Claude Code only): the subagent's id and type, its parent (the agent that started it, or session for the person's own session) and the tool_use_id of the call that started it, so the tree of agents survives a cleaned state file |
-| `usage` | an agent's token counts at its end (set 8; Claude Code only): one record for each model in its transcript, its totals over the whole transcript in usage and the model in model; kind unknown with its reason when the transcript could not be read |
+| `message` | a message between agents was written by bonsai message (bonsai.message/1); the target is its id, the text its kind, its recipient and a report's status, and the task its task, so who said what survives a cleaned file |
+| `spawn` | an agent was started (Claude Code only): the subagent's id and type, its parent (the agent that started it, or session for the person's own session) and the tool_use_id of the call that started it, so the tree of agents survives a cleaned state file |
+| `usage` | an agent's token counts at its end (Claude Code only): one record for each model in its transcript, its totals over the whole transcript in usage and the model in model; kind unknown with its reason when the transcript could not be read |
 
 ## Log categories
 
@@ -753,7 +753,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `stop-rung-not-asked` | deny | the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the task's bonsai.ladder |
 | `stop-rung-not-green` | deny | the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result |
 | `stop-proven` | allow | the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the task's rungs green: the session ends |
-| `stop-budget` | allow | the stop gate: a named session whose budget is spent has written its report: it may stop, its ladder red or not (step 5.5's stall stops) |
+| `stop-budget` | allow | the stop gate: a named session whose budget is spent has written its report: it may stop, its ladder red or not (the stall stops) |
 
 ## The guard's floor
 
@@ -793,7 +793,7 @@ Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps
 - Open list.
 - Defined in: guard.DeleteWords (internal/guard/shell_words.go).
 - Printed in a project by: none.
-- The words the guard's delete check reads in a Bash, PowerShell or Monitor call (plan-5 5.3.3): matched by base name, letter case ignored, .exe dropped; in PowerShell a bare name is the cmdlet's alias, a name with a folder or .exe the program. A recursive or bulk delete that does not name what it deletes is refused (`delete-unnamed`), a delete or move of a guarded path judged as an edit of it (`delete-protected`).
+- The words the guard's delete check reads in a Bash, PowerShell or Monitor call: matched by base name, letter case ignored, .exe dropped; in PowerShell a bare name is the cmdlet's alias, a name with a folder or .exe the program. A recursive or bulk delete that does not name what it deletes is refused (`delete-unnamed`), a delete or move of a guarded path judged as an edit of it (`delete-protected`).
 
 | Word | Names | Read by | Deletes |
 |---|---|---|---|
@@ -822,7 +822,7 @@ Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps
 - Open list.
 - Defined in: guard.RunnerWords (internal/guard/shell_words.go).
 - Printed in a project by: none.
-- The words the delete check passes over, with their options, to reach the program they run (plan-5 5.3.3 note 1).
+- The words the delete check passes over, with their options, to reach the program they run.
 
 | Word | Read by | What the check reads |
 |---|---|---|
@@ -860,7 +860,7 @@ Values, in order: `bonsai`, `bonsai.exe`, `bonsai.cmd`, `bonsai.bat`, `bonsai.ps
 - Open list.
 - Defined in: guard.ClaudeStartWords and guard.ClaudePackage (internal/guard/rolecmds.go).
 - Printed in a project by: none.
-- Where the lock declares roles (plan-5 5.5.11): the program names whose start on an agent's shell line the guard refuses to every role but the session's (`call-refused`), matched by base name, letter case ignored, .exe, .cmd, .bat or .ps1 dropped; and Claude Code's npm package, refused through npx, pnpx or bunx and through npm exec, pnpm dlx or yarn dlx, any version, as is `node` running Claude Code's `cli.js`. A session started so would carry no agent id and read as the person's own.
+- Where the lock declares roles: the program names whose start on an agent's shell line the guard refuses to every role but the session's (`call-refused`), matched by base name, letter case ignored, .exe, .cmd, .bat or .ps1 dropped; and Claude Code's npm package, refused through npx, pnpx or bunx and through npm exec, pnpm dlx or yarn dlx, any version, as is `node` running Claude Code's `cli.js`. A session started so would carry no agent id and read as the person's own.
 
 Values, in order: `claude`, `claude-here`.
 
@@ -871,7 +871,7 @@ The npm package: `@anthropic-ai/claude-code`.
 - Open list.
 - Defined in: guard.GitWriteWords (internal/guard/rolecmds.go).
 - Printed in a project by: none.
-- Where the lock declares roles (plan-5 5.5.11): git's subcommands that change the checkout or its history, refused on the shell line of a role that changes nothing (`role-writes-nothing`), git's own options before the subcommand passed over. Each with the words that make it only read (a listing or a dry run), which stay allowed, unless an option that makes it write is there too (a short option's letter counts inside a cluster, `-dr`); where options alone list, a call naming nothing lists (`git branch -v`), and one naming something writes (`git branch -v new` makes the branch). Anything else is a write.
+- Where the lock declares roles: git's subcommands that change the checkout or its history, refused on the shell line of a role that changes nothing (`role-writes-nothing`), git's own options before the subcommand passed over. Each with the words that make it only read (a listing or a dry run), which stay allowed, unless an option that makes it write is there too (a short option's letter counts inside a cluster, `-dr`); where options alone list, a call naming nothing lists (`git branch -v`), and one naming something writes (`git branch -v new` makes the branch). Anything else is a write.
 
 | Subcommand | Words that make it only read | Read where | Options that make it write | Options alone list |
 |---|---|---|---|---|
@@ -921,7 +921,7 @@ The npm package: `@anthropic-ai/claude-code`.
 - Open list.
 - Defined in: guard.HandBackTools (internal/guard/roles.go).
 - Printed in a project by: none.
-- Where the lock declares roles (plan-5 5.5.11): Claude Code's tools that hand a subagent's result back to its caller, which an agent past its budget may still call (`budget-exempt`), beside its report and reading its brief.
+- Where the lock declares roles: Claude Code's tools that hand a subagent's result back to its caller, which an agent past its budget may still call (`budget-exempt`), beside its report and reading its brief.
 
 Values, in order: `SubagentHandback`.
 

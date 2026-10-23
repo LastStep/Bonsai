@@ -236,5 +236,5 @@ var Rules = []Rule{
 	{RuleStopProven, true, "the stop gate: a green local ladder result proves the checkout's HEAD, with the floor and the " +
 		"task's rungs green: the session ends"},
 	{RuleStopBudget, true, "the stop gate: a named session whose budget is spent has written its report: it may stop, its ladder " +
-		"red or not (step 5.5's stall stops)"},
+		"red or not (the stall stops)"},
 }

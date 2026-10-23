@@ -72,7 +72,7 @@ var SettingKeys = []SettingKey{
 	{Key: "personal_from", Scope: ScopeMachine, Windows: true,
 		Values:  "WSL's personal folder as Windows reaches it (such as //wsl.localhost/<distro>/home/<user>/.bonsai/personal), or none; never the home's own personal/ or a folder in it",
 		Default: "none",
-		Means:   "on Windows only: where the personal layer is read from, so one personal folder serves both sides (step 5.6.3)"},
+		Means:   "on Windows only: where the personal layer is read from, so one personal folder serves both sides"},
 }
 
 // KeysOf lists the keys of a scope on an operating system ("windows", "linux"), in SettingKeys' order.

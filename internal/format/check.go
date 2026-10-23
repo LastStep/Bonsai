@@ -66,21 +66,21 @@ var CheckWords = []Word{
 	// Claude Code's settings in the project (spec sections 5 and 7).
 	{Word: "settings-rule", Kind: "finding", Who: "person", Means: "a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own"},
 	{Word: "hooks-off", Kind: "finding", Who: "person", Means: "disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them"},
-	{Word: "settings-env", Kind: "finding", Who: "person", Means: "the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: " + hookEnvNames() + "; the finding names the file and the name, never the value (step 5.3.6)"},
+	{Word: "settings-env", Kind: "finding", Who: "person", Means: "the env of .claude/settings.json or .claude/settings.local.json sets a name that wraps, redirects or steers a hook line, Bonsai's guard among them: " + hookEnvNames() + "; the finding names the file and the name, never the value"},
 	{Word: "plugin-version", Kind: "finding", Who: "person", Means: "a pack plugin's entry in a Bonsai marketplace carries a version, which a plugin pinned by commit never does (spec section 5)"},
 	{Word: "plugin", Kind: "finding", Who: "person", Machine: true, Means: "plugin drift: Claude Code turns on another commit of a locked pack's plugin for this checkout (spec section 5)"},
 	// This machine (the home and the PATH).
 	{Word: "id-changed", Kind: "finding", Who: "person", Machine: true, Means: "bonsai.yaml's workspace id is not the one this machine last recorded for the checkout (contract section 3)"},
 	{Word: "bonsai-path", Kind: "finding", Who: "person", Machine: true, Means: "the bonsai on the PATH is not the installed one that install.json records (spec section 3)"},
-	{Word: "git-bash", Kind: "finding", Who: "person", Machine: true, Means: "on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run (step 5.3.6)"},
-	{Word: "git-user", Kind: "finding", Who: "person", Machine: true, Means: "on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write (step 5.3.6)"},
-	{Word: "machine-record", Kind: "finding", Who: "person", Machine: true, Means: "a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here (step 5.3.6)"},
+	{Word: "git-bash", Kind: "finding", Who: "person", Machine: true, Means: "on Windows, Git Bash is not where Claude Code looks for it, so Claude Code runs every hook line in PowerShell, where Bonsai's lines do not parse: the guard's line, with onFailure block, then refuses every call on Claude Code 2.1.295 or later and lets every call through on an older one, and the stop gate's and the recorder's lines never run"},
+	{Word: "git-user", Kind: "finding", Who: "person", Machine: true, Means: "on Windows, the Git Bash Claude Code runs hook lines in is a Git for Windows installed for one user (outside the Program Files folders), so its /usr/local/bin, where Bonsai's lines look for bonsai when Windows' installed place holds none, is a folder that user can write"},
+	{Word: "machine-record", Kind: "finding", Who: "person", Machine: true, Means: "a record of a checkout in Bonsai's home (workspaces/r-<hex>/workspace.json) is not one Bonsai reads: until a person mends it, the guard verifies no main checkout on this machine, so no task's grant counts in any project here"},
 	// Warnings.
 	{Word: "claude-code-old", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code is older than the floor: Bonsai's own or a pack's needs.claude_code, the higher (spec section 7)"},
 	{Word: "claude-code-unknown", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code's version could not be read (not on the PATH, or claude --version gave an answer Bonsai does not read)"},
 	{Word: "same-id", Kind: "warning", Who: "person", Machine: true, Means: "another checkout on this machine holds the same workspace id (contract section 3)"},
 	{Word: "stranded", Kind: "warning", Who: "person", Machine: true, Means: "a machine folder of this workspace in Bonsai's home is stranded under an old checkout path that holds no bonsai.yaml now (moved or gone), with settings or attached labels this checkout does not get; the next step gives a person's lines that bring them over and remove the old folder (contract section 3)"},
-	{Word: "bonsai-newer", Kind: "warning", Who: "person", Machine: true, Means: "the Bonsai home's record of Bonsai's releases (cache/release.json, which bonsai status --full reads at most daily) holds a release newer than the installed copy's version (install.json's, else the running bonsai's); its next step points at the install lines, which a person runs on each side (step 5.6.5)"},
+	{Word: "bonsai-newer", Kind: "warning", Who: "person", Machine: true, Means: "the Bonsai home's record of Bonsai's releases (cache/release.json, which bonsai status --full reads at most daily) holds a release newer than the installed copy's version (install.json's, else the running bonsai's); its next step points at the install lines, which a person runs on each side"},
 	// The personal memory layer in the Bonsai home (spec section 10; step 5.6.3): warnings, read from the home whatever
 	// project check runs in, since the layer is the machine's, never a project's.
 	{Word: "personal-format", Kind: "warning", Who: "person", Machine: true, Means: "the personal memory index (INDEX.md in the Bonsai home's personal/) or a note in its notes/ does not read as bonsai.memory/1, or the index's kind is not index"},
@@ -93,15 +93,15 @@ var CheckWords = []Word{
 	{Word: "plugin-missing", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code reports a locked pack's plugin not installed for this checkout (it has registered the workspace's marketplace, or could not say whether it has)"},
 	{Word: "plugin-trust", Kind: "warning", Who: "person", Machine: true, Means: "Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet"},
 	{Word: "plugin-unchecked", Kind: "warning", Who: "person", Machine: true, Means: "this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread)"},
-	{Word: "cache", Kind: "warning", Who: "person", Machine: true, Means: "a lock written before formats set 4 names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked"},
+	{Word: "cache", Kind: "warning", Who: "person", Machine: true, Means: "a lock written before an older Bonsai names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked"},
 	{Word: "tables", Kind: "warning", Who: "agent", Means: "a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5)"},
 	{Word: "local-unchecked", Kind: "warning", Who: "agent", Means: "git ls-files failed, so files from .bonsai/local/ in git's index were not looked for"},
-	{Word: "own-hooks", Kind: "warning", Who: "person", Machine: true, Means: "Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7; step 5.1.1)"},
+	{Word: "own-hooks", Kind: "warning", Who: "person", Machine: true, Means: "Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7)"},
 }
 
 // HookEnvKeys are the names that, set in the env of a project's Claude Code settings (.claude/settings.json or
 // .claude/settings.local.json), wrap, redirect or steer a hook line, Bonsai's guard and stop gate among them, or what
-// Bonsai's own commands read: their one home (plan-5 5.3.6 note 3), which check's settings-env finding reads and its
+// Bonsai's own commands read: their one home, which check's settings-env finding reads and its
 // word's meaning lists (so the reference page and bonsai check --schema bonsai.check show them). Claude Code copies a
 // settings file's env into the environment of every hook and every tool command, and applies a change to it in the
 // running session (its env-vars and settings references). A name matches whatever its case, as Windows reads Path as
@@ -130,7 +130,7 @@ var HookEnvKeys = []Word{
 	// project's env would let a session end past Bonsai's stop gate sooner.
 	{Word: "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP", Means: "caps how many times in a row a Stop hook, Bonsai's stop gate among them, may block a session's end before Claude Code lets it end (0: no cap)"},
 	// A blank value changed nothing: Claude Code set 1 in every hook and tool command, on both sides, before and during.
-	{Word: "CLAUDE_CODE_CHILD_SESSION", Means: "how Bonsai's commands know they run inside an agent's session (step 5.3.6)"},
+	{Word: "CLAUDE_CODE_CHILD_SESSION", Means: "how Bonsai's commands know they run inside an agent's session"},
 }
 
 // HookEnvPrefix starts the names of Bonsai's own variables (its home, the running task, a test build's fault): any
@@ -191,7 +191,7 @@ var RoleCheckWords = []Word{
 }
 
 // MessageCheckWords are the known words of a warning's code about the messages between agents in
-// .bonsai/local/messages/ (set 8; the check is step 5.5.10's, note 5): their one home, beside CheckWords in the same
+// .bonsai/local/messages/ (the check is step 5.5.10's, note 5): their one home, beside CheckWords in the same
 // open list, in a table of their own for the reason RoleCheckWords is. A warning never changes the exit code: one bad
 // file never blocks the rest. Machine: the messages live in .bonsai/local/, never committed. CheckWord finds these too.
 var MessageCheckWords = []Word{
@@ -229,11 +229,11 @@ var PackCheckWords = []Word{
 	{Word: "pack-documents", Kind: "finding", Who: "agent", Means: "a document kind bonsai/pack.yaml declares is not well formed (contract section 7.3): a field the schema does not allow, a name of Bonsai's own or given twice, not exactly one of path and file, an id pattern Go does not read, a status twice, or a move or stamp naming a status the kind does not have"},
 	{Word: "pack-protected", Kind: "finding", Who: "agent", Means: "a protected path bonsai/pack.yaml declares is not a well-formed glob: project-relative with forward slashes, no empty, . or .. segment, each segment one path.Match reads (** whole segments only)"},
 	{Word: "pack-bash", Kind: "finding", Who: "agent", Means: "a hook command calls bash by name (spec section 3): a hook line in bonsai/pack.yaml, or a hook of the plugin itself"},
-	{Word: "pack-runs", Kind: "finding", Who: "agent", Means: "a hook command in bonsai/pack.yaml names a file the pack writes (by its path in the project or its file name) that its runs does not list, so a change to that file would run unseen (step 5.1.1)"},
+	{Word: "pack-runs", Kind: "finding", Who: "agent", Means: "a hook command in bonsai/pack.yaml names a file the pack writes (by its path in the project or its file name) that its runs does not list, so a change to that file would run unseen"},
 }
 
 // PackRoleCheckWords are the known words of a finding's code from bonsai check --pack <folder> about what step 5.5
-// adds to a pack (set 8; the rules are step 5.5.0's, note 9): its roles against its agents/ folder, and the form of its
+// adds to a pack (the rules are step 5.5.0's, note 9): its roles against its agents/ folder, and the form of its
 // deny rules on project paths. Their one home, beside PackCheckWords in the same open list, in a table of their own so
 // that this file is final before 5.5.0 writes the rules (cmd/bonsai's TestCheckPackTable and engine's
 // TestCheckWordsInTheCode walk PackCheckWords; 5.5.0 walks this table the same way). Every one is a finding whose next
@@ -242,7 +242,7 @@ var PackRoleCheckWords = []Word{
 	{Word: "pack-role-file", Kind: "finding", Who: "agent", Means: "a role bonsai/pack.yaml declares has no agents/<name>.md in the plugin"},
 	{Word: "pack-role-undeclared", Kind: "finding", Who: "agent", Means: "a file in the plugin's agents/ folder is not a role bonsai/pack.yaml declares"},
 	{Word: "pack-role-turns", Kind: "finding", Who: "agent", Means: "a role file's maxTurns is not the max_turns bonsai/pack.yaml declares for it (missing on one side, or another number)"},
-	{Word: "pack-deny-relative", Kind: "finding", Who: "agent", Means: "a deny rule in bonsai/pack.yaml on a project path is written without its leading / or //, so it would not hold after a shell cd (step 5.3.5): the finding names the form that holds"},
+	{Word: "pack-deny-relative", Kind: "finding", Who: "agent", Means: "a deny rule in bonsai/pack.yaml on a project path is written without its leading / or //, so it would not hold after a shell cd: the finding names the form that holds"},
 }
 
 // PackCheckWord finds a word in PackCheckWords, or in PackRoleCheckWords.

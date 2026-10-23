@@ -58,8 +58,8 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 | `generated.ladder` | Ladder results, one per task, in .bonsai/local/ladder/; default: 7 days after the result's finished | a mapping (its fields below) | under Mappings, below |
 | `generated.run` | Run reports, committed history, in the run reports' folder (documents.run); default: kept | a mapping (its fields below) | under Mappings, below |
 | `generated.sessions` | Rows of the sessions table, in .bonsai/sessions.md; default: kept | a mapping (its fields below) | under Mappings, below |
-| `generated.messages` | Messages between agents (set 8), in .bonsai/local/messages/; default: 30 days after a thread's last message | a mapping (its fields below) | under Mappings, below |
-| `generated.agents` | Each agent's state (set 8), in .bonsai/local/agents/; default: 30 days after a session folder's last line | a mapping (its fields below) | under Mappings, below |
+| `generated.messages` | Messages between agents, in .bonsai/local/messages/; default: 30 days after a thread's last message | a mapping (its fields below) | under Mappings, below |
+| `generated.agents` | Each agent's state, in .bonsai/local/agents/; default: 30 days after a session folder's last line | a mapping (its fields below) | under Mappings, below |
 | `messages` | When bonsai messages flags a thread; null for Bonsai's defaults (bonsai check --schema bonsai.messages) | a mapping (its fields below), or null | `null` |
 | `messages.unanswered_minutes` | Minutes a brief may go with no report once its agent is quiet; null for the default | a whole number from 0, or null | `120` |
 | `messages.circling_briefs` | Briefs each way one thread may hold before it is flagged circling; null for the default | a whole number from 0, or null | `3` |
@@ -131,11 +131,11 @@ generated:
   sessions:                           # rows of the sessions table, in .bonsai/sessions.md; default: kept
     keep_days: null                   # clean what is older than this many days; null: no age rule
     keep_newest: null                 # keep only this many of the newest; null: no count rule
-  # messages between agents (set 8), in .bonsai/local/messages/; default: 30 days after a thread's last message
+  # messages between agents, in .bonsai/local/messages/; default: 30 days after a thread's last message
   messages:
     keep_days: 30                     # clean what is older than this many days; null: no age rule
     keep_newest: null                 # keep only this many of the newest; null: no count rule
-  # each agent's state (set 8), in .bonsai/local/agents/; default: 30 days after a session folder's last line
+  # each agent's state, in .bonsai/local/agents/; default: 30 days after a session folder's last line
   agents:
     keep_days: 30                     # clean what is older than this many days; null: no age rule
     keep_newest: null                 # keep only this many of the newest; null: no count rule

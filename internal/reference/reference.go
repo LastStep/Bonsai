@@ -46,19 +46,19 @@ func Page() []byte {
 		"The code of a finding (makes `check` exit 1, and is a problem in `status --json`) or a warning (printed, never the exit code); who is who usually takes the next step. Machine says the word is about this machine rather than the commit (the home, the PATH, Claude Code and its plugins): rung 0 does not judge it, since a proof is of a commit.")
 	p.words(format.CheckWords, "Kind", "Who", "Machine")
 	p.section("Check words about the ladder's shape", "open", "format.LadderCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
-		"The code of a finding or a warning about the ladder in bonsai.yaml (plan-5 5.4.0; the checks are 5.4.2's), in the same open list as the check words above; who is who usually takes the next step.")
+		"The code of a finding or a warning about the ladder in bonsai.yaml, in the same open list as the check words above; who is who usually takes the next step.")
 	p.words(format.LadderCheckWords, "Kind", "Who", "Machine")
 	p.section("Check --pack words", "open", "format.PackCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
 		"The code of a finding from `bonsai check --pack <folder>`; every one is a finding, and none appears in a project's check.")
 	p.words(format.PackCheckWords, "Kind", "Who")
 	p.section("Check words about the roles' limits", "open", "format.RoleCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
-		"The code of a finding about the limits a project sets for its packs' roles in bonsai.yaml (`packs[].roles`; set 8, the checks step 5.5.0's), in the same open list as the check words above; who is who usually takes the next step.")
+		"The code of a finding about the limits a project sets for its packs' roles in bonsai.yaml (`packs[].roles`), in the same open list as the check words above; who is who usually takes the next step.")
 	p.words(format.RoleCheckWords, "Kind", "Who", "Machine")
 	p.section("Check words about messages", "open", "format.MessageCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
-		"The code of a warning about the messages between agents in `.bonsai/local/messages/` (set 8, the check step 5.5.10's), in the same open list; a warning never changes the exit code.")
+		"The code of a warning about the messages between agents in `.bonsai/local/messages/`, in the same open list; a warning never changes the exit code.")
 	p.words(format.MessageCheckWords, "Kind", "Who", "Machine")
 	p.section("Check --pack words about roles and deny rules", "open", "format.PackRoleCheckWords (internal/format/check.go)", "`bonsai check --schema bonsai.check`",
-		"The code of a finding from `bonsai check --pack <folder>` about a pack's roles against its `agents/` folder and the form of its deny rules (set 8, the rules step 5.5.0's); every one is a finding.")
+		"The code of a finding from `bonsai check --pack <folder>` about a pack's roles against its `agents/` folder and the form of its deny rules; every one is a finding.")
 	p.words(format.PackRoleCheckWords, "Kind", "Who")
 	p.section("Check words later steps build", "closed", "engine.checkLater (internal/engine/check.go)", "none",
 		"Spec section 6's findings and warnings that are not built yet; each joins the check words above when its step lands.")
@@ -73,13 +73,13 @@ func Page() []byte {
 		"The form of a rung's test output in bonsai.yaml (`ladder[].tests`); an unknown word means the tests are not read, and `check` warns.")
 	p.words(format.TestForms)
 	p.section("Test files by tests form", "closed", "format.TestFileConventions (internal/format/ladder.go)", "`bonsai check --schema bonsai.workspace`",
-		"Which files are a project's test files for each tests form: what new tests must fail on the base reads (5.4.5), and git integrity's changed-test-file finding (5.4.6). Patterns are project-relative globs with forward slashes (`**` is a whole segment); a path matching any is a test file.")
+		"Which files are a project's test files for each tests form: what new tests must fail on the base reads, and git integrity's changed-test-file finding. Patterns are project-relative globs with forward slashes (`**` is a whole segment); a path matching any is a test file.")
 	p.testFiles()
 	p.section("Git integrity findings", "open", "format.GitFindings (internal/format/ladder.go)", "`bonsai check --schema bonsai.ladder`",
 		"The names a `ver-git` rung gives what it found, as keys of the rung's `captures`; the rung informs a verifier and never turns red for one.")
 	p.words(format.GitFindings)
 	p.section("Message flags", "open", "format.MessageFlags (internal/format/message.go)", "`bonsai check --schema bonsai.messages`",
-		"What `bonsai messages` noticed about a thread, in `threads[].flags` (set 8); it reports and never acts, and a reader shows a word it does not know as other.")
+		"What `bonsai messages` noticed about a thread, in `threads[].flags`; it reports and never acts, and a reader shows a word it does not know as other.")
 	p.words(format.MessageFlags)
 	p.section("Message thresholds", "closed", "format.MessageThresholds (internal/format/message.go), held to bonsai.workspace/1's `messages` properties",
 		"`bonsai check --schema bonsai.messages` (with the flags)",
@@ -87,10 +87,10 @@ func Page() []byte {
 	p.thresholds()
 	p.section("Role limits", "closed", "format.RoleLimits (internal/format/agents.go), held to every schema that lists them",
 		"`bonsai check --schema bonsai.pack` (roles[]), `bonsai check --schema bonsai.workspace` (packs[].roles)",
-		"The three limits of a role (set 8): pack.yaml gives each a default and a max, bonsai.yaml may set its own, a brief any value up to the max in force; each a whole number, or null for none.")
+		"The three limits of a role: pack.yaml gives each a default and a max, bonsai.yaml may set its own, a brief any value up to the max in force; each a whole number, or null for none.")
 	p.words(format.RoleLimits)
 	p.section("Fixed helper limits", "closed", "format.HelperLimits (internal/format/agents.go)", "none",
-		"Bonsai's own limits for an agent of a type no linked pack declares, where no linked pack declares a helper either (set 8); where one does, such an agent runs on the limits of the declared helper with the smallest default actions.")
+		"Bonsai's own limits for an agent of a type no linked pack declares, where no linked pack declares a helper either; where one does, such an agent runs on the limits of the declared helper with the smallest default actions.")
 	p.helperLimits()
 	p.section("Ask types", "open", "format.AskTypes (internal/format/ask.go), held to the ask schema's description of `type`",
 		"`bonsai check --schema bonsai.ask`", "A pack may define its own type (contract section 9.1).")
@@ -108,7 +108,7 @@ func Page() []byte {
 		"`bonsai check --schema bonsai.pack`", "The kinds a pack gives its files in bonsai/pack.yaml (`files[].kind`).")
 	p.values(workspace.PackFileKinds)
 	p.section("Pack path placeholders", "closed", "workspace.PathPlaceholders (internal/workspace/pack.go)", "`bonsai check --schema bonsai.pack` (files[].path)",
-		"What a files entry's path in a pack's bonsai/pack.yaml may start with, as its first segment only, and what the engine writes in its place when it links the pack (set 8; plan-5 5.5.0); no other `<...>` may appear in a path, and the lock records the path it resolved to.")
+		"What a files entry's path in a pack's bonsai/pack.yaml may start with, as its first segment only, and what the engine writes in its place when it links the pack; no other `<...>` may appear in a path, and the lock records the path it resolved to.")
 	p.words(workspace.PathPlaceholders)
 	p.section("Needs kinds", "open", "status.NeedKinds (internal/status/needs.go)", "`bonsai status --json` (needs[].kind)",
 		"What the workspace needs from a machine; a reader shows a kind it does not know as other.")
@@ -137,19 +137,19 @@ func Page() []byte {
 		"The file names the guard refuses an agent's file tools writing outside every linked project, letter case ignored: a stand-in for Bonsai's program in a folder on the PATH.")
 	p.values(guard.StandInNames)
 	p.section("Delete words", "open", "guard.DeleteWords (internal/guard/shell_words.go)", "none",
-		"The words the guard's delete check reads in a Bash, PowerShell or Monitor call (plan-5 5.3.3): matched by base name, letter case ignored, .exe dropped; in PowerShell a bare name is the cmdlet's alias, a name with a folder or .exe the program. A recursive or bulk delete that does not name what it deletes is refused (`delete-unnamed`), a delete or move of a guarded path judged as an edit of it (`delete-protected`).")
+		"The words the guard's delete check reads in a Bash, PowerShell or Monitor call: matched by base name, letter case ignored, .exe dropped; in PowerShell a bare name is the cmdlet's alias, a name with a folder or .exe the program. A recursive or bulk delete that does not name what it deletes is refused (`delete-unnamed`), a delete or move of a guarded path judged as an edit of it (`delete-protected`).")
 	p.deleteWords()
 	p.section("Words that run another program", "open", "guard.RunnerWords (internal/guard/shell_words.go)", "none",
-		"The words the delete check passes over, with their options, to reach the program they run (plan-5 5.3.3 note 1).")
+		"The words the delete check passes over, with their options, to reach the program they run.")
 	p.runnerWords()
 	p.section("Claude Code's start words", "open", "guard.ClaudeStartWords and guard.ClaudePackage (internal/guard/rolecmds.go)", "none",
-		"Where the lock declares roles (plan-5 5.5.11): the program names whose start on an agent's shell line the guard refuses to every role but the session's (`call-refused`), matched by base name, letter case ignored, .exe, .cmd, .bat or .ps1 dropped; and Claude Code's npm package, refused through npx, pnpx or bunx and through npm exec, pnpm dlx or yarn dlx, any version, as is `node` running Claude Code's `cli.js`. A session started so would carry no agent id and read as the person's own.")
+		"Where the lock declares roles: the program names whose start on an agent's shell line the guard refuses to every role but the session's (`call-refused`), matched by base name, letter case ignored, .exe, .cmd, .bat or .ps1 dropped; and Claude Code's npm package, refused through npx, pnpx or bunx and through npm exec, pnpm dlx or yarn dlx, any version, as is `node` running Claude Code's `cli.js`. A session started so would carry no agent id and read as the person's own.")
 	p.claudeStartWords()
 	p.section("Git's write words", "open", "guard.GitWriteWords (internal/guard/rolecmds.go)", "none",
-		"Where the lock declares roles (plan-5 5.5.11): git's subcommands that change the checkout or its history, refused on the shell line of a role that changes nothing (`role-writes-nothing`), git's own options before the subcommand passed over. Each with the words that make it only read (a listing or a dry run), which stay allowed, unless an option that makes it write is there too (a short option's letter counts inside a cluster, `-dr`); where options alone list, a call naming nothing lists (`git branch -v`), and one naming something writes (`git branch -v new` makes the branch). Anything else is a write.")
+		"Where the lock declares roles: git's subcommands that change the checkout or its history, refused on the shell line of a role that changes nothing (`role-writes-nothing`), git's own options before the subcommand passed over. Each with the words that make it only read (a listing or a dry run), which stay allowed, unless an option that makes it write is there too (a short option's letter counts inside a cluster, `-dr`); where options alone list, a call naming nothing lists (`git branch -v`), and one naming something writes (`git branch -v new` makes the branch). Anything else is a write.")
 	p.gitWriteWords()
 	p.section("Hand-back tools", "open", "guard.HandBackTools (internal/guard/roles.go)", "none",
-		"Where the lock declares roles (plan-5 5.5.11): Claude Code's tools that hand a subagent's result back to its caller, which an agent past its budget may still call (`budget-exempt`), beside its report and reading its brief.")
+		"Where the lock declares roles: Claude Code's tools that hand a subagent's result back to its caller, which an agent past its budget may still call (`budget-exempt`), beside its report and reading its brief.")
 	p.values(guard.HandBackTools)
 	p.section("Secret kinds", "open", "redact.Kinds (internal/redact/redact.go), in the order its rules run", "`bonsai check` (a `secret` finding names the kind it found)",
 		"The kinds of secret Bonsai's redactor finds and takes out of every record; a `secret` finding on a memory note names the kind, never the value. A new rule of the redactor adds a kind.")
@@ -405,7 +405,7 @@ func (p *page) generated() {
 func (p *page) orders() {
 	for _, o := range engine.ClaudeOrders() {
 		p.section("Claude Code's key order: "+o.Where, "closed", "engine."+o.Name+" (internal/engine/settings.go)", "none",
-			"The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295 (step 5.1.7); a key Bonsai adds goes where Claude Code would put it. The order is the value.")
+			"The order Claude Code writes them in, measured on Claude Code 2.1.294 and 2.1.295; a key Bonsai adds goes where Claude Code would put it. The order is the value.")
 		p.values(o.Keys)
 	}
 }

@@ -49,7 +49,7 @@ words, never an order above the reader's own brief, never consent, never a grant
 `,
 	Flags: []Flag{
 		utcFlag,
-		{Name: "--from", Value: "ADDRESS", Help: "the writer's own address (the guard holds it to the writer, step 5.5.11)"},
+		{Name: "--from", Value: "ADDRESS", Help: "the writer's own address (the guard holds it to the writer)"},
 		{Name: "--to", Value: "ADDRESS", Help: "the recipient's address"},
 		{Name: "--kind", Value: "brief|report", Help: "a brief from a caller, or a report back"},
 		{Name: "--task", Value: "ID", Help: "the task it serves; in a thread, the thread's task unless given"},
@@ -68,7 +68,7 @@ words, never an order above the reader's own brief, never consent, never a grant
 		{Name: "--json", Help: "print the bonsai.messages/1 document (for programs) instead of plain text"},
 	},
 	Notes: `Who may write a brief to whom, and that --from is the writer's own address, are the guard's rules where it
-reads the shell line (step 5.5.11). Bonsai never starts, wakes or resumes an agent, and never delivers a message:
+reads the shell line. Bonsai never starts, wakes or resumes an agent, and never delivers a message:
 the caller names the brief's id in its Agent call.
 `,
 	Exits: []Exit{

@@ -42,7 +42,7 @@ package engine
 //     project, in full or by its file name: namesPath, the engine's own reading at a link, checkRuns) lists that path
 //     in its runs (step 5.1.1, rule 4). A runs item naming another pack's file is the engine's to judge at a link,
 //     where it sees every linked pack.
-//   - pack-deny-relative (set 8; plan-5 5.5.0 note 9): a deny rule in pack.yaml on a project path, a file tool's rule
+//   - pack-deny-relative (plan-5 5.5.0 note 9): a deny rule in pack.yaml on a project path, a file tool's rule
 //     (Read, Edit, Write, MultiEdit, NotebookEdit) whose path starts with neither / (the project's top folder), // (an
 //     absolute path), ~ (the home) nor a drive, is written relative to the session's folder, so it would not hold after
 //     a shell cd (step 5.3.5 measured it); the finding names the form that holds with the reach the rule has
@@ -56,7 +56,7 @@ package engine
 //   - pack-plugin-version: .claude-plugin/plugin.json, when the pack has one, carries no version (manifestVersion, the
 //     link's own rule); one that is not a JSON object Bonsai reads is this rule's too, since its version cannot be
 //     told.
-//   - pack-role-file, pack-role-undeclared and pack-role-turns (set 8; note 9): each role pack.yaml declares (those of
+//   - pack-role-file, pack-role-undeclared and pack-role-turns (note 9): each role pack.yaml declares (those of
 //     its roles that fit the schema) has its file, agents/<name>.md in the plugin; each .md file in agents/ is a
 //     declared role, held only in a pack whose roles is not empty (the orchestrator's ruling of 14 Oct: a pack that
 //     declares no role, roles: [], opts out of the role rules, as the guard's role rules hold only where packs declare
@@ -418,7 +418,7 @@ func rolesThatFit(doc schema.Object, badItem map[string]bool) []format.PackRole 
 var pathRuleTools = []string{"Read", "Edit", "Write", "MultiEdit", "NotebookEdit"}
 
 // denyRelative finds pack.yaml's deny rules on a project path written without its leading / or // (pack-deny-relative):
-// a file tool's rule whose path is relative to the session's folder, which a shell cd moves (step 5.3.5).
+// a file tool's rule whose path is relative to the session's folder, which a shell cd moves.
 func denyRelative(file string, m *reader.Map) []packFound {
 	var out []packFound
 	for _, it := range mapItems(m, "deny") {
@@ -436,7 +436,7 @@ func denyRelative(file string, m *reader.Map) []packFound {
 			how, also = "at any depth, as the rule's name with no slash matches now (the form Bonsai's own deny rules take)", ""
 		}
 		out = append(out, packFound{"pack-deny-relative", file, fmt.Sprintf("%s: deny item %d's rule %s names a project path relative to the "+
-			"session's folder, so it would not hold after a shell cd (step 5.3.5); the form that holds is %s, %s",
+			"session's folder, so it would not hold after a shell cd; the form that holds is %s, %s",
 			at(file, e.Line), it.i+1, strconv.QuoteToASCII(rule), strconv.QuoteToASCII(holds), how),
 			fmt.Sprintf("write deny item %d's rule in %s as %s%s", it.i+1, file, strconv.QuoteToASCII(holds), also)})
 	}
@@ -803,7 +803,7 @@ func hookRuns(file string, m *reader.Map) []packFound {
 		for _, p := range paths {
 			if !listed[p] && namesPath(cmd, p) {
 				out = append(out, packFound{"pack-runs", file, fmt.Sprintf("%s: hooks item %d's command (%s) names %s, a file the pack writes, "+
-					"but its runs does not list it, so a change to that file would run unseen (step 5.1.1)", at(file, e.Line), it.i+1,
+					"but its runs does not list it, so a change to that file would run unseen", at(file, e.Line), it.i+1,
 					strconv.QuoteToASCII(cmd), p), fmt.Sprintf("add %s to hooks item %d's runs in %s (runs lists every pack file the "+
 					"command runs, by its path in the project)", strconv.QuoteToASCII(p), it.i+1, file)})
 			}

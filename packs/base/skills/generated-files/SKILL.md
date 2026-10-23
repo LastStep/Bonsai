@@ -27,7 +27,7 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 
 - What: questions for a person and their answers.
 - Where it lives: .bonsai/local/asks/.
-- Written by: bonsai ask and bonsai answer (and the ladder runner from step 5.4, as its Bless), one day file a day.
+- Written by: bonsai ask and bonsai answer (and the ladder runner, as its Bless), one day file a day.
 - Default: kept.
 - Never cleaned: a day file holding an open ask, or the answer or withdrawal of an ask whose filing stays (else it would read open again).
 - Cleaned: at a session's end, within the same budget; by default nothing, as the default keeps.
@@ -37,7 +37,7 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 
 - What: ladder results, one per task.
 - Where it lives: .bonsai/local/ladder/.
-- Written by: the ladder runner (step 5.4), one file per task.
+- Written by: the ladder runner, one file per task.
 - Default: 7 days after the result's finished.
 - Never cleaned: the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done).
 - Cleaned: at a session's end, and by the ladder runner after each run.
@@ -65,22 +65,22 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 
 ### `messages`
 
-- What: messages between agents (set 8).
+- What: messages between agents.
 - Where it lives: .bonsai/local/messages/.
-- Written by: bonsai message (step 5.5.10), one file per message, one folder per recipient, created new and never overwritten.
+- Written by: bonsai message, one file per message, one folder per recipient, created new and never overwritten.
 - Default: 30 days after a thread's last message.
 - Never cleaned: an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it.
-- Cleaned: at a session's end, with the log, within the same budget (step 5.5.10).
+- Cleaned: at a session's end, with the log, within the same budget.
 - Rule in bonsai.yaml: `generated.messages` takes `keep_days` and `keep_newest`.
 
 ### `agents`
 
-- What: each agent's state (set 8).
+- What: each agent's state.
 - Where it lives: .bonsai/local/agents/.
-- Written by: the guard (step 5.5.11): one folder per session, one file per agent with one line a call, and a tie file per brief.
+- Written by: the guard: one folder per session, one file per agent with one line a call, and a tie file per brief.
 - Default: 30 days after a session folder's last line.
 - Never cleaned: a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept.
-- Cleaned: at a session's end, with the log, within the same budget (step 5.5.11).
+- Cleaned: at a session's end, with the log, within the same budget.
 - Rule in bonsai.yaml: `generated.agents` takes `keep_days` and `keep_newest`.
 
 ### `tasks`

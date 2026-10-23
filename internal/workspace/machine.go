@@ -169,7 +169,7 @@ func LabelsInForce(lock *Lock, home, main string) ([]LabelSet, []error) {
 	sort.Strings(names)
 	for _, name := range names {
 		path := filepath.ToSlash(filepath.Join(dir, name))
-		next := "attach the definitions again with Bonsai's attach command (step 5.6), or delete " + path
+		next := "attach the definitions again with Bonsai's attach command, or delete " + path
 		raw, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			problems = append(problems, &Error{File: path, Msg: "cannot be read: " + oneLine(err), Err: err, Next: "check the file's permissions"})
