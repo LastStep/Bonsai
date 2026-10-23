@@ -102,7 +102,9 @@ Fields and templates: `base:message`. An address is `<role>@<task>`; the person'
 ## Budgets and calls
 
 A refusal of the guard or a block of the stop gate says why first, then `next`, then `rule:` and its rule's word on a
-line of its own (the one the log keeps; `bonsai logs` shows it too). Act on the rule by its word:
+line of its own (the word its log record keeps, which `bonsai logs` shows; a block made before the project's
+`bonsai.yaml` is read, such as `no-project`, `bad-config` or an early `over-time`, or one whose record cannot be
+written, `log-failed`, keeps no record, and its word is printed only). Act on the rule by its word:
 
 - `budget-spent` ("budget spent (minutes: 181 of 180) ..."): write your report now by the command its `next.do`
   names, exactly as written, as one shell call with nothing else on the line; then end the turn. It runs the
