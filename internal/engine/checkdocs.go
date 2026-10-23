@@ -231,6 +231,29 @@ func (r *CheckResult) checkDocument(short, kind, p string, raw []byte, defs map[
 	}
 }
 
+// DocumentFindings gives bonsai check's findings on one document of one of Bonsai's kinds (k, a kind workspace.DocKinds
+// gives) at p, project-relative, holding raw: checkDocument's, read with the lock and the labels in force as check
+// reads them (the lock from root, none when it does not read, as check's own lock finding then says; the labels from
+// the lock, home and main), only those on that file, warnings left out. The stop gate reads a run report through it
+// (T-5731), so a green gate never stands on a report check rejects, and the two cannot drift.
+func DocumentFindings(root, main, home string, k workspace.DocKind, p string, raw []byte) []Finding {
+	r := &CheckResult{Root: root, Main: main, Home: home}
+	if lock, err := workspace.LoadLock(root); err == nil {
+		r.Lock = lock
+	}
+	sets, _ := workspace.LabelsInForce(r.Lock, home, main)
+	defs := r.checkLabelsTwice(sets)
+	r.Findings = nil
+	r.checkDocument(strings.TrimPrefix(k.Format, "bonsai."), k.Kind, p, raw, defs)
+	var out []Finding
+	for _, f := range r.Findings {
+		if f.File == p {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // formatOf names the format a document was read under, for a person.
 func formatOf(short string, f0 bool) string {
 	if f0 {
