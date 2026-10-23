@@ -143,10 +143,17 @@ cannot read or decide, and blocks itself after 5 s, before the hook's timeout co
 	Examples: []string{"BONSAI_TASK=T-0001 CLAUDE_PROJECT_DIR=. bonsai hook stop < payload.json"},
 	Run: func(c *call) int {
 		if len(c.rest) > 0 {
-			return c.refuse(c.flagError("hook stop takes no %+q", c.rest[0]))
+			return stopLine(c, c.flagError("hook stop takes no %+q", c.rest[0]))
 		}
 		return stopgate.Main(stopgate.Options{Stdin: os.Stdin, Stderr: c.stderr, StdinTerminal: isTerminal(os.Stdin)})
 	},
+	LineRefusal: stopLine,
+}
+
+// stopLine refuses hook stop's command line through the stop gate's own frame (T-5726): the session goes on (exit 2)
+// with the gate's reason, next step and rule word (bad-input), as every other block of the gate prints them.
+func stopLine(c *call, e *engine.Error) int {
+	return stopgate.Main(stopgate.Options{Stdin: os.Stdin, Stderr: c.stderr, StdinTerminal: isTerminal(os.Stdin), BadLine: e.What})
 }
 
 var startWord = &Word{

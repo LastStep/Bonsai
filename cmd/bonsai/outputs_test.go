@@ -188,7 +188,7 @@ func runArgs(args ...string) (int, string, string) {
 func wantRefusal(t *testing.T, w *Word, args []string, exit int, word string) {
 	t.Helper()
 	code, out, errOut := runArgs(args...)
-	if code != exit || !hasNext(out+errOut) {
+	if code != exit || !(hasNext(out+errOut) || (w == stopWord && out == "" && stopFrame(errOut))) { // hook stop: the gate's frame
 		t.Errorf("%v: exit %d, want %d, and a next step:\n%s%s", args, code, exit, out, errOut)
 	}
 	if !w.takesJSON() {
@@ -439,7 +439,8 @@ const linkedYAML = "format: bonsai.workspace/1\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaa
 func TestHookRefusals(t *testing.T) {
 	for _, args := range [][]string{{"hook"}, {"hook", "nap"}, {"hook", "stop", "now"}, {"hook", "guard", "now"}, {"hook", "guard", "--json"}} {
 		code, out, errOut := runArgs(args...)
-		if code != 2 || out != "" || !hasNext(errOut) || strings.Contains(errOut, "{") {
+		framed := args[0] == "hook" && len(args) > 1 && args[1] == "stop" && stopFrame(errOut) // hook stop: the gate's frame (T-5726)
+		if code != 2 || out != "" || !(hasNext(errOut) || framed) || strings.Contains(errOut, "{") {
 			t.Errorf("%v: exit %d, %q %q", args, code, out, errOut)
 		}
 	}

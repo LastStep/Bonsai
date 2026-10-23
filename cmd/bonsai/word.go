@@ -52,6 +52,9 @@ type Word struct {
 	LaterNext string
 	// FlagNext is the next step of a refusal of its command line ("" for the generic one: its --help).
 	FlagNext string
+	// LineRefusal, when set, refuses the word's command line in its own way (hook stop: through the stop gate's frame,
+	// with its rule word) instead of the command's refusal; nil for every other word.
+	LineRefusal func(c *call, e *engine.Error) int
 	// Refused gives the word's --json document for a refusal: nil for a word that takes no --json (hook).
 	Refused func(c *call, e *engine.Error) encoder
 	// Run runs the word once its command line is read; it returns the exit code.
@@ -275,17 +278,17 @@ func runWord(w *Word, args []string, stdout, stderr io.Writer) int {
 		f := w.flag(name)
 		switch {
 		case f == nil:
-			return c.refuse(c.flagError("%s takes no %+q", w.Name, a))
+			return c.refuseLine(c.flagError("%s takes no %+q", w.Name, a))
 		case f.Later != "":
 			drop := 1
 			if f.Value != "" && !hasValue && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 				drop = 2
 			}
-			return c.refuse(&engine.Error{Code: "not-built", Exit: exitInput,
+			return c.refuseLine(&engine.Error{Code: "not-built", Exit: exitInput,
 				What: fmt.Sprintf("%s %s is not built yet (it comes with %s)", w.Name, f.Name, f.Later),
 				Next: "run `" + c.without(args, i, drop) + "` without " + f.Name})
 		case f.Value == "" && hasValue:
-			return c.refuse(c.flagError("%s takes no value for %+q", w.Name, name))
+			return c.refuseLine(c.flagError("%s takes no value for %+q", w.Name, name))
 		case f.Value != "" && !hasValue:
 			if i+1 >= len(args) || (strings.HasPrefix(args[i+1], "-") && args[i+1] != "-") {
 				need := f.Need
@@ -296,13 +299,13 @@ func runWord(w *Word, args []string, stdout, stderr io.Writer) int {
 				if f.NeedNext != nil {
 					e.Next = f.NeedNext()
 				}
-				return c.refuse(e)
+				return c.refuseLine(e)
 			}
 			i++
 			value = args[i]
 		}
 		if f.Value != "" && !f.Many && c.has(f.Name) {
-			return c.refuse(c.flagError("%s takes %s once", w.Name, f.Name))
+			return c.refuseLine(c.flagError("%s takes %s once", w.Name, f.Name))
 		}
 		c.given = append(c.given, given{f.Name, value})
 	}
@@ -384,6 +387,14 @@ func (c *call) refuse(e *engine.Error) int {
 	}
 	_, _ = io.WriteString(c.stderr, refusalText(c.word, e, c.stderr))
 	return e.Exit
+}
+
+// refuseLine refuses the word's command line: by its own LineRefusal where it has one, else as refuse does.
+func (c *call) refuseLine(e *engine.Error) int {
+	if c.word.LineRefusal != nil {
+		return c.word.LineRefusal(c, e)
+	}
+	return c.refuse(e)
 }
 
 // fail is refuse for a failure once the word runs (today the same as refuse, kept apart for the words that call it).

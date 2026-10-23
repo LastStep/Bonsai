@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -430,7 +431,9 @@ func TestHookCommand(t *testing.T) {
 		{[]string{"hook", "guard", "--json"}, 2, "", "bonsai hook guard: refused  [bad-flag]\n  what  exit 2, block\n  why   hook guard takes no \"--json\"\n"},
 		{[]string{"hook", "stop", "--help"}, 0, engine.ShownLine(engine.StopCommand) + "on Stop (no matcher), timeout 10 s.\n", ""},
 		{[]string{"hook", "stop", "--help"}, 0, engine.HookPlaceWords(), ""},
-		{[]string{"hook", "stop", "now"}, 2, "", "bonsai hook stop: refused  [bad-flag]\n  what  exit 2, block\n  why   hook stop takes no \"now\"\n"},
+		{[]string{"hook", "stop", "now"}, 2, "", "bonsai stop gate: hook stop takes no \"now\", and a stop gate run another way than its hook line keeps the session going.\nnext: use the hook line bonsai init writes (bonsai hook stop --help quotes it).\nrule: bad-input.\n"},
+		{[]string{"hook", "stop", "--json"}, 2, "", "bonsai stop gate: hook stop takes no \"--json\", and a stop gate run another way than its hook line keeps the session going.\nnext: use the hook line bonsai init writes (bonsai hook stop --help quotes it).\nrule: bad-input.\n"},
+		{[]string{"hook", "stop", "--x=1", "now"}, 2, "", "bonsai stop gate: hook stop takes no \"--x=1\", and a stop gate run another way than its hook line keeps the session going.\nnext: use the hook line bonsai init writes (bonsai hook stop --help quotes it).\nrule: bad-input.\n"},
 		{[]string{"hook", "nap"}, 2, "", "bonsai hook: refused  [bad-value]\n  what  exit 2, block\n  why   \"nap\" is not a hook\n"},
 	}
 	for _, c := range cases {
@@ -441,8 +444,48 @@ func TestHookCommand(t *testing.T) {
 		}
 		asciiOnly(t, "stdout", stdout.String())
 		asciiOnly(t, "stderr", stderr.String())
-		if code != 0 && !hasNext(stderr.String()) {
+		// A refusal names its next step: the command's own refusal, or the stop gate's frame for hook stop's command line.
+		if code != 0 && !hasNext(stderr.String()) && !(c.args[1] == "stop" && stopFrame(stderr.String())) {
 			t.Errorf("%v: a refusal with no next step", c.args)
 		}
 	}
+}
+
+// Only hook stop refuses its command line its own way (T-5726): every other word, and every sub-word, keeps the
+// command's own refusal of a flag it does not take.
+func TestOnlyHookStopRefusesItsLineItsOwnWay(t *testing.T) {
+	var walk func(w *Word)
+	seen := 0
+	walk = func(w *Word) {
+		seen++
+		if (w.LineRefusal != nil) != (w == stopWord) {
+			t.Errorf("%s: LineRefusal set %v", w.Name, w.LineRefusal != nil)
+		}
+		for _, s := range w.Subs {
+			walk(s)
+		}
+	}
+	names := make([]string, 0, len(words))
+	for n := range words {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	for _, n := range names {
+		walk(words[n])
+	}
+	if seen < 10 {
+		t.Fatalf("walked %d words: the table was not read", seen)
+	}
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"status", "--nope"}, &stdout, &stderr); code != 2 || !strings.Contains(stderr.String(), "bonsai status: refused  [bad-flag]") {
+		t.Errorf("status --nope: exit %d, stderr %q", code, stderr.String())
+	}
+}
+
+// stopFrame reports whether a refusal is the stop gate's frame for hook stop's command line (T-5726): its reason, its
+// next step and its rule word bad-input, one line each, in place of the command's own refusal.
+func stopFrame(s string) bool {
+	l := strings.Split(s, "\n")
+	return len(l) == 4 && strings.HasPrefix(l[0], "bonsai stop gate: hook stop takes no ") && strings.HasPrefix(l[1], "next: ") &&
+		len(l[1]) > len("next: .") && l[2] == "rule: bad-input." && l[3] == ""
 }

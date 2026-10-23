@@ -171,7 +171,7 @@ type Options struct {
 	Budget        time.Duration       // the gate's own time limit; 0 means Budget
 	RecordWait    time.Duration       // how long the over-time block waits for its record; 0 means hookin.RecordWait
 	Now           func() time.Time    // the clock; nil means time.Now
-	BadLine       string              // a fault of the command line, as the command says it ("takes no \"now\""); "" for none: the gate blocks on it first
+	BadLine       string              // a fault of the command line, as the command says it (hook stop takes no "now"); "" for none: the gate blocks on it first
 }
 
 // Decision is the gate's answer to one session's end.
@@ -250,7 +250,7 @@ func (r *run) work() Decision {
 	beforeWork()
 	if r.o.BadLine != "" {
 		r.drain()
-		return deny(RuleBadInput, "", "the command line "+r.o.BadLine+", and a stop gate run another way than its hook line "+
+		return deny(RuleBadInput, "", r.o.BadLine+", and a stop gate run another way than its hook line "+
 			"keeps the session going", "use the hook line bonsai init writes (bonsai hook stop --help quotes it)")
 	}
 	named := r.o.Getenv(workspace.TaskEnv)

@@ -957,8 +957,8 @@ func TestBadLine(t *testing.T) {
 	for _, getenv := range []func(string) string{env(root, workspace.TaskEnv, "T-0901"), env(root)} {
 		var stderr bytes.Buffer
 		in := strings.NewReader(stopPayload("s1", root))
-		code := Main(Options{Stdin: in, Stderr: &stderr, Getenv: getenv, Budget: untimed, BadLine: `takes no "now"`})
-		blocks(t, code, stderr.String(), "", RuleBadInput, `the command line takes no "now"`,
+		code := Main(Options{Stdin: in, Stderr: &stderr, Getenv: getenv, Budget: untimed, BadLine: `hook stop takes no "now"`})
+		blocks(t, code, stderr.String(), "", RuleBadInput, `bonsai stop gate: hook stop takes no "now", and a stop gate run`,
 			"use the hook line bonsai init writes")
 		if in.Len() != 0 {
 			t.Errorf("the payload was not drained: %d bytes left", in.Len())
