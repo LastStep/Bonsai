@@ -74,7 +74,7 @@ bonsai ask --status <key> --json
 
 Types: Answer, Decide, Look, Play. `bonsai asks --json` lists the open asks. Never answer your own: `bonsai answer`
 is the person's (`answer-own-session`). The person may answer a Decide by an option's letter or number
-(`bonsai answer <key> --choice B`); `bonsai ask --status` shows the letters.
+(`bonsai answer <key> --choice B`); `bonsai ask --status <key>` shows the letters.
 
 ## Brief and report (where a pack declares roles)
 
