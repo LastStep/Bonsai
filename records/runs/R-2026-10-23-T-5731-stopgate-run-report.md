@@ -44,6 +44,10 @@ labels: {}
   (a report with `started: 2026-10-11`). That file is not in the brief's Owns list: an added case, nothing changed or
   weakened.
 - go vet ./... clean, gofmt clean, go test ./... all ok (WSL, once). go generate ./internal/reference: lists.md +1 line.
+- 09:44 UTC, climb 1 at 899982a1 (sha256 13c60c7b...): red at rung 0 only, "2 of 80 changed paths refused":
+  .gitignore and CLAUDE.md, both T-5730's changes (my branch starts on T-5730; rung 0 judges against main at
+  7e172040, under T-5731's empty grant). Nothing of mine; rungs 1-5 skipped. Waiting for main to reach T-5730
+  (its CI was finishing), then climbing again. Not reverting T-5730's work.
 
 ## What is different now
 
