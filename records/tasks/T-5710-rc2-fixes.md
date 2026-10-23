@@ -48,3 +48,9 @@ Gathered on 20 Oct; rc.2 always follows (note 5.7.10). Each becomes its own task
     ~/bonsai-clips <clip>`, then `sh docs/demos/edit.sh`), clip 10 among them (BUG-098); `~/bonsai-checks/bin/claude-here`
     forces its own Bonsai home and plugin cache, so a dry run through it cannot see the stop gate judge a project
     linked with another home (T-5724; a scratch tool's limit, for T-5793).
+13. **Other agents' markers refuse person-only commands** (the director, 23 Oct, C4 and C8 of
+    `design/agent-neutral-walkthrough.md`): wherever Claude's child marker refuses `update --yes --allow-exec`,
+    `unlink --yes` and looser settings today, any of `CLAUDE_CODE_CHILD_SESSION`, `AI_AGENT`, `PI_CODING_AGENT`,
+    `CODEX_THREAD_ID`, `GEMINI_CLI`, `CURSOR_AGENT`, `OPENCODE`, `GOOSE_TERMINAL` refuses (`CLAUDECODE` left out: it
+    reaches editor terminals); the refusal names the marker it found; the test helper clears the list. The director's
+    terminals print none of them (checked 23 Oct). Before 1.0, because pi runs with the stopgap extension before then.

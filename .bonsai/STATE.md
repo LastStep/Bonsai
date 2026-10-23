@@ -1,13 +1,18 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-22
+updated: 2026-10-23
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 22 Oct 2026 (a day session, the director present).
+Rewritten, never appended (`base:state`). Last rewritten 23 Oct 2026 (a morning session, the director present).
+**23 Oct: the agent research walked through** (`T-5797` done): the director answered C1-C9 of
+`design/agent-neutral-walkthrough.md`: 1.0 first; translate in Go; the pi side built by the director in pi, in their
+`~/Servers/pi-harness`, now, from a contract plan, the Go side here after 1.0; the markers in rc.2 (`T-5710` item 13);
+the envelope format only for now; the proof on their pi login. The contract plan `design/pi-contract.md` (`T-5798`).
+**Next session: 1.0 only.**
 **Step 5.7: the README and demos (`T-5711`) done and landed** (22 Oct, `main` at `57fa4f97` plus this session's
 records commit, CI green): the README restructured (what you get, how it works, install folded, a first project with
 both dry runs' fixes and the `BONSAI_TASK` line), the How it works picture (light and dark SVG), **`docs/features.md`**
@@ -246,9 +251,16 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | rc.2's fixes (BUG-014 first; the notes' line; Go; CLAUDE.md's stale lines; ...) | `T-5710` | todo | the list in the task |
 | The README improved and demo videos (the director's added step) | `T-5711` (`T-5718`-`T-5724`) | done | landed `57fa4f97`; `T-5720` cut; facts verifier PASS (round 2); the director filmed the clips (`~/bonsai-clips`) |
 | The workflow pack names no studio's files | `T-5796` | done | pack `612bc333`, pin `6f8783ea` |
+| **Bonsai with any agent, pi first: the research** (the director, 22 Oct) | `T-5797` | done | `design/agent-neutral.md` (verifiers PASS, two rounds); walked through with the director 23 Oct, C1-C9 answered (`R-2026-10-22-T-5797`, 23 Oct lines) |
+| **Bonsai under pi: the contract plan** (the director, 23 Oct) | `T-5798` | done | `design/pi-contract.md`: the pi side (one plain-JS extension in the director's `~/Servers/pi-harness`, a stopgap mode against today's binary, an envelope mode `bonsai.hook/1` later); four review rounds (FAIL, FAIL, FAIL, PASS), approved by the director 23 Oct; theirs to hand to pi |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Next, in this order:** rc.2's fixes
+**Next session: sole focus, Bonsai 1.0** (the director, 23 Oct: "the next session sole focus would be to get bonsai
+to 1.0 release"). The agent work waits for after 1.0 (C1, "1.0 first"): the pi side is the director's to run in pi
+from `design/pi-contract.md`, outside this repo; Bonsai's Go side (identity, the envelope and pi's reader, protection
+and honesty; section 9 of that file) is planned after 1.0. One piece of it is in rc.2: `T-5710` item 13, every agent
+marker refuses person-only commands (C4, C8; the director's terminals print none of the eight).
+**In this order:** rc.2's fixes
 (`T-5710`, each its own task, BUG-014 before 1.0); rc.2 (note 5.7.10: the director's tag, approval and WSL install;
 the stages the changes touched re-run as probes); the director's own trial on a fresh project; 5.7.6; batch 5. Every
 landing by CI on the branch; in a batch the one piece that changes protected files goes on top (rung 0 judges the
@@ -278,6 +290,10 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 (`internal/workspace/active.go:175`), while a named session skips that rule (`internal/workspace/active.go:131-150`).
 
 ## Waiting on the director
+
+- **Now, outside this repo, theirs:** hand `design/pi-contract.md` (approved 23 Oct) to pi to build in
+  `~/Servers/pi-harness`. For their pi setup: pi runs edited copies from its compile cache (`/tmp/jiti/`; `JITI_FS_CACHE=false`
+  turns it off), and pi started inside Claude Code inherits Claude's variables.
 
 - **Their own step, from 5.6's close:** take the `"autoMemoryEnabled": true` line out of their local settings file
   (theirs only; the guard refuses agents). Also for them to read: the pin test's one exception, `release.yml` (5.7.2's).

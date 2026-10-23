@@ -5,18 +5,28 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-5798 | Bonsai under pi: the contract plan (the pi side in pi-harness, the envelope bonsai.hook/1) | done | | 2026-10-23 | 2026-10-23 |
+| T-5797 | Bonsai with any agent, pi first: the master research | done | | 2026-10-22 | 2026-10-23 |
+| T-5796 | The workflow pack names no studio's files: its twelve Trinetra deny rules taken out | done | light | 2026-10-22 | 2026-10-22 |
 | T-5795 | Before 1.0: one system for time (stored with its zone, shown in local time, never typed by hand), planned with the director | done | full | 2026-10-21 | 2026-10-21 |
 | T-5794 | Go held before rc.1: go.mod's toolchain to go1.27.3, govulncheck clean on it | cut | | 2026-10-20 | 2026-10-20 |
 | T-5793 | Scratch folders, declared in bonsai.yaml: what one is, where it lives, which roles may use it and with what authority | todo | full | | |
 | T-5792 | CI on the branch: a batch's branch pushed and green on CI (its windows jobs among them) before main moves | done | | 2026-10-20 | 2026-10-20 |
 | T-5790 | The tagged pass narrowed to the packages the bonsai_test_fault tag can reach, held there by a test | done | | 2026-10-19 | 2026-10-19 |
+| T-5724 | README and demos: the new README's first project followed exactly as written, on the installed Bonsai | done | | 2026-10-22 | 2026-10-22 |
+| T-5723 | README and demos, piece F: the showcase edit (an edit script; the README's GIFs and a showcase video from the clips) | done | | 2026-10-22 | 2026-10-22 |
+| T-5722 | README and demos, piece E: docs/features.md, every capability by area, with its limits | done | | 2026-10-22 | 2026-10-22 |
+| T-5721 | README and demos, piece D: the clip set (one tape a moment, filmed by the director on the installed Bonsai) | done | | | 2026-10-22 |
+| T-5720 | README and demos, piece C: the scripted recording | cut | | 2026-10-22 | 2026-10-22 |
+| T-5719 | README and demos, piece B: the How it works picture | done | | 2026-10-22 | 2026-10-22 |
+| T-5718 | README and demos, piece A: the README restructured | done | | 2026-10-22 | 2026-10-22 |
 | T-5717 | Time, piece E: now told on each prompt and each subagent start | done | | 2026-10-21 | 2026-10-21 |
 | T-5716 | Time, piece F: the guard checks fresh stamps against Bonsai's clock | done | | 2026-10-21 | 2026-10-21 |
 | T-5715 | Time, piece D: the sessions table: new rows with an offset, compared by instant | cut | | | 2026-10-21 |
 | T-5714 | Time, piece C: printed times in local time with their offset | done | | 2026-10-21 | 2026-10-21 |
 | T-5713 | Time, piece B: bonsai now and internal/timefmt | done | | 2026-10-21 | 2026-10-21 |
 | T-5712 | Time, piece A: formats set 11: document times with an offset, now.schema.json | done | | 2026-10-21 | 2026-10-21 |
-| T-5711 | Before 1.0: the README improved, and demo videos showing how Bonsai works for a project | todo | full | | |
+| T-5711 | Before 1.0: the README improved, and demo videos showing how Bonsai works for a project | done | full | 2026-10-22 | 2026-10-22 |
 | T-5710 | rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on) | todo | | | |
 | T-5709 | 5.7.9, the trial's analysis: records/trial-rc1.md for the director, and an agent's dry run of the README's first-project steps | done | | 2026-10-21 | 2026-10-21 |
 | T-5708 | The trial's feature: the stop gate names its rule when it blocks (BUG-089, with BUG-088) | done | | 2026-10-20 | 2026-10-20 |
