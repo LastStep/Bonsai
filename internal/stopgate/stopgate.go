@@ -49,6 +49,10 @@
 //  5. a run report for the task in the session's own checkout's run folder (main's documents.run), named
 //     R-<date>-<task id>[-<more>].md by the run kind's id pattern (stop-no-run-report): today's gate's first check,
 //     as contract §13 has the gate read "the run report from the session's own checkout, where the builder writes it";
+//     and each such report read as bonsai check reads it (engine.DocumentFindings: check's own reading, with the
+//     checkout's lock and the labels in force), none with a finding of check's on the file: format0-new, document,
+//     label or absolute-path (stop-bad-run-report, T-5731; the pi brief's B3). With no lock that reads, a report
+//     with no format: line passes, as check passes it; a missing field passes too (readers hold the lenient schema);
 //  6. the ladder result at main's .bonsai/local/ladder/<task id>.json (contract §11): there (stop-no-result), reading
 //     as bonsai.ladder/1 (stop-bad-result), made for the task (its task the named id and its workspace this one's:
 //     stop-other-task), mode local (stop-not-local), green (stop-red), proving the commit at the
@@ -144,6 +148,7 @@ const (
 	RuleTaskUnreadable    = "stop-task-unreadable"    // deny: the main checkout's task folder or a file in it cannot be read
 	RuleBadRungs          = "stop-bad-rungs"          // deny: the task's bonsai.ladder, or the workspace's ladder_floor, is not a list of rung numbers
 	RuleNoRunReport       = "stop-no-run-report"      // deny: the session's checkout holds no run report for the task
+	RuleBadRunReport      = "stop-bad-run-report"     // deny: a run report of the task in the session's checkout does not pass bonsai check
 	RuleNoResult          = "stop-no-result"          // deny: there is no ladder result for the task in the main checkout
 	RuleBadResult         = "stop-bad-result"         // deny: the ladder result cannot be read, or does not read as bonsai.ladder/1
 	RuleOtherTask         = "stop-other-task"         // deny: the ladder result at the task's path was made for another task (another id, none, or another workspace)
@@ -540,7 +545,7 @@ func judge(local workspace.Local, layout workspace.GitLayout, also *untied, name
 			"fix the task's bonsai.ladder label to a list of rung numbers, e.g. [1, 2], in the main checkout's "+act.File+
 				"; then "+ladder)
 	}
-	if d, ok := runReport(local.Root, w, named); !ok {
+	if d, ok := runReport(local.Root, local.Main, w, named); !ok {
 		return d
 	}
 	return result(local, layout, also, named, cfg.ID, want)
@@ -627,10 +632,12 @@ func rungNumber(v any) (int64, bool) {
 	return 0, false
 }
 
-// runReport finds the task's run report in the session's own checkout (root): a file of the run kind (the run folder,
-// documents.run, and the run id pattern R-<date>-<task id>, workspace.DocKinds' one home) whose id names the task.
-// ok is false, with the block, when there is none.
-func runReport(root string, w *format.Workspace, named string) (Decision, bool) {
+// runReport finds the task's run reports in the session's own checkout (root): the files of the run kind (the run
+// folder, documents.run, and the run id pattern R-<date>-<task id>, workspace.DocKinds' one home) whose id names the
+// task; and reads each as bonsai check does (engine.DocumentFindings, check's own reading: the lock from root, the
+// labels in force from it, the home and main), in the folder's order. ok is false, with the block, when there is none
+// (stop-no-run-report), or when check makes a finding on one of them or one cannot be read (stop-bad-run-report).
+func runReport(root, main string, w *format.Workspace, named string) (Decision, bool) {
 	kinds, _ := workspace.DocKinds(w, nil)
 	var kind workspace.DocKind
 	for _, k := range kinds {
@@ -652,14 +659,55 @@ func runReport(root string, w *format.Workspace, named string) (Decision, bool) 
 			"), so the stop gate cannot find the run report for "+named, "tell the person: check that the folder can be read"), false
 	}
 	idp := regexp.MustCompile(kind.ID)
+	found := false
 	for _, f := range files {
 		id := workspace.NameID(filepath.Base(f), idp)
-		if len(id) > len("R-YYYY-MM-DD-") && id[len("R-YYYY-MM-DD-"):] == named {
-			return Decision{}, true
+		if len(id) <= len("R-YYYY-MM-DD-") || id[len("R-YYYY-MM-DD-"):] != named {
+			continue
 		}
+		found = true
+		if d, ok := checkedReport(root, main, kind, f, named); !ok {
+			return d, false
+		}
+	}
+	if found {
+		return Decision{}, true
 	}
 	return deny(RuleNoRunReport, folder, "this checkout has no run report for "+named+" in its run folder "+folder+
 		" (a file named R-<date>-"+named+".md)", next), false
+}
+
+// checkedReport reads one run report of the task, f relative to root, as bonsai check does: ok is false, with the
+// block (stop-bad-run-report), when it cannot be read or check makes a finding on it. The block names check's first
+// finding, its word and its sentence (which names the field and its line), and gives check's own next step.
+func checkedReport(root, main string, kind workspace.DocKind, f, named string) (Decision, bool) {
+	raw, err := readCapped(filepath.Join(root, filepath.FromSlash(f)), maxResult)
+	if err != nil {
+		return deny(RuleBadRunReport, f, "the run report "+f+" cannot be read ("+osWords(err)+"), so the stop gate cannot "+
+			"tell whether it passes bonsai check", "tell the person: check that the file can be read; then run: "+
+			ladderCommand(named)), false
+	}
+	found := engine.DocumentFindings(root, main, home(), kind, f, raw)
+	if len(found) == 0 {
+		return Decision{}, true
+	}
+	fd := found[0]
+	why := "the run report " + f + " does not pass bonsai check (" + fd.Code + "): " + strings.TrimSuffix(fd.Message, ".")
+	if len(found) > 1 {
+		why += fmt.Sprintf(" (and %d more %s on it)", len(found)-1, plural(len(found)-1))
+	}
+	next := strings.TrimSuffix(fd.Next, ".")
+	if !strings.HasSuffix(next, "run: bonsai check") {
+		next += "; then run: bonsai check"
+	}
+	return deny(RuleBadRunReport, f, why, next+"; then run: "+ladderCommand(named)), false
+}
+
+func plural(n int) string {
+	if n == 1 {
+		return "finding"
+	}
+	return "findings"
 }
 
 // maxResult caps the ladder result the gate reads, in bytes: a larger one does not read.

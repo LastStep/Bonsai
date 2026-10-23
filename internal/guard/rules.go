@@ -80,6 +80,7 @@ const (
 	RuleStopTaskUnreadable    = "stop-task-unreadable"
 	RuleStopBadRungs          = "stop-bad-rungs"
 	RuleStopNoRunReport       = "stop-no-run-report"
+	RuleStopBadRunReport      = "stop-bad-run-report"
 	RuleStopNoResult          = "stop-no-result"
 	RuleStopBadResult         = "stop-bad-result"
 	RuleStopOtherTask         = "stop-other-task"
@@ -214,6 +215,8 @@ var Rules = []Rule{
 		"not a list of rung numbers"},
 	{RuleStopNoRunReport, false, "the stop gate: the session's checkout holds no run report for the task in its run folder " +
 		"(a file named R-YYYY-MM-DD-T-nnnn.md for the task)"},
+	{RuleStopBadRunReport, false, "the stop gate: a run report of the task in the session's checkout does not pass bonsai " +
+		"check: check makes a finding on the file itself (format0-new, document, label or absolute-path)"},
 	{RuleStopNoResult, false, "the stop gate: the main checkout holds no ladder result for the task (.bonsai/local/ladder/T-nnnn.json for the task)"},
 	{RuleStopBadResult, false, "the stop gate: the ladder result cannot be read, or does not read as bonsai.ladder/1"},
 	{RuleStopOtherTask, false, "the stop gate: the ladder result at the task's path was made for another task: its task is " +

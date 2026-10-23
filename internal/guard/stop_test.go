@@ -204,6 +204,12 @@ func init() {
 				t.Fatal(err)
 			}
 		}},
+		{rule: RuleStopBadRunReport, task: "T-0901", change: func(t *testing.T, dir string) {
+			// A run report bonsai check rejects: started without a time (T-5731).
+			writeFile(t, filepath.Join(dir, "work", "runs", "R-2026-10-11-T-0901.md"), "---\nformat: bonsai.run/1\n"+
+				"id: R-2026-10-11-T-0901\ntask: T-0901\nrole: builder\nmodel: a-model\nstarted: 2026-10-11\nfinished: null\n"+
+				"outcome: running\ncommits: []\nlabels: {}\n---\n\n# Run\n")
+		}},
 		{rule: RuleStopNoResult, task: "T-0901", change: func(t *testing.T, dir string) {
 			if err := os.Remove(filepath.Join(dir, filepath.FromSlash(workspace.LocalDir), "ladder", "T-0901.json")); err != nil {
 				t.Fatal(err)
