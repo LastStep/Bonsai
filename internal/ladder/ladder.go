@@ -529,3 +529,18 @@ func unexpected(what string, err error) *engine.Error {
 	return &engine.Error{Code: "unexpected", Exit: ExitRuntime, What: fmt.Sprintf("%s: %v", what, err),
 		Next: "run the same command again, and report it to Bonsai's maintainers if it repeats"}
 }
+
+// shownRoot gives the checkout as the header prints it: relative to the folder the climb was run in ("." for the
+// checkout's own folder, "../name" for a worktree beside it), and in full, with forward slashes, when the folder is
+// unknown or the way is more than two folders up.
+func shownRoot(root, cwd string) string {
+	if cwd != "" {
+		if rel, err := filepath.Rel(cwd, root); err == nil {
+			rel = filepath.ToSlash(rel)
+			if !strings.HasPrefix(rel, "../../../") && rel != "../../.." {
+				return engine.ASCII(rel)
+			}
+		}
+	}
+	return shown(root)
+}

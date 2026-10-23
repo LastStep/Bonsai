@@ -6,6 +6,7 @@ package ladder
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -41,7 +42,8 @@ func (c *Climb) printHeader() {
 	if c.git.Dirty {
 		dirty = " (dirty)"
 	}
-	c.say("  %s at %s %s%s", shown(c.Root), c.git.Branch, shortSHA(c.git.SHA), dirty)
+	cwd, _ := os.Getwd()
+	c.say("  %s at %s %s%s", shownRoot(c.Root, cwd), c.git.Branch, shortSHA(c.git.SHA), dirty)
 	if c.unverified != "" {
 		c.say("  this checkout's main checkout is not verified (%s): the ci result is written in this checkout", c.unverified)
 	}
