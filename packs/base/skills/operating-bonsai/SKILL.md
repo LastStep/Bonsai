@@ -61,7 +61,10 @@ bonsai ladder --task <id> --json
 
 Read the climb's `next`; run each failing test alone by its `run` line; fix the code (never the test, the ladder or
 `bonsai.yaml` to get green); climb again. A green local result at HEAD is the proof the stop gate reads; a `--ci`
-result proves nothing. The proof that counts is made by the installed copy the hook lines name:
+result proves nothing. The gate also reads the task's run reports in your checkout as `bonsai check` does: one with a
+finding of check's (no `format:` line, a field out of its form such as a `started` with no time, a label off its
+kinds, an absolute path) keeps the session going (`stop-bad-run-report`, its `next` check's own); run `bonsai check`
+before you stop. A green gate proves the work at HEAD and a readable report, not a finished task. The proof that counts is made by the installed copy the hook lines name:
 `/usr/local/bin/bonsai` on Linux, `C:/Program Files/Bonsai/bonsai.exe` on Windows. On `ladder-busy`, run it again
 after the time it names.
 
