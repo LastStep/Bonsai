@@ -5,8 +5,8 @@ task: T-5728
 role: builder
 model: sonnet
 started: 2026-10-23 07:38
-finished: null
-outcome: partial
+finished: 2026-10-23 07:56
+outcome: verify
 commits: []
 labels: {}
 ---
@@ -20,3 +20,8 @@ labels: {}
 
 - 2026-10-23 07:38 Audit sent (M-2026-10-23-f76efbeb); go received. Building as audited.
 - 07:43 Tests first: TestAnswerByLetter failed to build (Letter undefined), TestAskCommands failed on "option B" and the letter answer (exit 2). Built: asks.Letter, byPlace/lettered in file.go, statusText letters, answer help. Two existing assertions moved with the spec: ask_test.go option line (option 2 -> option B), and the order/count in TestAskCommands (7 -> 9 records, agent:size added by the new letter case). The asks_test.go:432 prefix kept. docs/features.md rows, operating-bonsai skill line; internal/reference/gen produced no diff.
+
+## Left
+
+Nothing. Processes started: go test runs and the ladder climb, all finished; checked with ps. No process left running.
+Rebase on main at landing and regenerate docs/reference (it produced no diff here).
