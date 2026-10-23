@@ -5,8 +5,8 @@ task: T-5727
 role: builder
 model: opus
 started: 2026-10-23 07:36
-finished: null
-outcome: running
+finished: 2026-10-23 07:57
+outcome: needs-verifier
 commits: ["083c0e6c", "7eced158", "e4fb2cfb", "3b2d6000", "e83f4abc"]
 labels: {}
 ---
@@ -67,7 +67,25 @@ changed with it (inside the guard files C added to Owns).
   (CLAUDE_CODE_CHILD_SESSION=1 and AI_AGENT set), so no test that runs as a person flipped.
 - `go run ./internal/reference/gen <root>`: docs/reference/lists.md, 3 lines (person-command's error and the two rule
   rows); packs unchanged.
-- 07:49 Five commits, 083c0e6c..e83f4abc. Climbing next.
+- 07:49 Five commits, 083c0e6c..e83f4abc, then the run report 4b67e94d. Climb green (Ladder, below).
+
+## Ladder
+
+`/usr/local/bin/bonsai ladder --task T-5727 --json`, 07:50-07:56 UTC, at `4b67e94d3ea24ab1bb82c9872053edde94fb5c2a`
+(branch T-5727, dirty false), mode local, **green true**, result sha256
+`ae78b203c88f8543d27d53c2303802b6b560a1cbdb8afc38fa244cc2a04e5f94`:
+
+| Rung | Check | Result | Evidence |
+|---|---|---|---|
+| 0 | guard | green | 26 paths checked, 4.9 s |
+| 1 | vet | green | 1.4 s |
+| 2 | schemas | green | 0.4 s |
+| 3 | tests | green | 5024 seen, 9 skipped (each with its reason), 63.4 s |
+| 4 | tests with the fault switch | green | 2316 seen, 3 skipped, 60.9 s |
+| 5 | git integrity | green | 37 ms |
+
+This commit (the run report's ladder section) moves HEAD; the climb at the new HEAD is quoted in the report to the
+orchestrator.
 
 ## What did not work
 
@@ -90,6 +108,19 @@ changed with it (inside the guard files C added to Owns).
   helpers in agent_test.go, hookline_test.go, settings_test.go use them. No assertion changed.
 - `docs/features.md`: the person's commands row.
 
+## What it cost
+
+About 20 minutes wall clock, 07:36-07:57 UTC; spend not known to this session.
+
+## Left for next time
+
+- `cmd/bonsai/labels_test.go`'s header comment still says newCLI clears CLAUDE_CODE_CHILD_SESSION (true; it now
+  clears every marker). Left as is.
+- The other builders (T-5725, T-5726, T-5728, T-5729): a test that clears only CLAUDE_CODE_CHILD_SESSION to run as a
+  person fails in a local climb once this lands; use testpack.Isolate, AsPerson or PersonEnv.
+- A fresh verifier (security: guard code).
+
 ## Processes left running
 
-Not yet checked (session running).
+None. Checked with `ps -eo pid,etime,cmd` at 07:56 UTC: no go or bonsai process of this session's; the climbs and
+go runs listed there belong to T-5726 and T-5729's builders (not touched).
