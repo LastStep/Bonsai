@@ -5,9 +5,9 @@ task: T-5726
 role: builder
 model: opus
 started: 2026-10-23 07:37
-finished: null
-outcome: running
-commits: []
+finished: 2026-10-23 08:22
+outcome: verify
+commits: ["30750502", "a3cdf030", "74241bac", "43f2fa64", "1a427344"]
 labels: {}
 ---
 
@@ -65,22 +65,78 @@ labels: {}
   `go run ./internal/reference/gen .`), 43f2fa64 (SKILL.md).
 - `go vet ./...` clean; `go test ./... -count=1`: every package ok.
 
+- 08:15-08:21 UTC climb 1 (`/usr/local/bin/bonsai ladder --task T-5726 --json`, after a wait on the ladder's lock):
+  green at 1a427344, dirty false, sha256 c9bdbc5f623950dc6a7be90290cc47f17e357b3c6b7054d9340129bef40d99a6. This report's
+  last commit follows, so the final climb is at the new HEAD (below and in the report to the orchestrator).
+
 ## What is different now
 
-(not yet)
+An agent stopped by the stop gate now always gets the same three lines, ending with the rule's word, even when
+`bonsai hook stop` is given an argument or a flag it does not take (before, that case printed the command's own
+refusal with no rule line). Every rule word the stop gate and the guard can print is now checked by a test against the
+words that would make Claude Code treat the block as a failed hook, so a future rule named with one fails the build.
+Base's operating skill now says truly which blocks leave no log record.
 
 ## Deviations from the plan
 
-(not yet)
+- outputs_test.go (cmd/bonsai) held two specs of the old refusal for hook stop; they now accept, for hook stop only,
+  the gate's exact frame (stopFrame). Not named in the brief's Owns; it is hook.go's test by subject.
+- The unsafe-word test over the guard's rule words lives in internal/stopgate/stopgate_test.go (which already imports
+  the guard's table), so no guard test file changed.
+
+## Ladder
+
+Climb 1, at 1a427344: green, git.dirty false, sha256 c9bdbc5f623950dc6a7be90290cc47f17e357b3c6b7054d9340129bef40d99a6.
+
+| Rung | Check | Result | Evidence |
+|---|---|---|---|
+| 0 | guard | green | 10 checked, 4.9 s |
+| 1 | vet | green | 1.5 s |
+| 2 | schemas | green | 0.4 s |
+| 3 | tests | green | 4886 seen, 9 skipped (each OS-only or release-only, reasons in the result), 62.0 s |
+| 4 | tests with the fault switch | green | 2179 seen, 3 skipped, 57.5 s |
+| 5 | git integrity | green | 0.035 s |
+
+The final climb at the HEAD holding this report is quoted in the report to the orchestrator.
 
 ## What did not work
 
-(not yet)
+- The first BadLine wording ("the command line hook stop takes no ...") read badly; changed before the hook was
+  wired, so the reason now starts with the command's own words.
+- The cmd/bonsai suite went red once after the change (TestWordTables/hook_stop, TestHookRefusals): both asserted the
+  old refusal for hook stop. Fixed by holding them to the frame's exact lines, not by dropping the check.
+- My first climb's output file holds a stray, cut-off T-5727 header before my own document (another builder's climb
+  sharing the lock); the result file itself is mine and whole.
+
+## Evidence for a human
+
+`printf '{}' | bonsai hook stop now` (once this lands and is installed) prints three lines ending `rule: bad-input.`
+and exits 2.
+
+## Files changed
+
+- internal/stopgate/stopgate.go: Options.BadLine, blocked on first (bad-input, drained, no record); comments.
+- internal/stopgate/stopgate_test.go: TestRuleWordsSafe (stop gate and guard rule words), TestBadLine.
+- cmd/bonsai/word.go: Word.LineRefusal and refuseLine, used by the flag parser's refusals only.
+- cmd/bonsai/hook.go: hook stop's bad argument and bad flags go through stopLine (the gate's frame).
+- cmd/bonsai/hook_test.go, outputs_test.go: the frame's output for hook stop; only hook stop has LineRefusal.
+- internal/guard/rules.go, docs/reference/lists.md: bad-input's description names hook stop's command line.
+- packs/base/skills/operating-bonsai/SKILL.md: which blocks keep no log record.
 
 ## Processes left running
 
-(not yet)
+None of mine. Checked with `ps -eo pid,etime,cmd` at 08:21 UTC: only T-5728's climb (`bonsai ladder --task T-5728`)
+and its `go test`, which are not mine.
 
 ## What it cost
 
-(not yet)
+About 45 minutes wall clock (07:37 to 08:22 UTC), most of it waiting on the ladder's lock. Spend not known.
+
+## Left for next time
+
+- A bug after 1.0: `bonsai hook guard <bad arg>` (cmd/bonsai/hook.go:107) refuses through the command's own refusal,
+  not the guard's frame (no rule line); LineRefusal is the way to fix it.
+
+## Verifier
+
+> Added by the verifier, in a fresh context. Pass or fail, with reasons.
