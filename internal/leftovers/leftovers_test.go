@@ -169,8 +169,8 @@ func TestRecordAndLines(t *testing.T) {
 		{Value{Kind: Found, MS: 7}, `{"checkout":[],"ms":7}` + "\n", []string{"leftovers not started by this run: none"}},
 		{Value{Kind: Found, Checkout: many[:2], MS: 3},
 			`{"checkout":[{"pid":101,"name":"sl\u00e9ep","head":"go test"},{"pid":102,"name":"sl\u00e9ep","head":null}],"ms":3}` + "\n",
-			[]string{"leftovers not started by this run: 2 (read-only; stop only what you started)",
-				"  101  sl?ep  go test", "  102  sl?ep  -"}},
+			[]string{"leftovers not started by this run: 2 (pids 101, 102; read-only, stop only what you started; " +
+				"their names and commands are in the result file and in --json)"}},
 		{Value{Kind: Unknown, Why: "no /proc", MS: 1}, `{"unknown":"no /proc","ms":1}` + "\n",
 			[]string{"leftovers: unknown (no /proc)"}},
 		{Value{Kind: NotChecked, Why: "darwin"}, `"not checked (darwin)"` + "\n",
@@ -188,12 +188,39 @@ func TestRecordAndLines(t *testing.T) {
 		}
 	}
 	lines := Value{Kind: Found, Checkout: many}.Lines()
-	if len(lines) != RowsPrinted+2 || lines[len(lines)-1] != "  ... and 2 more (all of them are in the result file)" {
+	if len(lines) != 1 || !strings.Contains(lines[0], "12 (pids 101, 102, 103, 104, 105, 106, 107, 108, 109, 110 and 2 more;") {
 		t.Errorf("twelve: %q", lines)
 	}
 	for _, l := range lines {
 		if strings.IndexFunc(l, func(r rune) bool { return r > 0x7e }) >= 0 {
 			t.Errorf("not ASCII: %q", l)
 		}
+	}
+}
+
+// BUG-097: the line a climb prints names no program: a count and pids only, so a published climb does not name
+// what else the person runs. The names and command heads stay in the record (the result file and --json).
+func TestLinesNameNoProgram(t *testing.T) {
+	v := Value{Kind: Found, Checkout: []Process{
+		{PID: 4121, Name: "chrome", Head: "chrome --user-data-dir"},
+		{PID: 4130, Name: "chrome_crashpad", Head: ""},
+	}}
+	got := strings.Join(v.Lines(), "\n")
+	for _, bad := range []string{"chrome", "user-data-dir", "crashpad"} {
+		if strings.Contains(got, bad) {
+			t.Errorf("the line names %q:\n%s", bad, got)
+		}
+	}
+	for _, want := range []string{": 2 ", "4121", "4130", "result file", "--json"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the line lacks %q:\n%s", want, got)
+		}
+	}
+	b, err := schema.EncodeLine(v.Record())
+	if err != nil || !strings.Contains(string(b), `"name":"chrome"`) || !strings.Contains(string(b), `"head":"chrome --user-data-dir"`) {
+		t.Errorf("the record lost the names: %s (%v)", b, err)
+	}
+	if n := len(v.Lines()); n != 1 {
+		t.Errorf("%d lines, want 1", n)
 	}
 }

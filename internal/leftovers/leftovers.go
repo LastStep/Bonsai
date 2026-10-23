@@ -24,7 +24,8 @@
 // read (another user's, or any on Windows) is not seen; one whose program and arguments name nothing in the
 // checkout and that works elsewhere is not seen. The line also names processes that are rightly running from the
 // checkout but were not started by this run: another session's shell or its tool servers, an editor's helpers. It
-// says so: read-only, stop only what you started.
+// says so: read-only, stop only what you started. The printed line gives the count and the pids only; the names and
+// command heads are in the record (the result file and --json), so a published climb names no program.
 //
 // The package also holds the readers rungjob uses to list a rung's processes (proc_linux.go, proc_windows.go), so
 // the system's process tables are read in one place.
@@ -136,21 +137,21 @@ func (v Value) Lines() []string {
 		if len(v.Checkout) == 0 {
 			return []string{"leftovers not started by this run: none"}
 		}
-		out := []string{fmt.Sprintf("leftovers not started by this run: %d (read-only; stop only what you started)",
-			len(v.Checkout))}
+		// A count and pids, no name and no command: a climb's output may be published, and a name lists what else the
+		// person runs (BUG-097). The names and heads are in the record: the result file and --json.
+		ids := make([]string, 0, RowsPrinted)
 		for i, p := range v.Checkout {
 			if i == RowsPrinted {
-				out = append(out, fmt.Sprintf("  ... and %d more (all of them are in the result file)",
-					len(v.Checkout)-RowsPrinted))
 				break
 			}
-			head := p.Head
-			if head == "" {
-				head = "-"
-			}
-			out = append(out, fmt.Sprintf("  %d  %s  %s", p.PID, ascii(p.Name), ascii(head)))
+			ids = append(ids, fmt.Sprint(p.PID))
 		}
-		return out
+		list := strings.Join(ids, ", ")
+		if more := len(v.Checkout) - RowsPrinted; more > 0 {
+			list += fmt.Sprintf(" and %d more", more)
+		}
+		return []string{fmt.Sprintf("leftovers not started by this run: %d (pids %s; read-only, stop only what you started; "+
+			"their names and commands are in the result file and in --json)", len(v.Checkout), list)}
 	case Unknown:
 		return []string{"leftovers: unknown (" + ascii(v.Why) + ")"}
 	case NotChecked:
