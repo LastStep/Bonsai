@@ -723,7 +723,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `role-unbacked` | allow | an agent's type names a declared role, but no Agent, Task or Skill call the guard allowed for that role started it, so it is held as a type no pack declares: it changes nothing, calls no one, and runs on a helper's budget (a record beside its first call's own) |
 | `roles-from-files` | allow | the main checkout's HEAD holds neither bonsai.yaml nor the lock, so an agent's role facts and limits were read from the files as they stand (a record beside the call's own) |
 | `second-line-fault` | allow | the guard's second line could not read or decide (its input, bonsai.yaml, the lock, the roles as committed, an agent's state, its own time limit) and lets the call through, as its line does while bonsai is missing |
-| `bad-input` | deny | the hook's payload cannot be read (for the stop gate, or it is not a Stop payload) |
+| `bad-input` | deny | the hook's payload cannot be read (for the stop gate, or it is not a Stop payload, or bonsai hook stop's command line holds what it does not take: blocked with no record) |
 | `bad-glob` | deny | a glob on a list is not a glob the guard reads |
 | `bad-path` | deny | the guard cannot tell where the path leads: its symbolic links loop or run past 64, it runs through a junction or link that does not resolve or into /proc (Linux), or Windows cannot name it |
 | `bad-lock` | deny | the lock's declares cannot be read (or the lock is missing while bonsai.yaml names packs) |

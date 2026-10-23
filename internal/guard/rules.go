@@ -192,7 +192,8 @@ var Rules = []Rule{
 		"were read from the files as they stand (a record beside the call's own)"},
 	{RuleSecondLineFault, true, "the guard's second line could not read or decide (its input, bonsai.yaml, the lock, the roles as " +
 		"committed, an agent's state, its own time limit) and lets the call through, as its line does while bonsai is missing"},
-	{RuleBadInput, false, "the hook's payload cannot be read (for the stop gate, or it is not a Stop payload)"},
+	{RuleBadInput, false, "the hook's payload cannot be read (for the stop gate, or it is not a Stop payload, or bonsai hook " +
+		"stop's command line holds what it does not take: blocked with no record)"},
 	{RuleBadGlob, false, "a glob on a list is not a glob the guard reads"},
 	{RuleBadPath, false, "the guard cannot tell where the path leads: its symbolic links loop or run past 64, it runs through " +
 		"a junction or link that does not resolve or into /proc (Linux), or Windows cannot name it"},
