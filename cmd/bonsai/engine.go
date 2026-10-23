@@ -184,7 +184,12 @@ func runEngine(c *call) int {
 	if plan.Nothing() {
 		plan.Plugins = pluginStep(plan, again, false)
 		d := &textui.Doc{}
-		d.Title("bonsai "+word, "nothing to change"+packsAt(plan))
+		lead := "nothing to change"
+		if len(engine.ChecksLooser(plan)) > 0 {
+			// recorded (below) is about to accept looser settings for the checks: that is what this run did.
+			lead = "recorded the settings for the checks, looser than the ones accepted before"
+		}
+		d.Title("bonsai "+word, lead+packsAt(plan))
 		plan.LeftAloneTo(d)
 		recorded(d, plan)
 		if f.yes {
