@@ -20,13 +20,15 @@ var answerWord = &Word{
 	Summary: "answer an open ask",
 	Args:    "<key> [flags]",
 	About: `It appends one answer record to the main checkout's .bonsai/local/asks/ and one ask record to the log. A
-Decide is answered with --choice (one of its options, as written), a Look with --verdict, any ask with --words. The
+Decide is answered with --choice (one of its options as written, or its letter A to D or number 1 to 4, as
+bonsai ask --status shows them; an option's whole text is tried first, so an option that is itself "B" or "2" is
+taken as that text, not as a place), a Look with --verdict, any ask with --words. The
 first answer stands: the same answer again (the same key and --by) writes nothing and exits 0; any other answer to
 an ask that is not open is refused. The session that filed the ask cannot answer it (CLAUDE_CODE_SESSION_ID). Every
 text is checked as ask checks it: no hidden or control character, every secret redacted, its limit never cut.
 `,
 	Flags: []Flag{
-		{Name: "--choice", Value: "TEXT", Help: "a Decide's option, as written (bonsai ask --status lists them)"},
+		{Name: "--choice", Value: "TEXT", Help: "a Decide's option as written, or its letter A-D or number 1-4 (bonsai ask --status lists them)"},
 		{Name: "--verdict", Value: "pass|fail", Help: "a Look's verdict"},
 		{Name: "--words", Value: "TEXT", Help: "the person's own words, at most 2,000 characters (they may hold line feeds)"},
 		{Name: "--by", Value: "TEXT", Help: "who answered: terminal unless given; a caller's own reference, at most 60 characters"},
@@ -36,13 +38,14 @@ text is checked as ask checks it: no hidden or control character, every secret r
 	Exits: []Exit{
 		{Code: 0, Means: "answered, or the same answer was there already (nothing written)"},
 		{Code: 2, Means: "bad input: no key, a flag answer does not take, no --choice, --verdict or --words, a choice not among\n" +
-			"the options, a value broken (the message names the rule); bonsai.yaml refused. Nothing was written"},
+			"the options (by text, letter or number), a value broken (the message names the rule); bonsai.yaml refused. Nothing was written"},
 		{Code: 3, Means: "the answer could not be written or the asks read (partly-written: the answer record stands, its log\nrecord not)"},
 		{Code: 4, Means: "not in a git checkout or not linked (bonsai init); the key has no ask, or its ask is answered or\n" +
 			"resolved (ask-not-open); the session that asked is answering (answer-own-session). Nothing was written"},
 	},
 	Examples: []string{
 		`bonsai answer agent:h-3e9f0a1b2c4d --choice "Darker blue" --words "Darker reads better on old monitors."`,
+		"bonsai answer agent:colour-choice --choice B",
 		"bonsai answer agent:colour-choice --by act:4711 --via desk --verdict pass --json",
 	},
 	Refused: asksRefused,

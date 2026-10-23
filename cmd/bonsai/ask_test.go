@@ -102,7 +102,7 @@ func TestAskCommands(t *testing.T) {
 	code, out, _ = c.run("", "ask", "--status", "agent:colour")
 	if code != 0 || !strings.HasPrefix(out, "agent:colour  open\ntype          Decide\nabout         task T-0901\nfiled         ") ||
 		!strings.Contains(out, "\nwhy           Both pass.\n              The check passes for both.\n") ||
-		!strings.Contains(out, "\noption 2      Darker password=[redacted]\n") || !strings.HasSuffix(out, "\n  no answer yet\n") {
+		!strings.Contains(out, "\noption B      Darker password=[redacted]\n") || !strings.HasSuffix(out, "\n  no answer yet\n") {
 		t.Errorf("--status, open: %d\n%s", code, out)
 	}
 	// A terminal's answer, then the same answer again: written once. The answer restores a missing .bonsai/.gitignore
@@ -127,6 +127,16 @@ func TestAskCommands(t *testing.T) {
 	closed, _ := entry.Get("closed")
 	if a, _ := closed.(schema.Object).Get("answer"); a.(schema.Object).String("by") != "terminal" {
 		t.Errorf("--status --json: %s", schema.Show(entry))
+	}
+	// A Decide answered by its option's letter: the record holds the option's full text, and --status shows it.
+	c.asksDoc(0, "ask", "--type", "Decide", "--title", "Which size?", "--why", "w", "--option", "Small", "--option", "Large", "--key", "size")
+	code, out, _ = c.run("", "answer", "agent:size", "--choice", "b")
+	if code != 0 || out != "agent:size  answered\n" {
+		t.Errorf("the answer by letter: %d %q", code, out)
+	}
+	code, out, _ = c.run("", "ask", "--status", "agent:size")
+	if code != 0 || !strings.Contains(out, "\noption A    Small\noption B    Large\n") || !strings.Contains(out, "\nchoice      Large\n") {
+		t.Errorf("--status, answered by letter: %d\n%s", code, out)
 	}
 	// Another caller's answer to it: the first answer stands.
 	doc, _ = c.asksDoc(4, "answer", "agent:colour", "--by", "act:4711", "--via", "desk", "--choice", "Lighter")
@@ -162,7 +172,7 @@ func TestAskCommands(t *testing.T) {
 	for _, e := range list.([]any) {
 		order = append(order, e.(schema.Object).String("key")+" "+e.(schema.Object).String("state"))
 	}
-	if strings.Join(order, ", ") != "agent:play resolved, agent:look answered, agent:colour answered, "+answerKey+" open" {
+	if strings.Join(order, ", ") != "agent:size answered, agent:play resolved, agent:look answered, agent:colour answered, "+answerKey+" open" {
 		t.Errorf("asks --all: %v", order)
 	}
 
@@ -233,7 +243,7 @@ func TestAskCommands(t *testing.T) {
 	}
 	sort.Strings(askLines)
 	sort.Strings(logLines)
-	if len(askLines) != 7 || strings.Join(askLines, "\n") != strings.Join(logLines, "\n") {
+	if len(askLines) != 9 || strings.Join(askLines, "\n") != strings.Join(logLines, "\n") {
 		t.Errorf("the ask records:\n%s\nthe log records:\n%s", strings.Join(askLines, "\n"), strings.Join(logLines, "\n"))
 	}
 	all := ""

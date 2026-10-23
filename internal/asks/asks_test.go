@@ -706,3 +706,61 @@ func TestHidden(t *testing.T) {
 		}
 	}
 }
+
+// A Decide is answered by an option's letter (A to D, either case) or number (1 to 4): the record holds the option's
+// full text. The whole text wins when it clashes with a letter or number; a place past the options is refused with the
+// lettered list.
+func TestAnswerByLetter(t *testing.T) {
+	kinds := testKinds(t)
+	cases := []struct {
+		name    string
+		options []string
+		choice  string
+		want    string // the recorded choice, "" for a refusal
+		in      string // the refusal's text
+	}{
+		{"a capital letter", []string{"Lighter", "Darker"}, "B", "Darker", ""},
+		{"a small letter", []string{"Lighter", "Darker"}, "a", "Lighter", ""},
+		{"a number", []string{"Lighter", "Darker"}, "2", "Darker", ""},
+		{"the fourth by D", []string{"a1", "b1", "c1", "d1"}, "D", "d1", ""},
+		{"the fourth by 4", []string{"a1", "b1", "c1", "d1"}, "4", "d1", ""},
+		{"the whole text", []string{"Lighter", "Darker"}, "Darker", "Darker", ""},
+		{"an option that is itself B wins", []string{"B", "A"}, "B", "B", ""},
+		{"an option that is itself 2 wins", []string{"2", "1"}, "2", "2", ""},
+		{"a letter past the options", []string{"Lighter", "Darker"}, "C", "", `--choice "C" is not one of the ask's options: "Lighter", "Darker"`},
+		{"a letter past the options names the letters", []string{"Lighter", "Darker"}, "3", "", "A: Lighter, B: Darker"},
+		{"zero", []string{"Lighter", "Darker"}, "0", "", "is not one of the ask's options"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p := testPlace(t, sessA)
+			if _, e := File(p, Filing{Type: "Decide", Title: "t", Why: "w", Key: "k", Options: c.options}, kinds); e != nil {
+				t.Fatal(e)
+			}
+			q := p
+			q.Session = sessB
+			d, e := Answer(q, "agent:k", Answering{Choice: c.choice})
+			if c.want == "" {
+				if e == nil || e.Code != "bad-value" || !strings.Contains(e.What+e.Next, c.in) {
+					t.Fatalf("want a refusal with %q, got %+v %v", c.in, d, e)
+				}
+				return
+			}
+			if e != nil || val(d.Entry.Closed.Answer.Choice) != c.want {
+				t.Fatalf("want %q, got %+v %v", c.want, d, e)
+			}
+		})
+	}
+	if Letter(0) != "A" || Letter(3) != "D" {
+		t.Errorf("Letter: %q %q", Letter(0), Letter(3))
+	}
+	// A letter on a Look is still refused as a choice on a Look.
+	p := testPlace(t, sessA)
+	if _, e := File(p, Filing{Type: "Look", Title: "t", Why: "w", Key: "k", Task: "T-0901"}, kinds); e != nil {
+		t.Fatal(e)
+	}
+	p.Session = sessB
+	if _, e := Answer(p, "agent:k", Answering{Choice: "A", By: "x"}); e == nil || e.Code != "bad-flag" {
+		t.Errorf("a letter on a Look: %v", e)
+	}
+}

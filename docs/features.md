@@ -146,7 +146,7 @@ the person, messages between agents, one line per agent, and one clock.
 | Capability | What it does for you | How | Limits |
 |---|---|---|---|
 | Ask the person | An agent files a typed question: Answer, Decide (up to four options), Look (at a task's result) or Play; the ladder files Bless ([ask types](reference/lists.md#ask-types)). The same ask filed twice is one ask | `bonsai ask --type <type> --title <text> [--why --then --option --task]`; `--status <key>` reads its answer; `--resolve <key>` withdraws it | Over-long text is refused, never cut (title 300 characters, why 600). The session that filed an ask cannot answer it. None known |
-| Answer | You answer an open ask; the first answer stands | `bonsai answer <key> --choice <option> \| --verdict pass\|fail \| --words <text>` | A Decide is answered with the option's full text; answering by its letter is planned, not built |
+| Answer | You answer an open ask; the first answer stands | `bonsai answer <key> --choice <option, A-D or 1-4> \| --verdict pass\|fail \| --words <text>` | A Decide is answered with the option's full text, or its letter (A to D, either case) or number (1 to 4) as `bonsai ask --status` shows them; the record holds the full text. An option whose own text is "B" or "2" is taken as that text, not as a place |
 | See open asks | Lists open asks, newest first | `bonsai asks [--all]` | None known |
 | Messages between agents | A caller's brief and an agent's report, each one file that is never overwritten, in threads; each shown with a line saying it is another agent's words, never the person's, never consent. Pointers to files are fingerprinted, and a brief can set the agent's budget | `bonsai message --kind brief\|report --from <address> --to <address> ...`; `bonsai message --show <id>`; template: skill `base:message` | A report goes only back to the brief's sender; the guard holds `--from` to the writer. A body is at most 65,536 bytes |
 | Threads at a glance | Lists threads with their state, and flags those unanswered past 60 minutes, circling (three briefs each way), past a budget, or unreadable ([message flags](reference/lists.md#message-flags)) | `bonsai messages [--to --task --open]`; thresholds under `messages:` in `bonsai.yaml` | It reports and never acts. None known |
@@ -192,6 +192,6 @@ notifications and deploys are its users' to build. Nothing in the program applie
 - A migration from Bonsai 0.4.3.
 - Commands to add or remove a pack, edit `bonsai.yaml`, move a task, search the log by text, or clean generated files
   on demand.
-- Filters for `bonsai agents`, and answering a Decide by its option's letter (both planned).
+- Filters for `bonsai agents` (planned).
 - A pack's needs beyond Claude Code's version: the `mcp` and `shell` kinds are listed but not written by this build.
 - A tested macOS build, and an installer for it.

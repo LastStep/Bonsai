@@ -345,8 +345,13 @@ func Answer(p Place, key string, a Answering) (*Done, *Error) {
 	case choice != "" && typ != "Decide":
 		return nil, badFlag("--choice answers a Decide; "+key+" is "+article(typ), "leave --choice out; give --words")
 	case choice != "" && !contains(entry.Filed.Options, choice):
-		return nil, badValue(fmt.Sprintf("--choice %+q is not one of the ask's options: %s", choice, quoteAll(entry.Filed.Options)),
-			"give --choice one of the options as written (bonsai ask --status "+key+" lists them), or answer with --words")
+		if opt, ok := byPlace(entry.Filed.Options, choice); ok {
+			choice = opt
+			break
+		}
+		return nil, badValue(fmt.Sprintf("--choice %+q is not one of the ask's options: %s (or a letter: %s)", choice,
+			quoteAll(entry.Filed.Options), lettered(entry.Filed.Options)),
+			"give --choice an option as written, or its letter or number (bonsai ask --status "+key+" lists them), or answer with --words")
 	case a.Verdict != "" && typ != "Look":
 		return nil, badFlag("--verdict answers a Look; "+key+" is "+article(typ), "leave --verdict out; give --words")
 	}
@@ -403,4 +408,37 @@ func answeredBy(rec *format.Ask) string {
 		return ""
 	}
 	return rec.Answer.By
+}
+
+// byPlace reads s as an option's place: a letter A to D in either case, or a number 1 to 4, within the options. The whole
+// text of an option is tried first by the caller, so an option that is itself "B" is that option, not the second.
+func byPlace(options []string, s string) (string, bool) {
+	if len(s) != 1 {
+		return "", false
+	}
+	i := -1
+	switch c := s[0]; {
+	case c >= 'A' && c <= 'D':
+		i = int(c - 'A')
+	case c >= 'a' && c <= 'd':
+		i = int(c - 'a')
+	case c >= '1' && c <= '4':
+		i = int(c - '1')
+	}
+	if i < 0 || i >= len(options) {
+		return "", false
+	}
+	return options[i], true
+}
+
+// lettered lists the options with their letters: A: Lighter, B: Darker.
+func lettered(options []string) string {
+	if len(options) == 0 {
+		return "it has none"
+	}
+	q := make([]string, len(options))
+	for i, s := range options {
+		q[i] = Letter(i) + ": " + s
+	}
+	return strings.Join(q, ", ")
 }

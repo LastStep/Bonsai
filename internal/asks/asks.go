@@ -149,3 +149,7 @@ func val(s *string) string {
 	}
 	return *s
 }
+
+// Letter is the letter an option is shown and chosen by: A for the first, up to D for the fourth (OptionsMax). It is the
+// one lettering Bonsai prints, so a person sees which letter is which.
+func Letter(i int) string { return string(rune('A' + i)) }

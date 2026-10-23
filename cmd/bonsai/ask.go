@@ -258,7 +258,7 @@ func statusText(e *asks.Entry, when func(string) string) *textui.Doc {
 	line("why", text0(f.Why))
 	line("then", text0(f.ThenText))
 	for i, o := range f.Options {
-		line("option "+string(rune('1'+i)), o)
+		line("option "+asks.Letter(i), o)
 	}
 	line("verdict", text0(f.Verdict))
 	if e.Closed == nil {
