@@ -2,8 +2,9 @@ package main
 
 // Bonsai's own commands refusing an agent (design/plan-5.md, 5.3.6 note 8, under the director's answer (ii)), and a project
 // linked by the build before taking the new lines only with --allow-exec --yes (note 2, "Whichever"). Every test here
-// sets or clears CLAUDE_CODE_CHILD_SESSION itself (newCLI's testpack.Isolate clears it; asAgent sets it), so the suite
-// behaves the same inside an agent's session, where Claude Code sets it, and in CI.
+// sets or clears the agent markers itself (newCLI's testpack.Isolate clears every one; asAgent sets
+// CLAUDE_CODE_CHILD_SESSION), so the suite behaves the same inside any agent's session and in CI. Each other agent's
+// marker is tested in markers_test.go.
 
 import (
 	"os"
@@ -20,8 +21,8 @@ import (
 // asAgent makes the rest of a test an agent's session: CLAUDE_CODE_CHILD_SESSION=1, as Claude Code sets it.
 func asAgent(c *cli) { c.t.Setenv("CLAUDE_CODE_CHILD_SESSION", "1") }
 
-// asPerson makes the rest of a test a person's terminal: the variable cleared.
-func asPerson(c *cli) { c.t.Setenv("CLAUDE_CODE_CHILD_SESSION", "") }
+// asPerson makes the rest of a test a person's terminal: every agent marker cleared (testpack.AsPerson).
+func asPerson(c *cli) { testpack.AsPerson(c.t) }
 
 // oldGuardMatcher is the guard's matcher every build before step 5.3.6 wrote, without Monitor.
 const oldGuardMatcher = "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
@@ -460,11 +461,11 @@ func TestAgentRefusedThroughTheShell(t *testing.T) {
 	if tree(t, c.root) != before {
 		t.Fatal("a refused command wrote")
 	}
-	if code, out, errOut := runShell(t, c.root, lines[0], "CLAUDE_CODE_CHILD_SESSION="); code != 0 ||
+	if code, out, errOut := runShell(t, c.root, lines[0], testpack.PersonEnv()...); code != 0 ||
 		!strings.Contains(c.read(".claude/settings.json"), jsonCmd(engine.GuardCommand)) {
 		t.Errorf("%s as a person: exit %d\n%s%s", lines[0], code, out, errOut)
 	}
-	if code, out, errOut := runShell(t, c.root, lines[3], "CLAUDE_CODE_CHILD_SESSION="); code != 0 {
+	if code, out, errOut := runShell(t, c.root, lines[3], testpack.PersonEnv()...); code != 0 {
 		t.Errorf("%s as a person: exit %d\n%s%s", lines[3], code, out, errOut)
 	}
 	if _, err := os.Stat(filepath.Join(c.root, "bonsai.yaml")); err == nil {

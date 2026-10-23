@@ -248,11 +248,11 @@ func TestStampedBuild(t *testing.T) {
 		t.Fatalf("init again: exit %d\n%s%s", code, out, errOut)
 	}
 	normal, _ := bonsaiBuilds(t)
-	if code, out, _ := runBin(t, normal, inside, []string{"CLAUDE_CODE_CHILD_SESSION="}, "update", "--yes"); code != 4 ||
+	if code, out, _ := runBin(t, normal, inside, testpack.PersonEnv(), "update", "--yes"); code != 4 ||
 		!strings.Contains(flat(out), "change hook Stop: "+flat(engine.StopCommand)) || !strings.Contains(flat(out), "needs --allow-exec") {
 		t.Errorf("a plain update of a stamped link, --yes alone: exit %d\n%s", code, out)
 	}
-	if code, out, errOut := runBin(t, normal, inside, []string{"CLAUDE_CODE_CHILD_SESSION="}, "update", "--allow-exec", "--yes"); code != 0 {
+	if code, out, errOut := runBin(t, normal, inside, testpack.PersonEnv(), "update", "--allow-exec", "--yes"); code != 0 {
 		t.Errorf("a plain update --allow-exec: exit %d\n%s%s", code, out, errOut)
 	}
 	if raw, _ := os.ReadFile(filepath.Join(inside, ".claude", "settings.json")); strings.Contains(string(raw), shellPath(place)) ||

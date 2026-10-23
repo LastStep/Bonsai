@@ -196,7 +196,7 @@ func TestPersonOnly(t *testing.T) {
 	if e := personOnly(shown, what, line); e == nil || e.Code != "person-command" {
 		t.Errorf("an agent's session: %+v", e)
 	}
-	t.Setenv(guard.ChildSessionEnv, "")
+	testpack.AsPerson(t)
 	if e := personOnly(shown, what, line); e != nil {
 		t.Errorf("a person's: %+v", e)
 	}

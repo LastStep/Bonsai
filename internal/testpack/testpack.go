@@ -29,6 +29,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/LastStep/Bonsai/internal/format"
 )
 
 // ID is the pack's id.
@@ -56,7 +58,7 @@ const PluginHooks = `{
 `
 
 // Isolate points git at an empty configuration and no ignore file of the person's, stops it looking above tmp, and
-// sets BONSAI_HOME to tmp/home. Every test that runs git or Bonsai calls it first.
+// sets BONSAI_HOME to tmp/home, as a person's terminal (AsPerson). Every test that runs git or Bonsai calls it first.
 func Isolate(t *testing.T, tmp string) (home string) {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
@@ -71,10 +73,29 @@ func Isolate(t *testing.T, tmp string) (home string) {
 	// git also reads the person's own ignore file, $XDG_CONFIG_HOME/git/ignore (or ~/.config/git/ignore): none here.
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmp, "xdg"))
 	t.Setenv("GIT_CEILING_DIRECTORIES", tmp)
-	t.Setenv("CLAUDE_CODE_CHILD_SESSION", "")
+	AsPerson(t)
 	home = filepath.Join(tmp, "home")
 	t.Setenv("BONSAI_HOME", home)
 	return home
+}
+
+// AsPerson makes the rest of a test a person's terminal: every agent marker (format.AgentMarkers, CLAUDE_CODE_CHILD_SESSION
+// and AI_AGENT among them) cleared, so a test behaves the same run inside any agent's shell and in CI.
+func AsPerson(t *testing.T) {
+	t.Helper()
+	for _, m := range format.AgentMarkers {
+		t.Setenv(m.Word, "")
+	}
+}
+
+// PersonEnv is every agent marker cleared (NAME=), for a test that starts a program with an environment of its own
+// built on os.Environ.
+func PersonEnv() []string {
+	var env []string
+	for _, m := range format.AgentMarkers {
+		env = append(env, m.Word+"=")
+	}
+	return env
 }
 
 // Git runs git in dir, as a fixed test user, and returns its output.
