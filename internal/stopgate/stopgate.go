@@ -128,7 +128,7 @@ var gitWait = 4 * time.Second
 // whose tests run the stop gate, so it keeps these copies, and TestRuleNames holds them to that table, name and answer.
 // The first eight are the guard's own words for the same case.
 const (
-	RuleBadInput        = "bad-input"         // deny: the payload cannot be read, or it is not a Stop payload
+	RuleBadInput        = "bad-input"         // deny: the payload cannot be read, or it is not a Stop payload, or the command line holds what the gate does not take
 	RuleBadConfig       = "bad-config"        // deny: a bonsai.yaml the gate reads cannot be read
 	RuleNoProject       = "no-project"        // deny (no record): CLAUDE_PROJECT_DIR is not set, or its folder cannot be read
 	RuleMainNotVerified = "main-not-verified" // deny: the session's main checkout is not verified, so what it would read there is not trusted
@@ -171,6 +171,7 @@ type Options struct {
 	Budget        time.Duration       // the gate's own time limit; 0 means Budget
 	RecordWait    time.Duration       // how long the over-time block waits for its record; 0 means hookin.RecordWait
 	Now           func() time.Time    // the clock; nil means time.Now
+	BadLine       string              // a fault of the command line, as the command says it ("takes no \"now\""); "" for none: the gate blocks on it first
 }
 
 // Decision is the gate's answer to one session's end.
@@ -228,7 +229,8 @@ func Main(o Options) int {
 
 // answer gives a decision as the frame's answer, its words made safe to print (safe), and its rule word, which the
 // frame prints on a line of its own after the next step, as the guard's refusals do (BUG-089). A rule is one of this
-// file's constants: ASCII, with no word safe takes out.
+// file's constants, printed as written so that it reads as the record's: TestRuleWordsSafe holds every one of them to
+// one plain ASCII word with no word safe takes out.
 func (d Decision) answer() hookin.Answer {
 	return hookin.Answer{Block: !d.Allow, Why: safe(oneLine(d.Why)), Next: safe(oneLine(d.Next)), Rule: d.Rule}
 }
@@ -246,6 +248,11 @@ var beforeWork = func() {}
 // work does the gate's whole job and gives its decision. A panic inside is the frame's to answer (panicked).
 func (r *run) work() Decision {
 	beforeWork()
+	if r.o.BadLine != "" {
+		r.drain()
+		return deny(RuleBadInput, "", "the command line "+r.o.BadLine+", and a stop gate run another way than its hook line "+
+			"keeps the session going", "use the hook line bonsai init writes (bonsai hook stop --help quotes it)")
+	}
 	named := r.o.Getenv(workspace.TaskEnv)
 	if named == "" {
 		r.drain()

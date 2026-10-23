@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -903,4 +904,65 @@ func TestSafeWords(t *testing.T) {
 			t.Errorf("safe(%q) = %q, want %q", in, got, want)
 		}
 	}
+}
+
+// Every rule word the gate can print is safe as written (BUG-089, T-5726): the frame prints a block's rule word on a
+// line of its own with no filter, so a word safe would change (unsafeWords) is refused here, for every constant the
+// package's source declares (ruleConsts), not only those a test blocks with. The guard's rule words, which its
+// refusals print the same way, are held to the same filter. A rule word is also one plain word: printable ASCII with
+// no space.
+func TestRuleWordsSafe(t *testing.T) {
+	words := map[string]string{}
+	for r := range ruleConsts(t) {
+		words[r] = "the stop gate's"
+	}
+	for _, r := range guard.Rules {
+		if _, ok := words[r.Name]; !ok {
+			words[r.Name] = "the guard's"
+		}
+	}
+	for _, w := range unsafeRuleWords(words) {
+		t.Errorf("%s rule word %q is not safe to print: it says a file is missing as an operating system says it, or it is "+
+			"not one plain ASCII word", words[w], w)
+	}
+	// The check itself finds an unsafe word, so a pass above means something.
+	if got := unsafeRuleWords(map[string]string{"stop-file-missing": "", "stop-proven": "", "not found": ""}); len(got) != 2 {
+		t.Errorf("unsafeRuleWords found %v, want the two unsafe words", got)
+	}
+}
+
+// unsafeRuleWords gives the words, sorted, that are not safe to print as a rule word: one safe would change, or one
+// that is not a single word of printable ASCII.
+func unsafeRuleWords(words map[string]string) []string {
+	var bad []string
+	for w := range words {
+		plain := w != ""
+		for _, c := range w {
+			if c <= 0x20 || c >= 0x7f {
+				plain = false
+			}
+		}
+		if !plain || safe(w) != w {
+			bad = append(bad, w)
+		}
+	}
+	sort.Strings(bad)
+	return bad
+}
+
+// A command line the gate does not take blocks through the gate's own frame, its rule word last (T-5726): before
+// anything is read, engaged or not, with the payload drained and no record written.
+func TestBadLine(t *testing.T) {
+	root := project(t)
+	for _, getenv := range []func(string) string{env(root, workspace.TaskEnv, "T-0901"), env(root)} {
+		var stderr bytes.Buffer
+		in := strings.NewReader(stopPayload("s1", root))
+		code := Main(Options{Stdin: in, Stderr: &stderr, Getenv: getenv, Budget: untimed, BadLine: `takes no "now"`})
+		blocks(t, code, stderr.String(), "", RuleBadInput, `the command line takes no "now"`,
+			"use the hook line bonsai init writes")
+		if in.Len() != 0 {
+			t.Errorf("the payload was not drained: %d bytes left", in.Len())
+		}
+	}
+	noLog(t, root)
 }
