@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `asks`, `logs` and `log`, `message` and `messages`, `agents`, `settings` and `labels`. Every word takes `--help`;
   every word but `hook` takes `--json`; without a terminal none prompts; each refusal names its next step.
   `bonsai --help --json` prints every word, flag and exit code as one document.
-- **The formats** (`formats/`): 28 JSON Schemas (`bonsai check --schema <format>` prints any), examples, trick files
+- **The formats** (`formats/`): 29 JSON Schemas (`bonsai check --schema <format>` prints any), examples, trick files
   for readers with their expected outcomes, a manifest of every file's bytes, and a Go test.
 - **Packs**: `base` (`packs/base/`, Bonsai's own: the templates of its documents as skills, the operating skills, the
   walls and Bonsai's four labels; it carries no code) and a template for a new pack (`packs/template/`). The
@@ -30,248 +30,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The ladder**: `bonsai ladder --task <id>` runs the project's rungs and writes the result a named session's stop
   gate reads before the session may end.
 - **A `windows` CI job**: the tests and `go vet` on `windows-latest`, beside the Linux `test` job.
+- **The stop gate names its rule**: every block ends with a `rule:` line, as the guard's refusals do, and the rule
+  words are checked against the words a refusal may not print.
+- **One clock, in UTC**: `bonsai now` prints the time to write in a record (`--day`, `--iso`, `--local`); every time
+  Bonsai writes or checks is UTC (formats set 11, `bonsai.now/1`), and printed times show in the person's zone with
+  its offset (`--utc` prints them as stored). The guard refuses an edit that writes a fresh stamp far from the clock
+  (`time-not-now`), and a hook line puts the time in front of the model at each prompt and subagent start.
+- **Answering by letter**: `bonsai answer <key> --choice B` (or `b`, or `2`) answers a Decide with that option;
+  `bonsai ask --status` shows each option's letter. The record keeps the option's whole text.
+- **Other agents count as agents**: beside Claude Code's own marker, `AI_AGENT`, `PI_CODING_AGENT`,
+  `CODEX_THREAD_ID`, `GEMINI_CLI`, `CURSOR_AGENT`, `OPENCODE` and `GOOSE_TERMINAL` make the person's commands refuse
+  (`update --allow-exec`, `unlink`, accepting looser checks, `settings set`, `labels`), naming the marker found.
+- **`docs/features.md`**: every capability by area, with its limits and its open bugs.
 - Where to start: [`README.md`](README.md), and `docs/install.md` for the install lines.
 
 ### Changed
 - **`go.mod`** needs only the standard library.
 - **`make build`** builds with `-trimpath`.
+- **A pack kept in a subfolder** (`base`, in `packs/base`) counts only tags that start with its name (`base-v1.0.0`)
+  as its releases, so `bonsai status` no longer reads Bonsai's own `v` tags as newer `base` releases. A pack at its
+  repository's top (`workflow`) keeps its plain `v` tags.
+- **A climb's printed lines** name no other program: the leftovers line gives a count and process ids (the names stay
+  in the result file and in `--json`), and no printed line names a step of Bonsai's own build plan.
 
 ### Removed
 - **The old product's code** (the commands, the embedded catalog and guides, the documentation site and its deploy
   workflow) and **`make install`**: `go install` would put a `bonsai` in front of the installed one on the `PATH`.
+- **The old product's demo** (`assets/demos/`): the README shows 1.0's own, in `docs/demos/`.
 
 ### A 0.4.3 workspace
 `bonsai init`, `update` and `unlink` refuse a checkout that holds 0.4.3's `.bonsai.yaml` or `.bonsai-lock.yaml`
 (`old-workspace`, exit 4) and change nothing in it. Moving a 0.4.3 workspace to this Bonsai is not part of 1.0: keep it
 on 0.4.3, whose binaries and `brew install LastStep/tap/bonsai` stay where they are.
 
-The sections below are the old product's. The 0.5.0 section was never released, and 1.0 carries none of them.
+## The old product
 
-## [0.5.0] - Unreleased
-
-> **The "in-repo memory" release.** Two new opt-in scaffolding items give a workspace a durable, version-controlled memory layer: a frozen-schema memory graph (`MEMORY.md` + `Memory/` tree) and a repo-root project manifest. `bonsai validate` gains a project-level pass that lints both, and `bonsai guide` documents the two v1 schemas. Generated workspaces now route architectural decisions into the memory graph rather than an append-only log.
-
-### Added
-- **In-repo memory graph scaffolding (`memory` opt-in item)** — installs a `MEMORY.md` index plus a `Memory/{decisions,notes}/` tree at the project root, following a frozen v1 memory-note schema. Gives a workspace a structured, version-controlled memory layer that downstream hub ingest / repo indexers can read straight from the filesystem.
-- **Project manifest scaffolding (`project-manifest` opt-in item)** — writes a repo-root `.bonsai/project.yaml` describing the project against a frozen v1 schema. Root-relative, lock-tracked, and idempotent: re-runs preserve the original `created` timestamp.
-- **`bonsai validate` project-level pass** — lints the project manifest and the memory-note tree: `schema_version`, required fields, `status`/`type` enums, permalink charset, scope match, dangling `superseded_by`, and unresolved relations. Note-target resolution is adversarial-grade (`EvalSymlinks` plus a boundary check, with symlink-escape refused) over a bounded walk.
-- **`bonsai guide formats`** — a combined "Formats" reference page documenting both frozen v1 schemas (memory-note and project manifest) in one place.
-- **`bonsai update` non-interactive flags** — `--non-interactive` (force the headless JSONL core on a TTY) and `--skip-conflicts` (skip + count conflicting files instead of exiting `5`). A non-TTY stdin auto-enables headless mode.
-- **`bonsai remove` non-interactive flags** — `--non-interactive` / `-y`,`--yes` (bypass the cinematic confirm prompt) and `--from <agent>` (scope an item removal to one owning agent, required to disambiguate a multi-owner item). `--yes` bypasses confirmation only, never validation: empty/`*` targets are rejected, and `--yes --delete-files` refuses a symlinked delete target.
-- **`bonsai list --json`** — emit the installed-agent state as a single indent-2 JSON document (a pinned `ListSnapshot`), matching `catalog --json` / `validate --json`. Agent-consumable, exit `0`.
-- **Headless exit-code `5` (`ExitConflict`)** — `bonsai update` returns exit `5` when unresolved file conflicts are present and `--skip-conflicts` was not passed (the conflicting files are listed in the JSONL stream). The mutating exit-code contract is now `0`/`2`/`3`/`4`/`5`, defined canonically in `internal/nonint/runner.go`.
-- **`docs/agent-interface.md`** — canonical headless CLI contract: per-command flags, the two output serializations (JSONL for mutating commands, single-doc JSON for read commands), and the per-command exit-code table. The single reference for AI integrators and CI scripts.
-
-### Changed
-- **Architectural decisions now route to the memory graph.** Generated workspaces record durable architectural decisions in `Memory/decisions/` (the in-repo memory graph) instead of appending to `Logs/KeyDecisionLog.md`.
-- **Piped `bonsai update` now emits JSON Lines** (was human-readable prose). Running `bonsai update` with a non-TTY stdin — or with the new `--non-interactive` flag — streams `file`/`summary` events to stdout instead of the previous styled success text. The interactive TTY flow is unchanged.
-- **`bonsai update` conflicts now exit `5`** (was a generic non-zero error). Headlessly, unresolved file conflicts return `ExitConflict` (5) with the conflicting files listed in the stream; pass `--skip-conflicts` to skip + count them and exit `0` instead.
-
-## [0.4.3] - 2026-05-13
-
-> **Hotfix.** Sensor hook commands in generated `.claude/settings.json` no longer use a `$PWD`-walk-up to locate their parent project — they bake the install-time absolute paths instead. Surfaced during the Bonsai-Eval bootstrap dogfood when a Bash invocation drifted between two sibling projects and a Stop hook executed against the wrong workspace.
-
-### Fixed
-- **Sensor hook commands now use absolute paths.** `internal/generate/generate.go` previously emitted `bash -c 'r="$PWD"; while [ ! -f "$r/.bonsai.yaml" ]; do r=$(dirname "$r"); done; bash "$r/<sensor>" "$r"'` for every sensor entry. In any multi-`.bonsai.yaml` setup, the walker landed in whichever project the runtime `$PWD` was under — which could be a *different* Bonsai project than the session was scoped to. Generator now writes `bash "<absolute-script>" "<absolute-project-root>"` instead. Survives bash-cwd drift across sibling projects. Trade-off: settings.json embeds the install-time absolute path, so moving a project requires re-running `bonsai update` to regenerate.
-
-### Notes
-- Run `bonsai update` in any existing Bonsai project to refresh `.claude/settings.json` with the new template. The hook content is the only meaningful change; sensor scripts themselves are unchanged.
-
-## [0.4.2] - 2026-05-13
-
-> **The "headless Bonsai" release.** `bonsai init` and `bonsai add` now run without TUI prompts under `--non-interactive --from-config`, so automation can materialise an agent workspace from a YAML fixture and parse progress as a clean JSON Lines stream.
-
-### Added
-- **`bonsai init --non-interactive --from-config <path>`** — skip the cinematic init flow; read every answer from a `.bonsai.yaml`-shaped YAML file. Emits one `{"event":"file",...}` line per generated file on stdout, then a terminal `{"event":"summary","created":N,...}` with all five count keys always present.
-- **`bonsai add --non-interactive --from-config <path>`** — same shape for the add flow. The overlay must name exactly one agent (loop the command for multi-agent setups). `project_name` / `docs_path` / `scaffolding` in the overlay must either be omitted or match the existing `.bonsai.yaml` exactly.
-
-  ```bash
-  cat > cfg.yaml <<'EOF'
-  agents:
-    tech-lead: {}
-  EOF
-  bonsai init --non-interactive --from-config cfg.yaml | jq -c .
-  ```
-
-### Changed
-- Conflict resolution under `--non-interactive` is **forced to skip** — user-modified files are reported as `action:"conflict"` events and left untouched on disk. No `.bak`, no overwrite. The interactive flows are unchanged.
-
-### Notes
-- Exit codes: `0` success · `2` invalid input (bad YAML, missing required field, shell-metacharacter, multi-agent overlay, mismatched project fields, tech-lead-required) · `3` runtime / filesystem error · `4` `.bonsai.yaml` already present (init) or missing (add).
-- Stderr is reserved for diagnostics; stdout is pure JSONL on success. Pipe stdout to `jq` and capture stderr separately.
-- `bonsai update` and `bonsai remove` keep their interactive-only surface — non-interactive variants are out of scope for this release.
-- Versioned as a patch (`v0.4.2`) rather than a minor bump: Bonsai is pre-1.0, the flags are additive, and no existing behaviour or shape changes.
-
-## [0.4.1] - 2026-05-07
-
-> Quiet patch — tighten CI against cross-platform regressions and sync a stale doc pointer.
-
-### Changed
-- **Windows cross-compile gate added to CI** — new `GOOS=windows GOARCH=amd64 go build ./...` step in the `test` job catches POSIX-only `syscall.*` use before release time. Closes the class of bug that broke v0.4.0's first cross-compile and required hotfix [#95](https://github.com/LastStep/Bonsai/pull/95).
-
-### Fixed
-- **Root `CLAUDE.md` Go version sync** — stack reference updated from `Go 1.24+` to `Go 1.25+` to match `go.mod` (`go 1.25.0`, toolchain `go1.25.9`). Followup to Plan 37's INDEX.md drift fix.
-
-## [0.4.0] - 2026-05-04
-
-> **The "audit your workspace" release.** New `bonsai validate` command surfaces drift between catalog and installed state. Plus a custom-ability discovery fix that recovers orphaned hand-rolled abilities, a website concept-page rewrite, and a chokepoint-hardening followup bundle.
-
-### Added
-- **`bonsai validate`** — read-only ability-state audit. Reports orphaned files, missing required items, lock/disk drift; `--json` for CI/agents; exits non-zero on any finding so CI can gate on workspace integrity. Headlines v0.4. (Plan 35, [#93](https://github.com/LastStep/Bonsai/pull/93))
-- **NoteStandards skill** in generated workspaces — 3-line cap on log/decision entries with link-out for trackers, wired into memory protocol and session-logging workflow.
-
-### Changed
-- **`bonsai update` recovers orphaned custom-ability registrations** — hand-authored abilities under `agent/{Skills,Workflows,Protocols}/` that were missing from `.bonsai.yaml` are now picked up and registered on update. (Plan 34, [#92](https://github.com/LastStep/Bonsai/pull/92))
-- **`wsvalidate` extracted** to a dedicated package; `Validate()` is now the single chokepoint for config validation; snapshot writes hardened with `O_NOFOLLOW`. (Plan 32, [#80](https://github.com/LastStep/Bonsai/pull/80))
-- **Website concept-page rewrite** — narrative-first explainers replace reference-style pages; clearer mental model for new users. (Plan 33, [#79](https://github.com/LastStep/Bonsai/pull/79))
-- **Sensor scripts now ship with shebang-aware frontmatter** so generator preserves `#!/usr/bin/env bash` across re-runs. ([#92](https://github.com/LastStep/Bonsai/pull/92))
-
-### Fixed
-- **Custom-ability discovery bug bundle** — orphaned registrations, sensor shebang frontmatter loss, and non-TTY warning channel resolved. (Plan 34, [#92](https://github.com/LastStep/Bonsai/pull/92))
-- **`bonsai update` non-TTY warnings** route to stderr instead of being suppressed. ([#92](https://github.com/LastStep/Bonsai/pull/92))
-- **Windows cross-compile** for `internal/generate/catalog_snapshot.go` — split `O_NOFOLLOW` use into platform files (`_unix.go` keeps the symlink defense; `_windows.go` falls back to plain `OpenFile`). Was breaking `goreleaser` cross-compile since Plan 32 (#80). ([#95](https://github.com/LastStep/Bonsai/pull/95))
-
-### Security
-- `O_NOFOLLOW` on snapshot writes — defense-in-depth against symlink-substitution races during `.bonsai/catalog.json` materialization. (Plan 32, [#80](https://github.com/LastStep/Bonsai/pull/80))
-- **Go toolchain 1.25.9** — clears 6 unreachable stdlib CVEs (GO-2026-4864/4947/4946/4870/4869/4865).
-- **`golang.org/x/net` v0.53.0** — clears GO-2026-4441 + GO-2026-4440. Reachable-set vuln count: 0.
-
-## [0.3.0] - 2026-04-24
-
-> **The "your AI agent can work with Bonsai itself" release.** Every new workspace now carries an agent-readable mental model of Bonsai, a filesystem-discoverable catalog snapshot, and copy-paste prompts to get your agent started. Plus a scope-guard correctness fix and cinematic polish on the last two commands that needed it.
-
-### Added
-
-- **Your agent can now reason about Bonsai directly.** Every new workspace ships a `bonsai-model` skill at `agent/Skills/bonsai-model.md` — a concise mental model covering how the catalog is shaped, when to add vs customize, and how the commands fit together. Point your agent at it and it can propose changes without you hand-feeding docs.
-- **Machine-readable catalog.** `bonsai init`, `add`, and `update` now write `.bonsai/catalog.json` at your project root — a filesystem-discoverable listing of every agent type, skill, workflow, protocol, sensor, and routine the installed binary ships. Same data available on demand via `bonsai catalog --json` for CI or scripted consumption (respects `-a <agent>` filter).
-- **"Bonsai Reference" in every generated CLAUDE.md.** A pointer table near the top of each workspace CLAUDE.md tells your agent where to find the model doc, the catalog snapshot, and the installed-state file. Pi.dev-inspired progressive-disclosure pattern: zero tokens spent until the agent actually needs to know.
-- **Post-command hints you'll actually use.** `init`, `add`, `remove`, and `update` yield screens now show three labeled sections:
-  1. **Next steps** — the mechanical CLI commands to run next
-  2. **Try this** — workflow suggestions inside your new workspace
-  3. **Ask your agent** — bordered copy-paste prompt boxes you can hand straight to Claude / your editor / wherever
-  Hints are agent-type aware — a backend agent gets backend-shaped prompts, a devops agent gets devops-shaped ones.
-- **Cinematic `bonsai remove` and `bonsai update`** — the last two commands without a dedicated flow package got the same treatment as `init` / `add` / `list` / `catalog` / `guide`. Stage rails, chromeless prompts for destructive actions, per-file conflict resolver, responsive resize, ASCII fallback.
-- **`NO_COLOR` and `TERM=dumb` honored explicitly.** Scripts piping Bonsai output and color-averse terminals now get clean text with zero ANSI escapes. Covered by regression tests so it stays that way.
-
-### Changed
-
-- **`bonsai add` keeps every agent's awareness up to date automatically.** After you add a new agent, Bonsai now refreshes the peer-awareness files on every already-installed agent — you no longer need to run `bonsai update` after each `add` to keep scope-guards honest. Lock-aware, so any hand-edits you've made to those files still trigger the conflict resolver.
-- **`bonsai update` non-TTY path returns a proper exit code.** When run in a script and conflicts can't be auto-resolved, `bonsai update` now exits non-zero so your CI actually notices. Previously it printed a warning and silently returned success.
-- **Cleaner internals in `cmd/update.go`** (313 lines → ~85). All TUI logic delegated to the new flow package; business logic preserved.
-
-### Fixed
-
-- **Silent cross-agent scope-guard bypass.** Before 0.3, running `bonsai add backend` in a project that already had a tech-lead did *not* update tech-lead's `scope-guard-files.sh` with a block-rule for the new `backend/` workspace. Net effect: dispatching tech-lead to edit a backend file quietly worked when scope-guard was supposed to exit 2 and block it. Same class of silent staleness on `dispatch-guard.sh`'s workspace→agent map. Now refreshed automatically on every `add`.
-
-### Security
-
-- **Peer-awareness state is now always correct after `add`.** Closes the class of silent scope-guard bypasses described in Fixed. No more "tech-lead can edit any agent's files" once a project grows past one agent.
-
-## [0.2.0] - 2026-04-22
-
-> **The "cinematic CLI" release.** `bonsai init` and `bonsai add` now run in dedicated multi-stage flows with a kanji stage rail, responsive layout, and per-file conflict resolution. Plus a Starlight documentation site, a four-topic `bonsai guide`, and a persistent statusline you can wire into your Claude Code session.
-
-### Added
-
-- **Cinematic `bonsai init`** — Vessel → Soil → Branches → Observe → Generate → Planted, with a kanji/kana stage rail, semantic palette, responsive resize, and ASCII fallback for terminals without wide-char support.
-- **Cinematic `bonsai add`** — Select → Ground → Graft → Observe → Grow → Conflicts → Yield, with a per-file conflict picker (Skip / Overwrite / Backup) and four terminal Yield variants (success, all-installed, tech-lead-required, unknown-agent).
-- **Persistent statusline** at `station/agent/Sensors/statusline.sh` — context %, 5h and 7d budget %, model, branch (with dirty marker), elapsed, cost, optional caveman-mode badge. Sage/sand/rose 256-color tiers; honours `NO_COLOR` and `BONSAI_STATUSLINE_HIDE`.
-- **`bonsai guide` extended to four topics** — `quickstart`, `concepts`, `cli`, `custom-files` (was a single page).
-- **Starlight documentation site** under `website/` — concepts, command reference, auto-generated catalog browser, LLM-friendly `llms.txt` layer, deploy workflow.
-- **Trigger metadata system** — `triggers:` blocks on skills/workflows feed both generated CLAUDE.md tables and `.claude/skills/{name}/SKILL.md` slash commands.
-- **`compact-recovery` sensor** — re-injects Quick Triggers and work state after `/compact` so the agent doesn't lose its operating context.
-- **Expanded `context-guard` patterns** — verify and plan triggers join the existing tier-based context-percentage injections.
-
-### Changed
-
-- **README rewritten audience-first** — new tagline "A workspace for your coding agent", a `Who Bonsai is for` section, mechanism-over-personality bullets, a `station/` tree snippet, and a demo gif.
-- **Adaptive color palette** across the TUI — automatic light/dark detection, `NO_COLOR` honoured, consistent `FatalPanel` and version banner treatment, structured error display.
-- **UI consistency pass** — ordering, item counts, key hints, and "Up to date" no-op detection are now consistent across all pickers.
-- **`bonsai` binary builds from `cmd/bonsai/main.go`** — `go install github.com/LastStep/Bonsai/cmd/bonsai@latest` now produces the correct lowercase binary name.
-- BubbleTea step/reducer harness in `internal/tui/harness/` is the foundation for `init`, `add`, `remove`, `update`.
-- Go toolchain bumped to 1.25.8; golangci-lint migrated v1 → v2.
-
-### Removed
-
-- `BONSAI_REDESIGN` and `BONSAI_ADD_REDESIGN` env gates — cinematic flows are the only path; legacy code paths deleted.
-- Three orphan legacy guide topics (1,213 lines) replaced by the four-topic `bonsai guide` set.
-
-### Fixed
-
-- **`bonsai init` Planted stage** now shows the correct station path; Observe stage no longer reports a misleading file count.
-- **`chmod` is re-applied on `ActionUnchanged`** so sensor scripts stay executable across re-runs.
-- **`.bak` write failures no longer silently discard files** in the conflict picker — failed-backup paths are dropped from the overwrite list and a warning is emitted.
-- **Doubled path prefix** in `bonsai add` output panels.
-- Cross-platform robustness — CRLF handling on Windows checkouts, cross-workspace tree rendering, ability deduplication across agents, concurrent spinner-step failures now surface via `errors.Join`.
-
-### Security
-
-- **CodeQL workflow** added for Go SAST.
-- **`govulncheck`** job added to CI.
-- **Dependabot** configured for `gomod` and `github-actions`.
-- **Astro XSS advisory (CVE-2026-41067)** resolved via `astro@6.1.7` lockfile bump.
-- CI now runs on `push: main` in addition to `pull_request` — closes the gap where formatting/lint drift on main was invisible until the next PR.
-
-## [0.1.3] - 2026-04-16
-
-> Internal-only patch. No user-visible changes.
-
-### Internal
-
-- `gofmt -s` sweep across all Go source files.
-
-## [0.1.2] - 2026-04-16
-
-> Quick fix to restore the Go Reference badge after the case-collision rename in v0.1.1.
-
-### Fixed
-
-- **Go Reference badge restored** — the case-collision rename in v0.1.1 settled a module-proxy issue that had blocked badge resolution.
-
-## [0.1.1] - 2026-04-16
-
-> Bug-fix release — make `bonsai` installable on case-insensitive filesystems (Windows/macOS) and ship the first onboarding skill.
-
-### Added
-
-- **`workspace-guide` skill** — installed with every agent to onboard humans into the generated workspace.
-- **"How to Work" decision heuristics** in generated `CLAUDE.md` — when to load a workflow vs a skill, where to log decisions.
-- **Obsidian-compatible markdown links** across generated workspace files (`[[link]]` syntax in nav tables and cross-references).
-
-### Fixed
-
-- **Case-insensitive file collision on Windows/macOS** — `station/index.md` renamed to `station/code-index.md` to avoid clashing with `INDEX.md` on case-insensitive filesystems. Unblocks `go install` on those platforms.
-
-### Internal
-
-- PR-triggered CI workflow — tests and `go vet` as required status checks.
-
-## [0.1.0] - 2026-04-16
-
-> First public release. CLI for scaffolding Claude Code agent workspaces — pick agent types, install abilities (skills, workflows, protocols, sensors, routines), and generate a workspace where AI agents operate with isolation, memory, and per-agent scope guards.
-
-### Added
-- Core commands — `bonsai init`, `add`, `remove`, `update`, `list`, `catalog`, `guide`.
-- Six agent types — tech-lead (required), frontend, backend, fullstack, devops, security.
-- Catalog of skills, workflows, protocols, sensors, routines — each with `meta.yaml` + content file; `required` and `agents` compatibility fields.
-- Routines — periodic self-maintenance with auto-managed `routine-check` sensor + dashboard at `agent/Core/routines.md`.
-- Sensors — auto-enforced hook scripts wired into `.claude/settings.json` at generation.
-- Awareness framework — `status-bar` and `context-guard` sensors for live context monitoring and guardrails.
-- Lock file (`.bonsai-lock.yaml`) — content hashing with conflict detection on re-run; user-modified files trigger skip/overwrite/backup prompt.
-- Selective file update with multi-select conflict picker via `bonsai update`.
-- Individual item removal — `bonsai remove <kind> <name>`.
-- `display_name` catalog field — decouples human-readable labels from machine identifiers; auto-derived from `name` when omitted.
-- Backlog system across catalog — intake queue scaffolding for every agent.
-- PR-driven subagent workflow — dispatched agents create draft PRs in isolated worktrees; tech-lead reviews and merges.
-- Release pipeline — GoReleaser v2, GitHub Actions tag trigger, Homebrew tap (`LastStep/homebrew-tap`).
-- Dogfooding — Bonsai generates its own `station/` workspace with tech-lead agent.
-
-[0.5.0]: https://github.com/LastStep/Bonsai/compare/v0.4.3...HEAD
-[0.4.1]: https://github.com/LastStep/Bonsai/compare/v0.4.0...v0.4.1
-[0.4.0]: https://github.com/LastStep/Bonsai/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/LastStep/Bonsai/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/LastStep/Bonsai/compare/v0.1.3...v0.2.0
-[0.1.3]: https://github.com/LastStep/Bonsai/compare/v0.1.2...v0.1.3
-[0.1.2]: https://github.com/LastStep/Bonsai/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/LastStep/Bonsai/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/LastStep/Bonsai/releases/tag/v0.1.0
+The old product's changes, 0.1.0 to 0.4.3, are in this file at tag
+[`v0.4.3`](https://github.com/LastStep/Bonsai/blob/v0.4.3/CHANGELOG.md). 1.0 carries none of them.

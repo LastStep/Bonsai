@@ -1,7 +1,7 @@
 # Bonsai: guide for Claude Code
 
-Bonsai is being rebuilt from scratch. 0.4.3 (May 2026) is the old product's last release, kept at its tag and in git
-history; everything in this repo now serves the rebuild. A person directs it (below, "the director"); Claude agents are
+Bonsai was rebuilt from scratch for 1.0. 0.4.3 (May 2026) is the old product's last release, kept at its tag and in git
+history; everything in this repo is the new product. A person directs it (below, "the director"); Claude agents are
 the team.
 
 **Bonsai guards its own checkout and proves its own work** (linked at 5.4's switch, 13 Oct; its packs `base` and
@@ -56,9 +56,10 @@ reports through `bonsai message`, the lanes and their pipelines, the lenses and 
   from `main` at or after the link commit), never the Agent tool's isolation worktrees, removed only with `git worktree
   remove`. They commit; they never push; they never edit a task file. A subagent shares its session's environment and
   carries no task of its own: the guard grants by the one task reading `running`, the ladder is named by `--task`, and
-  the landing rule below is their gate. **A named session** (`claude -p --agent workflow:builder` through `claude-here`
-  in its worktree, with `BONSAI_TASK=<id>` and `BONSAI_ROLE=builder`) has its task and run report committed on `main`
-  before its worktree is made, so the guard grants by its task and the stop gate holds it until its result is green.
+  the landing rule below is their gate. **A named session** (`claude -p --agent workflow:builder` in its worktree, with
+  `BONSAI_TASK=<id>` and `BONSAI_ROLE=builder`, through the launcher `~/bonsai-checks/scripts/T-5708/run.sh`;
+  `claude-here` runs in scratch only) has its task and run report committed on `main` before its worktree is made, so
+  the guard grants by its task and the stop gate holds it until its result is green.
 - **Tasks.** One per piece, `records/tasks/T-5xyy-<slug>.md` (`base:task`): piece 5.x.y is `T-5x` and `y` in two digits
   (5.4.7 is T-5407, 5.5.12 T-5512); a part's planning and other work outside its pieces take T-5x90 to T-5x99 in order;
   a piece with a letter takes the next free number, named in its title. `lane` empty; `done_when` from the section's
@@ -113,12 +114,13 @@ reports through `bonsai message`, the lanes and their pipelines, the lenses and 
 
 - `bonsai.yaml`, the lock and Claude Code's settings (and the release files) are person-only, and in Bonsai's mode a
   person-only path is grantable as written, so the rule is the orchestrator's: a task may hold one of them in
-  `bonsai.allows` only for a change of a stricter kind (a floor raised to a green climb's count; a rung, a floor entry or
-  a protected path added) or one a section the director approved names. **Any other change loosens the checks and waits
-  for the director's word**, marked in the run report: a floor lowered or `ratchets` emptied; a rung's `command`, `required`,
-  `tests`, `ratchet` or `capture` changed; a rung, floor entry, protected or person-only path taken out; a name added to
-  `ci_marked_tests`; a release file changed beyond its section. Why: an agent loosening the checks it is held to would
-  be judging its own work. Each part's end verifier reads every change to `bonsai.yaml` in the part against this rule.
+  `bonsai.allows` only for a change of a stricter kind (a floor raised to a green climb's count; a floor entry or a
+  protected path added) or one a section the director approved names. **Any other change loosens the checks and waits
+  for the director's word**, marked in the run report: a floor lowered or `ratchets` emptied; a rung added (its check
+  runs inside the climb, `internal/workspace/checks.go`); a rung's `command`, `required`, `tests`, `ratchet` or
+  `capture` changed; a rung, floor entry, protected or person-only path taken out; a name added to `ci_marked_tests`; a
+  release file changed beyond its section. Why: an agent loosening the checks it is held to would be judging its own
+  work. Each part's end verifier reads every change to `bonsai.yaml` in the part against this rule.
 - **A `bonsai.yaml` change reaches the ladder only once committed on `main`:** a climb reads the rungs, floor, ratchets
   and `ci_marked_tests` from main's committed copy, and refuses while the main checkout's file differs from it
   (`config-uncommitted`, a person's step: commit or revert it).

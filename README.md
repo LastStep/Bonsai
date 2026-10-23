@@ -169,9 +169,8 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    ```
 
    The first climb is refused, `config-looser`: a new rung runs a command, so a person accepts it on this machine
-   first. Run `bonsai update`, then the climb again: `GREEN: 1 of 1 rungs green`. Today `update` heads its output
-   `nothing to change`, since no file changed; the `note` line under it says it now accepts the new settings (rc.2
-   puts that first).
+   first. Run `bonsai update`, then the climb again: `GREEN: 1 of 1 rungs green`. `update` heads its output with what
+   it recorded: the settings for the checks, looser than the ones accepted before.
 
    > [!IMPORTANT]
    > Run that `bonsai update` in a terminal of your own. Bonsai refuses it from a Claude Code session, so an agent
