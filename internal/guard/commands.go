@@ -7,8 +7,8 @@ package guard
 //     they write this machine's settings and label files, which only a person's own terminal changes (the commands
 //     refuse themselves too, step 5.6).
 //   - bonsai with --allow-exec (the consent to code), bonsai unlink (which takes the guard out), and a line that unsets
-//     or changes CLAUDE_CODE_CHILD_SESSION (which hides an agent's session from those commands' own refusal) are a
-//     person's commands (person-command): allowed to an agent only with a person's grant in a project in command
+//     or changes an agent marker (format.AgentMarkers, which hide an agent's session from those commands' own
+//     refusal) are a person's commands (person-command): allowed to an agent only with a person's grant in a project in command
 //     mode, that is, the project's running task's bonsai.allows holds bonsai.yaml and .bonsai/lock.json (rule 3's
 //     grant; in command mode only a person's tap puts a person-only path there, tripwire.go).
 //   - bonsai init, update and unlink are judged as one edit of bonsai.yaml and .bonsai/lock.json at the top of the

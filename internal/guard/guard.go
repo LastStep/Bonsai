@@ -7,7 +7,7 @@
 // (floor.go), the lists and the packs' declared paths, the active task's grants, read from the main checkout and
 // honoured only while it reads running (grant.go), Bonsai's own files in every mode (own.go and the floor), and in
 // command mode the tripwires of contract §10.1 (tripwire.go). A Bash, PowerShell or Monitor call is judged for
-// Bonsai's own commands (commands.go): a line that unsets CLAUDE_CODE_CHILD_SESSION here, each bonsai call once
+// Bonsai's own commands (commands.go): a line that unsets an agent marker here, each bonsai call once
 // step 5.3.3's splitter finds it. Every rule a decision names is a row of the rules table (rules.go), its one home.
 //
 // Where the project's lock declares roles (step 5.5.11), the roles' rules and the stall stops come first (roles.go,

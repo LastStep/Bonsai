@@ -16,8 +16,9 @@ package guard
 //     flock and sg's command strings: delCmdRunners) has that text split again;
 //     a delete word (DeleteWords, the list's one home) gives what it deletes; a bonsai call goes to the guard's
 //     judgment of Bonsai's own commands (commands.go's ownCommand).
-//   - shell_env.go: CLAUDE_CODE_CHILD_SESSION read on the words of every simple command, at every depth; a change of
-//     it, or a program started with an empty or new environment, goes to commands.go's personStep.
+//   - shell_env.go: the agent markers (format.AgentMarkers, CLAUDE_CODE_CHILD_SESSION among them) read on the words of
+//     every simple command, at every depth; a change of one, or a program started with an empty or new environment,
+//     goes to commands.go's personStep.
 //   - this file: every text split (the line, and each text nested in it or decoded); the list walked in order, the
 //     folder each command runs in followed
 //     through cd (note 4: a cd to a name moves it; one that cannot be told leaves it unknown; a cd that may fail

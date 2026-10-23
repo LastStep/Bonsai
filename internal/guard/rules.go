@@ -146,14 +146,15 @@ var Rules = []Rule{
 	{RuleDeleteUnsplit, false, "a shell call's line the delete check cannot split (a quote or bracket left open, nesting " +
 		"past three levels) that holds a delete word, or whose runner words run past the walk's bound"},
 	{RuleDeleteNamed, true, "a shell call whose deletes and moves all name what they take, none of it guarded"},
-	{RulePersonCommand, false, "bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes CLAUDE_CODE_CHILD_SESSION: " +
+	{RulePersonCommand, false, "bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes an agent marker (CLAUDE_CODE_CHILD_SESSION, " +
+		"AI_AGENT or another of the list the error code person-command names): " +
 		"a person's commands, allowed to an agent only in a project in command mode under a running task's grant of " +
 		"bonsai.yaml and .bonsai/lock.json"},
 	{RuleHomeCommand, false, "bonsai settings set, bonsai labels attach or detach: never in an agent session"},
 	{RuleBonsaiCommand, true, "a bonsai command an agent may run: init and update judged as an edit of bonsai.yaml and the lock, " +
 		"every other word free"},
 	{RuleShell, true, "a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, " +
-		"no bonsai command, CLAUDE_CODE_CHILD_SESSION left as it is"},
+		"no bonsai command, every agent marker left as it is"},
 	{RuleOtherTool, true, "a tool other than the file tools and the shells"},
 	{RuleCallAllowed, true, "where the lock declares roles: an Agent, Task, SendMessage or Workflow call the caller's role may make, " +
 		"or a Skill whose frontmatter forks into a type it may call (the person's session any role but its own; a lead a declared " +

@@ -577,8 +577,8 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 	}
 	if rn.Word == "env" {
 		for _, u := range g.val("u", "unset") {
-			if envIs(u.text) {
-				r.envStep("unsets " + ChildSessionEnv + " (env -u)")
+			if m := envMarker(u.text); m != "" {
+				r.envStep("unsets " + m + " (env -u)")
 				return x, false
 			}
 		}
@@ -603,9 +603,9 @@ func (r *delRun) runner(rn *RunnerWord, x delExec) (delExec, bool) {
 		k := g.rest
 		for k < len(words) && strings.Contains(words[k].text, "=") && !strings.HasPrefix(words[k].text, "=") {
 			_, value, _ := strings.Cut(words[k].text, "=")
-			switch {
-			case envAssigns(words[k].text):
-				r.envStep("assigns " + ChildSessionEnv + " (env)")
+			switch m := envAssigned(words[k].text); {
+			case m != "":
+				r.envStep("assigns " + m + " (env)")
 				return x, false
 			case envAsData(value):
 				r.envStep("puts the name " + ChildSessionEnv + " in a variable, which the check cannot follow")

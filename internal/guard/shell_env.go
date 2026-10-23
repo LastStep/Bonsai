@@ -6,6 +6,13 @@ package guard
 // to a shell, -EncodedCommand). A change of the variable, or a program started with an empty or new environment, is a
 // person's step (commands.go's personStep): allowed only under a person's grant in command mode, else person-command.
 //
+// The other agents' markers (format.AgentMarkers; the director, 23 Oct, T-5727's choice C): every exact form below (an
+// assignment, a changer's word, env -u, env's assignment, a PowerShell assignment, a provider path naming the whole
+// name, a .NET argument) reads each of them as it reads CLAUDE_CODE_CHILD_SESSION, and the refusal names the one it
+// found. The catch-all text match (a name held as data, the backstop) stays Claude Code's alone: another marker's name
+// inside a word (cd opencode-tests, OPENCODE_HOME) is no change of it. So a pi agent's unset PI_CODING_AGENT is
+// refused where Bonsai's guard reads pi's lines.
+//
 // What changes it, letter case of the name ignored as Windows ignores it:
 //   - an assignment of it: NAME=... before a command (bash), $env:NAME = ... (PowerShell), set NAME=... (cmd.exe);
 //   - its name among the words of a command that sets or unsets variables (envChangers: unset, export, declare, ...);
@@ -37,7 +44,11 @@ package guard
 //     delete check's limits (shell.go);
 //   - a wolf: the backstop refuses a text that names part of the variable (env | grep CLAUDE_CODE_CHILD, a comment).
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/LastStep/Bonsai/internal/format"
+)
 
 // envName is the variable's name, lower case, as the words are compared with it.
 var envName = strings.ToLower(ChildSessionEnv)
@@ -60,13 +71,26 @@ func (r *delRun) envStep(what string) {
 	}
 }
 
-// envIs reports a text that is the variable's name, letter case ignored.
-func envIs(t string) bool { return strings.EqualFold(t, ChildSessionEnv) }
+// envMarker gives the agent marker (format.AgentMarkers: CLAUDE_CODE_CHILD_SESSION and the other agents') a text is
+// the name of, exactly, letter case ignored; "" for none. The exact forms (an assignment, a changer's word, env -u, a
+// provider path, .NET's argument) read every marker; the catch-all text match (envSight, envAsData, envBackstop)
+// reads Claude Code's alone, so a word that only holds another marker's name (cd opencode-tests) passes (T-5727).
+func envMarker(t string) string {
+	for _, m := range format.AgentMarkers {
+		if strings.EqualFold(t, m.Word) {
+			return m.Word
+		}
+	}
+	return ""
+}
 
-// envAssigns reports a NAME=value or NAME+=value text that assigns the variable.
-func envAssigns(t string) bool {
+// envAssigned gives the marker a NAME=value or NAME+=value text assigns, "" for none.
+func envAssigned(t string) string {
 	name, _, ok := strings.Cut(t, "=")
-	return ok && envIs(strings.TrimSuffix(name, "+"))
+	if !ok {
+		return ""
+	}
+	return envMarker(strings.TrimSuffix(name, "+"))
 }
 
 // envSight counts the words that name the variable, for the backstop: a word whose text holds the whole name.
@@ -81,9 +105,9 @@ func (r *delRun) envAssignWords(words []shWord) {
 			return
 		}
 		_, value, _ := strings.Cut(w.text, "=")
-		switch {
-		case envAssigns(w.text):
-			r.envStep("assigns " + ChildSessionEnv)
+		switch m := envAssigned(w.text); {
+		case m != "":
+			r.envStep("assigns " + m)
 			return
 		case envAsData(value):
 			r.envStep("puts the name " + ChildSessionEnv + " in a variable, which the check cannot follow")
@@ -119,8 +143,12 @@ func (r *delRun) envCommand(x delExec, name string) {
 	switch {
 	case listHas(envChangers, name):
 		for _, a := range args {
-			if envIs(a.text) || envAssigns(a.text) {
-				r.envStep("unsets, exports or sets " + ChildSessionEnv + " (" + name + ")")
+			m := envMarker(a.text)
+			if m == "" {
+				m = envAssigned(a.text)
+			}
+			if m != "" {
+				r.envStep("unsets, exports or sets " + m + " (" + name + ")")
 				return
 			}
 		}
@@ -138,32 +166,41 @@ func (r *delRun) envCommand(x delExec, name string) {
 	}
 	if x.d == shPower && !listHas(envReaders, name) {
 		for _, w := range words {
-			if envProviderPath(w.text) {
-				r.envStep("changes " + ChildSessionEnv + " through its Env: path")
+			if m := envProviderPath(w.text); m != "" {
+				r.envStep("changes " + m + " through its Env: path")
 				return
 			}
 		}
 	}
 }
 
-// envProviderPath reports a PowerShell provider path to the variable (Env:NAME, Env:\NAME, Env:/NAME, the provider's
-// full name Microsoft.PowerShell.Core\Environment::NAME), not a read of it ($env:NAME, ${env:NAME}).
-func envProviderPath(t string) bool {
+// envProviderPath gives the marker a PowerShell provider path names (Env:NAME, Env:\NAME, Env:/NAME, the provider's
+// full name Microsoft.PowerShell.Core\Environment::NAME), not a read of it ($env:NAME, ${env:NAME}); "" for none.
+// Claude Code's name counts wherever it stands after the prefix, as before; another marker's only as the whole name,
+// so Env:OPENCODE_HOME is not OPENCODE's.
+func envProviderPath(t string) string {
 	low := strings.ToLower(t)
-	for from := 0; ; {
-		i := strings.Index(low[from:], envName)
-		if i < 0 {
-			return false
-		}
-		i += from
-		from = i + len(envName)
-		pre := strings.TrimRight(low[:i], `\/`)
-		switch {
-		case strings.HasSuffix(pre, "$env:") || strings.HasSuffix(pre, "${env:"):
-		case strings.HasSuffix(pre, "env:") || strings.HasSuffix(pre, "environment::"):
-			return true
+	for _, m := range format.AgentMarkers {
+		name := strings.ToLower(m.Word)
+		for from := 0; ; {
+			i := strings.Index(low[from:], name)
+			if i < 0 {
+				break
+			}
+			i += from
+			from = i + len(name)
+			if m.Word != ChildSessionEnv && from < len(low) && shNameChar(low[from]) {
+				continue
+			}
+			pre := strings.TrimRight(low[:i], `\/`)
+			switch {
+			case strings.HasSuffix(pre, "$env:") || strings.HasSuffix(pre, "${env:"):
+			case strings.HasSuffix(pre, "env:") || strings.HasSuffix(pre, "environment::"):
+				return m.Word
+			}
 		}
 	}
+	return ""
 }
 
 // psAssign is one PowerShell assignment among a command's words: its left side (lower case, as written: $env:name,
@@ -252,8 +289,8 @@ func envPSOperator(t string) string {
 // "Env:$n"), which the check cannot follow.
 func (r *delRun) envPSAssign(words []shWord) {
 	for _, a := range envPSAssigns(words) {
-		if a.left == "$env:"+envName || a.left == "${env:"+envName+"}" {
-			r.envStep("assigns " + ChildSessionEnv)
+		if m := envPSLeft(a.left); m != "" {
+			r.envStep("assigns " + m)
 			return
 		}
 		for _, t := range a.right {
@@ -263,6 +300,18 @@ func (r *delRun) envPSAssign(words []shWord) {
 			}
 		}
 	}
+}
+
+// envPSLeft gives the marker an assignment's left side names ($env:NAME, ${env:NAME}, lower case as envPSAssigns
+// gives it), "" for none.
+func envPSLeft(left string) string {
+	if v, ok := strings.CutPrefix(left, "$env:"); ok {
+		return envMarker(v)
+	}
+	if v, ok := strings.CutPrefix(left, "${env:"); ok && strings.HasSuffix(v, "}") {
+		return envMarker(strings.TrimSuffix(v, "}"))
+	}
+	return ""
 }
 
 // envDotNet judges a .NET SetEnvironmentVariable call: its arguments, in the command's nested lists, read after their
@@ -277,29 +326,31 @@ func (r *delRun) envDotNet(c *shCommand) {
 	if !called {
 		return
 	}
-	var walk func(l *shList) bool
-	walk = func(l *shList) bool {
+	var walk func(l *shList) string
+	walk = func(l *shList) string {
 		for k := range l.cmds {
 			cmd := &l.cmds[k]
 			for _, w := range cmd.words {
-				if envIs(strings.Trim(w.text, "()'\" ")) {
-					return true
+				if m := envMarker(strings.Trim(w.text, "()'\" ")); m != "" {
+					return m
 				}
 			}
 			for _, n := range cmd.nested {
-				if walk(n.list) {
-					return true
+				if m := walk(n.list); m != "" {
+					return m
 				}
 			}
-			if cmd.group != nil && walk(cmd.group) {
-				return true
+			if cmd.group != nil {
+				if m := walk(cmd.group); m != "" {
+					return m
+				}
 			}
 		}
-		return false
+		return ""
 	}
 	for _, n := range c.nested {
-		if walk(n.list) {
-			r.envStep("sets " + ChildSessionEnv + " through .NET")
+		if m := walk(n.list); m != "" {
+			r.envStep("sets " + m + " through .NET")
 			return
 		}
 	}
