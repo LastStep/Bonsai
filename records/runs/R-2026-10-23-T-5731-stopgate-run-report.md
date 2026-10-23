@@ -5,9 +5,9 @@ task: T-5731
 role: builder
 model: opus
 started: 2026-10-23 09:36
-finished: 2026-10-23 09:53
+finished: 2026-10-23 10:12
 outcome: verify
-commits: ["1ec9b0b4", "51403d52", "7fce5791", "899982a1", "27526d3b"]
+commits: ["1ec9b0b4", "51403d52", "7fce5791", "899982a1", "27526d3b", "663f0aa1", "abb22f5e", "eba085b2"]
 labels: {}
 ---
 
@@ -51,6 +51,17 @@ labels: {}
 - main reached 1cbd0aa4 (T-5730). 09:45-09:52 UTC, climb 2 at 27526d3b (sha256 6c082838...): green, every rung.
 - 09:53 UTC: this report finished, committed; a last climb at that commit (its numbers in the report to the
   orchestrator, since a report cannot hold its own commit's climb).
+- 10:08 UTC, fix round 1 (brief M-2026-10-23-279b56a4; the verifier's FAIL M-2026-10-23-e8b0401b, two findings):
+  (1) check's format0 finding (a listed format-0 file changed) was not in DocumentFindings, and my "format 0 on the
+  lock's list" fixture held a made-up hash, so its premise was false. Fix: the format0 branch of checkLockedFiles
+  moved into one function, CheckResult.checkFormat0 (internal/engine/check.go), which both check's walk and
+  DocumentFindings call, in check's order (format0 before checkDocument). Fixtures now hold the file's real HashLF.
+  Shown failing at 663f0aa1's code (the engine change stashed, the new tests in): `--- FAIL:
+  TestAChangedFormat0RunReportHoldsTheGate` ("exit 0, want 2 (stop-bad-run-report)"); `--- FAIL:
+  TestDocumentFindingsAreChecksOwn/format_0_on_the_lock's_list,_changed` ("DocumentFindings gives [], check
+  [{Code:format0 ...}]"); the "as it was" parity case passed there. Green with the fix.
+  (2) docs/features.md said 21 stop gate rule words; now 22 (grep counts 22 `= "stop-` constants). format0 added to
+  the finding kinds in rules.go's row, the gate's doc comment and the operating skill; reference regenerated.
 
 ## What is different now
 
@@ -59,7 +70,7 @@ each of the task's run reports in the session's checkout through check's own rea
 on a report sends the session back (`stop-bad-run-report`). The reason quotes check's finding, which names the field
 and line; the next step is check's own, then `bonsai check`, then the ladder. Examples: a report with no `format:`
 line (format0-new), or `started: 2026-10-11` with no time (document). A report check accepts lets the gate go as
-before. A report with `finished: 2026-10-23 09:53` and `outcome: verify` passes too.
+before. A report with `finished: 2026-10-23 10:12` and `outcome: verify` passes too.
 
 ## Deviations from the plan
 
@@ -80,10 +91,12 @@ green true, result sha256 6c0828380870246a5da8ad0a30625d8334dc86fb0b8a6f4ef0a568
 | 4 | tests with the fault switch | green | 2338 seen, 3 skipped (Windows-only), 60.6 s |
 | 5 | git integrity | green | 34 ms |
 
-Climb 1 at 899982a1 was red at rung 0 on T-5730's two paths only (main still at 7e172040); see the log.
+After fix round 1: see the report to the orchestrator for the climb at the final commit. Climb 1 at 899982a1 was red at rung 0 on T-5730's two paths only (main still at 7e172040); see the log.
 
 ## What did not work
 
+- The first build missed check's format0 finding on a changed listed format-0 report, and its fixture's hash was
+  made up, so the test meant to cover that case proved nothing; the verifier found both (fix round 1).
 - The first absolute-path fixture was an unquoted value, which YAML reads as a document finding, not absolute-path;
   quoted.
 - Seen, not fixed (not this task's): the gate's noPaths swallows the space before "(" after a path it hides
