@@ -5,6 +5,7 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-5799 | An audit of the public repo's files: what can go before 1.0, what stays, what to ask | done | | 2026-10-23 | 2026-10-23 |
 | T-5798 | Bonsai under pi: the contract plan (the pi side in pi-harness, the envelope bonsai.hook/1) | done | | 2026-10-23 | 2026-10-23 |
 | T-5797 | Bonsai with any agent, pi first: the master research | done | | 2026-10-22 | 2026-10-23 |
 | T-5796 | The workflow pack names no studio's files: its twelve Trinetra deny rules taken out | done | light | 2026-10-22 | 2026-10-22 |
@@ -13,6 +14,13 @@ Active task when none is named: none (no task reads running)
 | T-5793 | Scratch folders, declared in bonsai.yaml: what one is, where it lives, which roles may use it and with what authority | todo | full | | |
 | T-5792 | CI on the branch: a batch's branch pushed and green on CI (its windows jobs among them) before main moves | done | | 2026-10-20 | 2026-10-20 |
 | T-5790 | The tagged pass narrowed to the packages the bonsai_test_fault tag can reach, held there by a test | done | | 2026-10-19 | 2026-10-19 |
+| T-5731 | The stop gate reads the run report as bonsai check does (the pi brief's B3) | done | | 2026-10-23 | 2026-10-23 |
+| T-5730 | rc.2's words: CHANGELOG since rc.1, CLAUDE.md's stale lines, the README's step 6, the old demo and old sections out | done | | 2026-10-23 | 2026-10-23 |
+| T-5729 | Bonsai's words from the dry run and BUG-097 | done | | 2026-10-23 | 2026-10-23 |
+| T-5728 | bonsai answer takes an option's letter or number | done | | 2026-10-23 | 2026-10-23 |
+| T-5727 | Other agents' markers refuse person-only commands | done | | 2026-10-23 | 2026-10-23 |
+| T-5726 | The stop gate's three risks from the trial's verifier | done | | 2026-10-23 | 2026-10-23 |
+| T-5725 | BUG-014: a subfolder pack counts only its own-name tags; V1's note C | done | | 2026-10-23 | 2026-10-23 |
 | T-5724 | README and demos: the new README's first project followed exactly as written, on the installed Bonsai | done | | 2026-10-22 | 2026-10-22 |
 | T-5723 | README and demos, piece F: the showcase edit (an edit script; the README's GIFs and a showcase video from the clips) | done | | 2026-10-22 | 2026-10-22 |
 | T-5722 | README and demos, piece E: docs/features.md, every capability by area, with its limits | done | | 2026-10-22 | 2026-10-22 |
@@ -27,7 +35,7 @@ Active task when none is named: none (no task reads running)
 | T-5713 | Time, piece B: bonsai now and internal/timefmt | done | | 2026-10-21 | 2026-10-21 |
 | T-5712 | Time, piece A: formats set 11: document times with an offset, now.schema.json | done | | 2026-10-21 | 2026-10-21 |
 | T-5711 | Before 1.0: the README improved, and demo videos showing how Bonsai works for a project | done | full | 2026-10-22 | 2026-10-22 |
-| T-5710 | rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on) | todo | | | |
+| T-5710 | rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on) | verify | | 2026-10-23 | |
 | T-5709 | 5.7.9, the trial's analysis: records/trial-rc1.md for the director, and an agent's dry run of the README's first-project steps | done | | 2026-10-21 | 2026-10-21 |
 | T-5708 | The trial's feature: the stop gate names its rule when it blocks (BUG-089, with BUG-088) | done | | 2026-10-20 | 2026-10-20 |
 | T-5707 | 5.7.7, Bonsai on itself on rc.1: the repo brought to rc.1, the proposals, the director's pick run end to end, its records | done | | 2026-10-20 | 2026-10-20 |

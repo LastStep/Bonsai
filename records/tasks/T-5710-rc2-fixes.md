@@ -2,14 +2,14 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5710
 title: "rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on)"
-status: todo
+status: verify
 lane:
 done_when:
   - "each item below landed as its own task with its proof, or put after 1.0 on the director's word; then rc.2 (note 5.7.10)"
 depends_on: [T-5709]
 blocked_by:
 created: 2026-10-20
-started:
+started: 2026-10-23
 finished:
 labels:
   bonsai.ladder: []
@@ -54,3 +54,16 @@ Gathered on 20 Oct; rc.2 always follows (note 5.7.10). Each becomes its own task
     `CODEX_THREAD_ID`, `GEMINI_CLI`, `CURSOR_AGENT`, `OPENCODE`, `GOOSE_TERMINAL` refuses (`CLAUDECODE` left out: it
     reaches editor terminals); the refusal names the marker it found; the test helper clears the list. The director's
     terminals print none of them (checked 23 Oct). Before 1.0, because pi runs with the stopgap extension before then.
+
+## The director's words, 23 Oct (the 1.0 session)
+
+- Item 10, `bonsai agents` filters: **after 1.0** ("After 1.0").
+- Item 1, BUG-014: **"Subfolder packs: own-name tags"** (a pack with a `path` counts only its `<id>-` tags; a pack at a
+  repository's top keeps bare `v` tags).
+- Item 5, V1's notes: **"Fix the test only"**: note C (the shell test's flow style) in rc.2; release.yml's notes A and B
+  after 1.0.
+- Item 4, Go: govulncheck's newest (v1.9.0, 11 Oct) still cannot load go1.27.3; rc.2 stays on go1.27.2 by the
+  director's 20 Oct word, checked again before 1.0.
+- Item 9: check 10's Windows half runs on rc.2, not rc.1.
+- Tasks: T-5725 (1, 5C), T-5726 (6), T-5727 (13), T-5728 (11), T-5729 (12's BUG-097, the dry run's Bonsai-words 11
+  and 13); items 2, 3, 7 and 12's README line in a records task after them.

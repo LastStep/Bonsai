@@ -1,6 +1,6 @@
 {
   "format": "bonsai.lock/1",
-  "written_by": "1.0.0-rc.1",
+  "written_by": "1.0.0-rc.2",
   "packs": [
     {
       "id": "base",
@@ -1151,7 +1151,7 @@
     ".claude/settings.json": {
       "kind": "keys",
       "pack": "base",
-      "sha256": "c4c67b22d8a55875773b8ba4d29c21c022a019d107c04e045d936446abb346cf"
+      "sha256": "45fc7be5b1515675b2e192834eaef0a2e6670e045313fa27956cccc32348ee34"
     },
     "CLAUDE.md": {
       "kind": "block",

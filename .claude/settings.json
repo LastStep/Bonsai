@@ -231,6 +231,15 @@
             "async": true
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook now || exit 0",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PermissionRequest": [
@@ -289,6 +298,15 @@
             "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook record",
             "timeout": 10,
             "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "b=\"/c/Program Files/Bonsai/bonsai.exe\"; [ -x \"$b\" ] || b=/usr/local/bin/bonsai; [ -x \"$b\" ] || exit 0; \"$b\" hook now || exit 0",
+            "timeout": 5
           }
         ]
       }

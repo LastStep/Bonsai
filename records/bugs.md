@@ -1,6 +1,6 @@
 ---
 title: Known bugs   # the bugs register; every field and how to fill it: skill workflow:bugs
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 # Known bugs
@@ -23,7 +23,6 @@ director".
 | **BUG-009** | check.sh validate prints "ok" in words that mislead | ~/bonsai-checks/bonsai-workflow/check.sh (workflow pack ci); 91d8a972 (said; not re-read) | STATE "Loose ends, from tonight" |
 | **BUG-011** | The guard may read a `~/` redirect target as relative to the working folder (refuses more, not less). Not confirmed: shell_paths.go:107,495 (delAbs) read ~/ against the home, so it may hold for the redirect form only | internal/guard shell_paths.go delAbs; shell_words.go:1132; 91d8a972 (said; not confirmed) | ~/bonsai-checks/verify-5.5-end/report-r2.md:53-60 |
 | **BUG-013** | The verifier and runner roles cannot make scratch repositories, so those steps go to a builder; the guard is uneven there: a runner's `mkdir -p` under ~/bonsai-checks/ passed while its `git init` and `rmdir` in the same tree were refused (21 Oct, M-2026-10-21-9ea8e432's thread) | the workflow pack's role files (agents/verifier.md, runner.md); 91d8a972 (said) | 5.5 end verifier (report-r2.md); STATE "How work runs now" |
-| **BUG-014** | Bonsai's old tags v0.1.1-v0.4.3 read as newer versions of base in bonsai status (no pack-scoped tag form yet) | internal/engine tag reading (newer.go/release.go), cmd/bonsai/status.go; 91d8a972 (said) | STATE "Waiting on the director, Later" |
 | **BUG-015** | A tag whose release is not published yet (waiting for approval, or its run failed) counts as a release, and its install lines fail to download. The orchestrator decided against a published-only check (Go's net would break TestTheBinaryLinksNoResolver) | internal/engine release.go, limits comment at line 25 (pointed) | M-2026-10-18-c3af4758; M-2026-10-18-412e8ad9; T-5605 |
 | **BUG-016** | status_command's rule (letters, spaces, - and /) allows a plain harmful command such as `rm -rf /`; the plan bars only metacharacters | internal/workspace/homesettings.go, StatusCommandOK (lines 108-120, pointed) | M-2026-10-18-8ba15229 (N5); T-5693 |
 | **BUG-017** | bonsai.changes/1 has no field for update's Memory lines or its cache-clean line, so --json carries nothing for them | formats/schemas/changes.schema.json (cache mentioned only for the adopt copy path, line 249; pointed) | M-2026-10-18-9b6f4d99 ("Left open"); T-5603 |
@@ -79,12 +78,17 @@ director".
 | **BUG-094** | The trial builder's climbs took 6.4 and 6.5 minutes of wall time for about 2 minutes of rungs (the climb of main: 2.2 for 2.0); not explained; after 1.0 unless it recurs | .bonsai/local/ladder/T-5708.json, T-5707.json (pointed) | records/trial-rc1.md, rough 12 (T-5709) |
 | **BUG-095** | .bonsai/sessions.md files a helper briefed before its task read running under another task (the trial's proposals auditor under T-5705, its brief from auditor@T-5707); after 1.0 | .bonsai/sessions.md:429 (pointed) | records/trial-rc1.md, gaps (T-5709) |
 | **BUG-096** | A session started from inside another Claude Code session records that session's id in every log record's `remote` field (inherited `CLAUDE_CODE_BRIDGE_SESSION_ID`); after 1.0 | the README dry run's demo log (pointed, since removed) | M-2026-10-21-8afc2b72 (T-5709) |
-| **BUG-097** | The ladder's "leftovers not started by this run" lists other programs on the machine by name (Chrome and its crash handler in the director's clips 03-05), so a published climb's output can name what else the person runs | the ladder's leftovers line (internal/leftovers); the director's clips in ~/bonsai-clips (seen, 22 Oct) | T-5721's builder, T-5723's final cut |
 | **BUG-098** | The clip set's clip 10 (ask and answer) stalled on a Claude Code permission question before Claude read the answer, in the director's take; left out of the showcase | docs/demos/clips/10-ask-answer.tape; ~/bonsai-clips/10-ask-answer.mp4 (seen, 22 Oct) | T-5723's final cut |
+| **BUG-099** | `bonsai hook guard <bad arg>` refuses through the command's own refusal, outside the guard's frame, with no rule line (`hook stop`'s was fixed in T-5726) | cmd/bonsai/hook.go:107 (pointed by T-5726's builder) | T-5726's builder; after 1.0 |
+| **BUG-100** | The guard's watch on a marker named through a variable (`X=PI_CODING_AGENT; unset $X`) holds for Claude's marker only; the other seven agents' markers pass it | internal/guard's marker watch (T-5727's verifier, run) | T-5727's verifier `M-2026-10-23-2b4b4a39`; after 1.0 (agent-neutral section 9) |
+| **BUG-101** | About 130 printed lines cite "contract section N", "spec section N" or a design/ file a new user's project does not hold | cmd/bonsai, internal/* printed strings (T-5729's sweep; its words test skips "section N") | T-5729's builder; after 1.0 |
+| **BUG-102** | release.yml:141's checksum substitution inside echo does not stop its step, and :282's `for id in $(gh api ...)` does not fail the draft cleanup; both fail closed later | .github/workflows/release.yml:141, :282 (V1's notes A and B) | V1 `M-2026-10-20-2a5d18eb`; after 1.0 (the director, 23 Oct) |
 
 ## Fixed
 
 | Id | What went wrong | Fixed in | Task |
+| **BUG-014** | Bonsai's old tags v0.1.1-v0.4.3 (and from 1.0 its v1.0.0) read as newer versions of base in bonsai status | faa0d718 (a pack with a path counts only its `<id>-`/`<id>/` tags; the director's rule, 23 Oct) | T-5725 |
+| **BUG-097** | The ladder's leftovers line named other programs on the machine | e9ae38b1 (count and pids printed; names in the result file and --json) | T-5729 |
 |---|---|---|---|
 | **BUG-063** | A stamped build's home confinement failed open past 64 path steps (RealPath returned the path as written); `settings set` wrote outside the scratch root | 6dbc4c87 (one walk, fails closed), 43e8b5fb | T-5694 (V1 B1; round 2 PASS M-2026-10-18-53079714) |
 | **BUG-064** | A shell write target the guard could not place was let through (pathForms error ignored in rolecmds/attrwords) | 27f193eb | T-5694 |
