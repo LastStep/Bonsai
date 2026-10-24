@@ -89,6 +89,8 @@ director".
 | **BUG-110** | sessions.md: every subagent row and each resumed session has an empty Model, though the usage records name one | LinkSink .bonsai/sessions.md; log lines 22, 47 (said, auditor#1) | T-5733; after 1.0 |
 | **BUG-111** | Plugin installs and other headless runs leave log files holding only a session_end (six in LinkSink) | LinkSink .bonsai/local/log (said, auditor#1) | T-5733; after 1.0 |
 | **BUG-112** | Windows CI once failed TestDecideReadsDevicePaths: QueryDosDevice gave an empty device, so the test built `\\?\GLOBALROOT\Users\...` with no device and the guard rightly read it as outside the project; the same code passed on the next commit and every run before. The test's setup should fail with its own words (or retry) when the device is empty | internal/guard/guard_windows_test.go:96-108 (pointed); CI run 40086737220, job windows on 6acfb786 | T-5734; after 1.0 (a test's setup, not the guard) |
+| **BUG-113** | README's first project: step 5's "ask for something small" need not write README.md, but step 6's rung passes only once README.md holds a line, so the climb can be red; and step 6 does not say whether the task must read running for the stop gate | README.md steps 5-6 (pointed) | T-5738 `M-2026-10-24-e9276a81`; README words, after 1.0 (main takes only records until the 1.0 tag) |
+| **BUG-114** | `bonsai init --yes` prints the whole preview again (about 130 lines) before what it wrote; and config-uncommitted's first-commit next step names no exact command (the README gives `git add -A && git commit`) | cmd/bonsai init; internal/engine/checkcommitted.go UncommittedInitNext | T-5738 `M-2026-10-24-e9276a81`; words, after 1.0 |
 
 ## Fixed
 

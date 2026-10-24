@@ -2,15 +2,15 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5734
 title: "rc.3's fixes: the rc.2 trial's (LinkSink) list (each its own task, T-5735 on)"
-status: todo
+status: done
 lane:
 done_when:
   - "each item below landed as its own task with its proof, or put after 1.0 on the director's word; then rc.3, tested by the orchestrator, then 1.0"
 depends_on: []
 blocked_by:
 created: 2026-10-24
-started:
-finished:
+started: 2026-10-24
+finished: 2026-10-24
 labels:
   bonsai.ladder: []
   bonsai.allows: []

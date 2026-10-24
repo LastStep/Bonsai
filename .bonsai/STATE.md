@@ -18,7 +18,11 @@ criterion, the packs' steering partial; rc.3 takes BUG-103 to BUG-108 (their wor
 a run report before any work, STATE as the project moves, notes as memory, `running` from any agent, one task at a
 time; Bonsai pinned and updated); `main` `1bd1a194` (`T-5736`: check's `config-uncommitted` warning, the reload
 words after a pack is added; `T-5737`: the guard's words after a cd it cannot follow, verifier PASS); CI green.
-Next: the director's `v1.0.0-rc.3` tag, then the orchestrator's test (`T-5738`), then 1.0.
+**rc.3 published and installed** (tag at `474ae7f7`, release run 40094853125, the director's approval, 12:52 UTC; the
+director's WSL install, sha256 `86cb629f...259d7`; the way back: rc.2 in `~/bonsai-checks/prerelease/previous/`).
+**Its test** (`T-5738`, run report `R-2026-10-24-T-5738-rc3-test.md`): every part green (the release on both sides,
+all programs rebuilt byte-identical, the README's first project, each fix seen working, LinkSink) but check 10's
+Windows half, left running at the director's stop: read its files first next session. Then 1.0.
 **23 Oct, the 1.0 session: `v1.0.0-rc.2` published and installed in WSL.** rc.2's fixes (`T-5710`, run report
 `records/runs/R-2026-10-23-T-5710-rc2-fixes.md`) landed as one batch at `1cbd0aa4`, CI green: BUG-014 (`T-5725`, a
 pack with a path counts only its own-name tags, the director's rule) and V1's note C; the stop gate's three risks
@@ -292,7 +296,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** the `v1.0.0-rc.3` tag and its release approval, then the WSL install (rc.3's fixes landed, `T-5734`). Their answer: the README's
+- **Now:** nothing until check 10's Windows half on rc.3 is read (T-5738); then their word for 1.0 (batch 5). Their answer: the README's
   first project again on rc.3 before 1.0, or the whole trial once on rc.3.
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
 - **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips
