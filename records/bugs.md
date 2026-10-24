@@ -1,6 +1,6 @@
 ---
 title: Known bugs   # the bugs register; every field and how to fill it: skill workflow:bugs
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Known bugs
@@ -83,6 +83,15 @@ director".
 | **BUG-100** | The guard's watch on a marker named through a variable (`X=PI_CODING_AGENT; unset $X`) holds for Claude's marker only; the other seven agents' markers pass it | internal/guard's marker watch (T-5727's verifier, run) | T-5727's verifier `M-2026-10-23-2b4b4a39`; after 1.0 (agent-neutral section 9) |
 | **BUG-101** | About 130 printed lines cite "contract section N", "spec section N" or a design/ file a new user's project does not hold | cmd/bonsai, internal/* printed strings (T-5729's sweep; its words test skips "section N") | T-5729's builder; after 1.0 |
 | **BUG-102** | release.yml:141's checksum substitution inside echo does not stop its step, and :282's `for id in $(gh api ...)` does not fail the draft cleanup; both fail closed later | .github/workflows/release.yml:141, :282 (V1's notes A and B) | V1 `M-2026-10-20-2a5d18eb`; after 1.0 (the director, 23 Oct) |
+| **BUG-103** | workflow: the orchestrator has no rule to keep a run report for planning, research or decision work: session-start section 5 says "before you write code", orchestrate assumes one only at landing; LinkSink's orchestrator worked 2 h 25 min with none | workflow bonsai/files/session-start.md section 5; skills/orchestrate (said, auditor#2) | T-5733 `M-2026-10-24-c3d8453a` F5; rc.3 |
+| **BUG-104** | workflow: orchestrate never names STATE and gives the orchestrator's notes no home, so LinkSink's kept its notes in an invented work/notes/ and left STATE empty until the end | workflow skills/orchestrate:24 (said, auditor#2) | T-5733 F6; rc.3 |
+| **BUG-105** | workflow: research and decision work get no status move (`running` is tied to a builder starting), so a director-lane task reads `todo` while its researchers work and sessions.md files their hours under "none" | workflow skills/orchestrate:57-60 (pointed) | T-5733 F4; rc.3; with BUG-095 |
+| **BUG-106** | bonsai check says nothing on a linked repo with no commit, or with bonsai.yaml uncommitted, which the climb and the stop gate refuse | internal/engine check (said, auditor#2) | T-5733 F7; rc.3 |
+| **BUG-107** | Adding a pack renames the plugin marketplace: the running session shows every pack skill as "Unknown skill" until a reload, and the old marketplace stays registered (LinkSink's orchestrator read base:operating-bonsai from the stale copy) | the update's words; ~/.claude/plugins records (said, both auditors) | T-5733; the words rc.3, the cleanup after 1.0 |
+| **BUG-108** | Guard, role-writes-nothing: a relative redirect after `cd $VAR` (to /tmp) is judged as a write inside the project, and its next step ("write scratch files outside the project") does not fit; a researcher's and a verifier's scratch writes refused | LinkSink log s-19462946 lines 344, 810 (pointed) | T-5733 `M-2026-10-24-d85969b6` B; the words rc.3, the reading after 1.0; akin to BUG-011, BUG-025 |
+| **BUG-109** | bonsai message refuses a pointer into Claude Code's /tmp scratchpad, where workflow:prototype puts spikes, so a builder there cannot point at its outputs | LinkSink log s-19462946 line 2073 (said, auditor#1) | T-5733; after 1.0 |
+| **BUG-110** | sessions.md: every subagent row and each resumed session has an empty Model, though the usage records name one | LinkSink .bonsai/sessions.md; log lines 22, 47 (said, auditor#1) | T-5733; after 1.0 |
+| **BUG-111** | Plugin installs and other headless runs leave log files holding only a session_end (six in LinkSink) | LinkSink .bonsai/local/log (said, auditor#1) | T-5733; after 1.0 |
 
 ## Fixed
 

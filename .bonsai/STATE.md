@@ -12,7 +12,8 @@ Rewritten, never appended (`base:state`). Last rewritten 24 Oct 2026 (a day sess
 first bullet): workflow `8a171735` gives up the `brief` and `playtest` kinds and the `interview` skill (now the
 studio and game packs'), its producer's work kept as `workflow:producer`; CI green; Bonsai pinned to it and updated
 (the plugins wait for a fresh Claude Code start, then `bonsai update`). The general rewording of workflow is after
-1.0. The director's trial on a new project (LinkSink) is under way.
+1.0. **The director's trial on rc.2** (LinkSink, `T-5733`, `records/trial-rc2.md`): Bonsai's machinery passed every
+criterion, the packs' steering partial; rc.3 takes BUG-103 to BUG-108 (their words), the rest after 1.0.
 **23 Oct, the 1.0 session: `v1.0.0-rc.2` published and installed in WSL.** rc.2's fixes (`T-5710`, run report
 `records/runs/R-2026-10-23-T-5710-rc2-fixes.md`) landed as one batch at `1cbd0aa4`, CI green: BUG-014 (`T-5725`, a
 pack with a path counts only its own-name tags, the director's rule) and V1's note C; the stop gate's three risks
@@ -286,7 +287,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** their own trial on a fresh project on rc.2 (their notes to the orchestrator). Their answer: the README's
+- **Now:** their trial on rc.2 is audited (`records/trial-rc2.md`); next, rc.3's plan with its fixes. Their answer: the README's
   first project again on rc.3 before 1.0, or the whole trial once on rc.3.
 - **Their call:** whether `design/pi-bonsai-work.md` (the pi side's brief, untracked) is committed.
 - **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips

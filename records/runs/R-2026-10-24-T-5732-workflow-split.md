@@ -38,3 +38,4 @@ labels: {}
 ## Processes left running
 
 None (the builder's and the update's; checked with `ps -eo pid,etime,cmd`).
+- 08:36 CI on `94613765` (main): all ten jobs green, the two windows jobs among them.
