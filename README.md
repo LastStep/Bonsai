@@ -106,8 +106,10 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    bonsai status
    ```
 
-   `check` says `no findings`, with a warning that the `base` plugin cannot be installed yet. It may also print a
-   `Notes` block (releases not read, no install record yet): notes are information, not findings.
+   `check` says `no findings`, with a warning that the `base` plugin cannot be installed yet, and one
+   (`config-uncommitted`) that what `init` wrote is not committed: commit it (`git add -A && git commit -m "link
+   Bonsai"`) before you climb, since a climb and the stop gate refuse until `bonsai.yaml` is committed. It may also
+   print a `Notes` block (releases not read, no install record yet): notes are information, not findings.
 
 4. Open Claude Code in the folder, answer its question about trusting the folder (it starts on "No, exit", which
    quits Claude Code: choose "Yes, I trust this folder"), quit it, then run `bonsai update`.
@@ -115,6 +117,8 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    > [!NOTE]
    > The trust question is Claude Code's; Bonsai never answers it for you. `update` then lists the `base` plugin as
    > `installed`. Still `waiting`: open Claude Code there once more, quit it, and run `bonsai update` again.
+   > A Claude Code session already open in the folder when `init` or `update` installs a pack's plugin loads the
+   > pack's skills only after `/reload-plugins` in it, or a fresh start; `update` says so.
 
 5. Open Claude Code there again and ask for something small. If Claude Code asks before an edit, that question is
    its own permission setting; Bonsai's guard is a separate check, which judges every edit and shell command and

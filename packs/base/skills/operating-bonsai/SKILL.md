@@ -46,7 +46,10 @@ Read `problems`, `needs`, `active_task`, `ladder`, `documents`, `labels`, `statu
 ## Check and fix
 
 Run `bonsai check --json`; for each finding run its `next.do` by its `who`, then check again until none is left.
-Warnings never block. `bonsai check --write` rebuilds the tables only in the main checkout, before a commit
+Warnings never block. `config-uncommitted` (no commit yet, or `bonsai.yaml` not as committed) is the person's: a
+climb and the stop gate refuse until they commit it, so name it in your report. When `init` or `update` installs a
+pack's plugin, a session already open loads its skills only after `/reload-plugins` or a fresh start: say so.
+`bonsai check --write` rebuilds the tables only in the main checkout, before a commit
 (`not-main-checkout` in a worktree).
 
 Memory: you write the project's notes (`base:memory`). The personal layer in Bonsai's home is the person's: never

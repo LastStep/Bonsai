@@ -188,6 +188,7 @@ error words.
 | `changed` | finding | person | - | a file the lock lists was edited: a pack file, Bonsai's block in CLAUDE.md, or Bonsai's lines in .claude/settings.json |
 | `missing` | finding | person | - | a file the lock lists is gone |
 | `gitignore` | finding | person | - | .bonsai/.gitignore is missing or changed, so .bonsai/local/ could be committed |
+| `config-uncommitted` | warning | person | - | the main checkout's repository holds no commit yet, or its HEAD holds no bonsai.yaml, or the main checkout's bonsai.yaml differs from HEAD's (line ends read as LF), so a climb (config-uncommitted) and the stop gate (stop-config-uncommitted) refuse until a person commits it; read as they read it, never a finding, since a fresh link is uncommitted by nature |
 | `local` | finding | agent | - | git tracks or has staged a file from .bonsai/local/, which is never committed |
 | `format0` | finding | agent | - | a format-0 file the lock's format0 list fixes changed or is gone (contract section 2.3) |
 | `format0-new` | finding | agent | - | a task, run report or STATE file with no format: line that is not on the lock's format0 list: it takes a format: line first (contract section 2.3) |
