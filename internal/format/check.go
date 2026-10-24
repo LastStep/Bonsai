@@ -49,6 +49,7 @@ var CheckWords = []Word{
 	{Word: "changed", Kind: "finding", Who: "person", Means: "a file the lock lists was edited: a pack file, Bonsai's block in CLAUDE.md, or Bonsai's lines in .claude/settings.json"},
 	{Word: "missing", Kind: "finding", Who: "person", Means: "a file the lock lists is gone"},
 	{Word: "gitignore", Kind: "finding", Who: "person", Means: ".bonsai/.gitignore is missing or changed, so .bonsai/local/ could be committed"},
+	{Word: "config-uncommitted", Kind: "warning", Who: "person", Means: "the main checkout's repository holds no commit yet, or its HEAD holds no bonsai.yaml, or the main checkout's bonsai.yaml differs from HEAD's (line ends read as LF), so a climb (config-uncommitted) and the stop gate (stop-config-uncommitted) refuse until a person commits it; read as they read it, never a finding, since a fresh link is uncommitted by nature"},
 	{Word: "local", Kind: "finding", Who: "agent", Means: "git tracks or has staged a file from .bonsai/local/, which is never committed"},
 	// Bonsai's document kinds (contract sections 2.3, 5, 6, 7).
 	{Word: "format0", Kind: "finding", Who: "agent", Means: "a format-0 file the lock's format0 list fixes changed or is gone (contract section 2.3)"},

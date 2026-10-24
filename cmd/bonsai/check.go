@@ -6,14 +6,17 @@ package main
 // --pack's findings are in the same document, each file the pack's own (relative to its folder), its warnings [].
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/LastStep/Bonsai/internal/engine"
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/schema"
+	"github.com/LastStep/Bonsai/internal/stopgate"
 	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -39,8 +42,10 @@ Bonsai's kinds (format 0 new or changed, each read under its format, labels agai
 absolute path); approve_first from git history; the block, memory index and note budgets; the paths CLAUDE.md,
 STATE and memory notes name; Claude Code's settings in the project (each permission rule, disableAllHooks, no
 version on a pack's plugin); this machine's record of the checkout and the bonsai on the PATH; .bonsai/.gitignore
-and .bonsai/local/ in git; and what Claude Code reports: the packs' plugins (claude plugin list --json) and its
-version against the floor (claude --version; Bonsai's ` + engine.ClaudeCodeFloor + `, or a pack's needs.claude_code). Each
+and .bonsai/local/ in git; bonsai.yaml as committed at the main checkout's HEAD, as a climb reads it (a warning,
+config-uncommitted, while there is no commit or the file is not as committed); and what Claude Code reports:
+the packs' plugins (claude plugin list --json) and its version against the floor (claude --version; Bonsai's
+` + engine.ClaudeCodeFloor + `, or a pack's needs.claude_code). Each
 finding and warning has a code (bonsai check --schema bonsai.check lists them all) and a next step: the exact
 command, written "run: <command>", wherever one fixes it. It fetches nothing, and writes nothing but with --write,
 which rebuilds the tasks table (.bonsai/tasks.md) from the task files and adds to the sessions table
@@ -121,6 +126,7 @@ func runCheck(c *call) int {
 	}
 	engine.ComparePlugins(r, pluginCLI)
 	engine.CompareClaudeCode(r, claudeVersion)
+	engine.CompareCommitted(r, committedAtHead(r.Main))
 	exit := engine.ExitOK
 	if len(r.Findings) > 0 {
 		exit = engine.ExitFindings
@@ -193,4 +199,22 @@ func runSchema(c *call, name string) int {
 // schemaNext is the next step of a check --schema refusal: every format's name.
 func schemaNext() string {
 	return "run `bonsai check --schema <format>` with one of: " + strings.Join(format.Names(), ", ")
+}
+
+// committedWait is the limit of check's one git call reading bonsai.yaml at the main checkout's HEAD.
+const committedWait = 30 * time.Second
+
+// committedAtHead reads the main checkout's bonsai.yaml at its HEAD as the ladder and the stop gate do
+// (stopgate.CommittedConfig, the one reading), for check's config-uncommitted warning (engine.CompareCommitted): only
+// its refusal as uncommitted is a warning; any other error is the ladder's to report, and check says nothing of it.
+func committedAtHead(main string) engine.Uncommitted {
+	if main == "" {
+		return engine.Uncommitted{}
+	}
+	_, err := stopgate.CommittedConfig(main, committedWait)
+	var u *stopgate.UncommittedError
+	if !errors.As(err, &u) {
+		return engine.Uncommitted{}
+	}
+	return engine.Uncommitted{Why: u.Why, Never: u.Never, Next: stopgate.UncommittedNext}
 }

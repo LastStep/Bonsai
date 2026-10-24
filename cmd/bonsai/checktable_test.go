@@ -375,6 +375,8 @@ var checkCases = map[string]func(c *cli){
 	"local-unchecked": func(c *cli) { c.link(); c.write(".git/index", "not an index") },
 	// init wrote the tasks table with no rows; a task file since makes it stale: a warning, never the exit code.
 	"tables": func(c *cli) { c.link(); c.task("T-0901", "todo", "", "") },
+	// A fresh link, never committed (BUG-106): TestCheckUncommitted has the rest.
+	"config-uncommitted": func(c *cli) { c.link() },
 }
 
 // checkMore: more of a word's cases, run after the walk's own on the same project.

@@ -661,6 +661,7 @@ func TestChangesFirstLink(t *testing.T) {
 	if e, _ := doc.Get("error"); code != 0 || doc.String("result") != "applied" || e != nil {
 		t.Errorf("the link: %d\n%s", code, out)
 	}
+	c.commit("link") // a project never committed has config-uncommitted's warning (BUG-106)
 	code, out, _ = c.run("", "check", "--json")
 	// One finding: bonsai.yaml names the test pack by a local folder, an absolute path (absolute-path).
 	if doc := fits(t, out, "check"); code != 1 || codesIn(doc, "findings") != "absolute-path" || codesIn(doc, "warnings") != "" {

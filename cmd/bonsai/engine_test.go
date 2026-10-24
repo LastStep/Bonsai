@@ -172,6 +172,7 @@ func TestUpdateCommand(t *testing.T) {
 	if code != 0 || !strings.Contains(flat(written(out)), " kept demo/guide.md ") {
 		t.Errorf("--keep: %d\n%s", code, out)
 	}
+	c.commit("kept") // a project never committed has config-uncommitted's warning (BUG-106)
 	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
 		t.Errorf("check: %d %q", code, out)
 	}
@@ -388,6 +389,7 @@ func TestPluginStep(t *testing.T) {
 		t.Errorf("check with drift: %d\n%s", code, out)
 	}
 	f.list = f.list[:1]
+	c.commit("link") // a project never committed has config-uncommitted's warning (BUG-106)
 	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
 		t.Errorf("check with no drift: %d %q", code, out)
 	}
@@ -485,6 +487,7 @@ func TestUpdateTakesAPackOut(t *testing.T) {
 		t.Errorf("plugins %s", schema.Show(plugins))
 	}
 	f.list = []engine.InstalledPlugin{{ID: "demo-pack@" + newMarket, Version: c.pack.A[:12], Scope: "project", ProjectPath: c.root}}
+	c.commit("taken out") // a project never committed has config-uncommitted's warning (BUG-106)
 	if code, out, _ := c.run("", "check"); code != 1 || !onlySource(out) {
 		t.Errorf("check after: %d\n%s", code, out)
 	}
