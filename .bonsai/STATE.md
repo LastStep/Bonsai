@@ -24,7 +24,7 @@ BUG-097 (`T-5729`); CHANGELOG since rc.1, the old product's sections and `assets
 release run failed closed (main's own CI on the commit still running: the orchestrator's mistake), re-run on the
 director's word, approved, published 10:33 UTC; checked on both sides (all six programs rebuilt byte-identical);
 the director's WSL install (sha256 `b45da83b...597e`) and `bonsai update --allow-exec --yes` (the time lines). The way
-back: rc.1 in `~/bonsai-checks/prerelease/previous/`. **The pi brief** `design/pi-bonsai-work.md` (the pi side's,
+back: rc.1 in `~/bonsai-checks/prerelease/previous/`. **The pi brief** (pi-bonsai-work.md in design/, untracked) (the pi side's,
 untracked, not committed: the director's call): B2 is `T-5727`; **B3 landed for rc.3** (`T-5731`: the stop gate
 reads the run report as check does, rule `stop-bad-run-report`; verifier FAIL then PASS; `main` `06ed179c`); B1, B4,
 B5 after 1.0 (the director: "B3 only"). After 1.0 too: `bonsai agents` filters, release.yml's notes A and B
@@ -289,7 +289,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 - **Now:** their trial on rc.2 is audited (`records/trial-rc2.md`); next, rc.3's plan with its fixes. Their answer: the README's
   first project again on rc.3 before 1.0, or the whole trial once on rc.3.
-- **Their call:** whether `design/pi-bonsai-work.md` (the pi side's brief, untracked) is committed.
+- **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
 - **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips
   <clip>`, then `sh docs/demos/edit.sh`; T-5710 item 12, clip 10 among them, BUG-098); then their word for 1.0.
 - **Their own step, from 5.6's close:** take the `"autoMemoryEnabled": true` line out of their local settings file
