@@ -41,4 +41,24 @@ labels: {}
   `docs/features.md`'s roles row names the limit (commit `ba5f62a4`). New tests PASS; `go test ./internal/guard
   ./internal/reference/...` ok (27.5 s), `go vet ./internal/guard` clean.
 
+- 10:10 Climb 1, `/usr/local/bin/bonsai ladder --task T-5737 --json` at `acac7906`: **red at rung 0**, the rest
+  skipped. `sha256` 94e167cc3b2965fc25d5114555e995a2885ccef77a1040667ab7ebbc032f37b9, `git.dirty` false, rung 0 4.8 s.
+  Reason, in full: "bonsai check finds 2 problem(s) about the commit: missing-path (.bonsai/STATE.md), missing-path
+  (.bonsai/STATE.md); next: run bonsai check, which names each one's next step". `bonsai check` in the worktree:
+  ".bonsai/STATE.md line 27 names design/pi-bonsai-work.md, which does not exist in the project" (and line 292).
+  Not this task's change: main's committed STATE (`41c797bf`) names `design/pi-bonsai-work.md`, which lives only
+  untracked in the main checkout (the director's call to keep it out of git), so every branch from `41c797bf` meets it.
+  STATE and `design/` are outside this task's Owns; the builder leaves them. Blocked on it.
+- 10:12 Not the ladder's proof, only to show nothing else is red: by hand in the worktree, `go vet ./...` and the
+  tagged vet clean; `go test -json -count=1 ./...` 5063 passed, 0 failed, 9 skipped; the fault-switch run
+  (rung 4's command) 2338 passed, 0 failed, 3 skipped.
+- 10:13 Processes: `ps -eo pid,etime,cmd` shows none of mine (one `go test ./cmd/bonsai`, pid 747446, is another
+  agent's, left alone).
+
+## What did not work
+
+- The climb: red at rung 0 on a STATE finding no builder may fix (above).
+
 ## Processes left running
+
+None of mine (`ps -eo pid,etime,cmd` at 10:13).
