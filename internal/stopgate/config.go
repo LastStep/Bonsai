@@ -33,7 +33,12 @@ import (
 
 // UncommittedError is CommittedConfig's refusal: the main checkout's bonsai.yaml differs from the one committed at its
 // HEAD, or its HEAD holds none. Why says which, in words that end a sentence.
-type UncommittedError struct{ Why string }
+// Never says HEAD holds no bonsai.yaml at all (no commit yet, or none holding it): what bonsai init wrote waits for its
+// first commit, which bonsai check's config-uncommitted warning names as the step (BUG-106).
+type UncommittedError struct {
+	Why   string
+	Never bool
+}
 
 func (e *UncommittedError) Error() string { return e.Why }
 
@@ -78,9 +83,9 @@ func CommittedConfig(main string, timeout time.Duration) (*workspace.Config, err
 	}
 	switch {
 	case errors.Is(err, vergit.ErrNoCommit):
-		return nil, &UncommittedError{Why: "the main checkout's HEAD names no commit yet, so it holds no bonsai.yaml"}
+		return nil, &UncommittedError{Why: "the main checkout's HEAD names no commit yet, so it holds no bonsai.yaml", Never: true}
 	case errors.Is(err, vergit.ErrNotInHead):
-		return nil, &UncommittedError{Why: "the main checkout's HEAD holds no bonsai.yaml (it was never committed there)"}
+		return nil, &UncommittedError{Why: "the main checkout's HEAD holds no bonsai.yaml (it was never committed there)", Never: true}
 	case errors.Is(err, vergit.ErrNotAFile):
 		return nil, &UncommittedError{Why: "the main checkout's HEAD holds bonsai.yaml as a folder or a submodule, not a file"}
 	case err != nil:
