@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Other agents count as agents**: beside Claude Code's own marker, `AI_AGENT`, `PI_CODING_AGENT`,
   `CODEX_THREAD_ID`, `GEMINI_CLI`, `CURSOR_AGENT`, `OPENCODE` and `GOOSE_TERMINAL` make the person's commands refuse
   (`update --allow-exec`, `unlink`, accepting looser checks, `settings set`, `labels`), naming the marker found.
+- **The stop gate reads the run report as `bonsai check` does**: a named session may not end on a run report check
+  would reject (`stop-bad-run-report`).
+- **`bonsai check` warns while `bonsai.yaml` is not committed** (`config-uncommitted`): on a project with no commit
+  yet, or one whose `bonsai.yaml` differs from what is committed, since a climb and the stop gate refuse it then; the
+  next step is the person's commit.
 - **`docs/features.md`**: every capability by area, with its limits and its open bugs.
 - Where to start: [`README.md`](README.md), and `docs/install.md` for the install lines.
 
@@ -50,6 +55,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A pack kept in a subfolder** (`base`, in `packs/base`) counts only tags that start with its name (`base-v1.0.0`)
   as its releases, so `bonsai status` no longer reads Bonsai's own `v` tags as newer `base` releases. A pack at its
   repository's top (`workflow`) keeps its plain `v` tags.
+- **After a pack is added or moved**, `init` and `update` say that a Claude Code session already open in the project
+  loads the pack's skills only after `/reload-plugins` or a fresh start.
+- **The guard's refusal after a `cd` it cannot follow** (a role that changes nothing, writing a relative path after
+  `cd $DIR`) says so and asks for the file by its full path; what it refuses is unchanged.
 - **A climb's printed lines** name no other program: the leftovers line gives a count and process ids (the names stay
   in the result file and in `--json`), and no printed line names a step of Bonsai's own build plan.
 
