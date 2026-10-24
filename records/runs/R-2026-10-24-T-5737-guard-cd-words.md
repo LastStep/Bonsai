@@ -55,10 +55,25 @@ labels: {}
 - 10:13 Processes: `ps -eo pid,etime,cmd` shows none of mine (one `go test ./cmd/bonsai`, pid 747446, is another
   agent's, left alone).
 
+- 10:20 Follow-up brief `M-2026-10-24-825896ea`: main at `251abb28` (STATE fixed). `git rebase main`: the five
+  commits replayed cleanly (now `4954180c` tests, `d8b07017` fix, `3d188c5c` docs, `783a7a28`, `e0aead70` records).
+- 10:23 Climb 2 at `e0aead70`: **green**, `git.dirty` false, sha256
+  574c90c1b0575226435cd4d2b5c0825f3107fcc6097ab17cb643025a8cd304c9. Rungs: 0 guard 5.6 s; 1 vet 0.8 s; 2 schemas
+  0.4 s; 3 tests 66.5 s, 5072 seen, 9 skipped (Windows-only and the dist check); 4 fault switch 59.2 s, 2341 seen,
+  3 skipped; 5 git integrity 0.03 s. This entry's commit moves HEAD, so climb 3 at the new HEAD is the proof
+  (its numbers in the report to the orchestrator).
+
+## Evidence for done_when
+
+- Item 1: `TestRoleWriteAfterACdNotFollowed` (the trial's two shapes and three others) failed on the old code (15
+  errors), passes now; `TestRoleWriteAfterACdFollowed` keeps today's words; what is refused is the same (each line
+  still exits 2 with rule role-writes-nothing).
+- Item 2: the climb green (above); CI on the branch and the verifier are the orchestrator's.
+
 ## What did not work
 
-- The climb: red at rung 0 on a STATE finding no builder may fix (above).
+- Climb 1: red at rung 0 on a STATE finding no builder may fix (above); fixed on main at `251abb28`, then rebased.
 
 ## Processes left running
 
-None of mine (`ps -eo pid,etime,cmd` at 10:13).
+None of mine (`ps -eo pid,etime,cmd` at 10:13 and after climb 2).
