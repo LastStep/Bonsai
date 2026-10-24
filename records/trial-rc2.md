@@ -47,6 +47,15 @@ your move from an agent's. `bonsai ask` exists for that; whether the pack should
 the options itself, not a researcher; the spike's mockup code committed into `design/reference/` (your approved plan
 asks for it); reporting, verification-ladder and reward-hacking-guards never opened.
 
+## The build stage (read the same day, 10:00 UTC)
+
+After 09:05 LinkSink built its first task (T-0003): a builder in a worktree with its run report from the first
+minute, two verifiers (tests FAIL on one real problem, fixed; security PASS), the person's ladder of six rungs
+committed by them, and a climb green at `e15441f` (unit 29, the ratchet set to 29). The guard refused 6 calls, all
+right. Rough: T-0006 and T-0007 `running` together (no active task; BUG-105's fix says one at a time); a builder's
+`prettier --write .` rewrote person-only files in its worktree, caught by the builder (BUG-039, known); the ladder's
+leftovers list named other programs (BUG-029, known). Not met yet: the stop gate (every builder a subagent).
+
 ## Not covered
 
 The session after 09:05 (`a60e4bad`, T-0003 running), which starts the build: the ladder, a builder in a worktree and

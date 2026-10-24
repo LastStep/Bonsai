@@ -337,14 +337,14 @@
   },
   "disableAllHooks": false,
   "enabledPlugins": {
-    "base@bonsai-bonsai-d9e5fa11": true,
-    "workflow@bonsai-bonsai-d9e5fa11": true
+    "base@bonsai-bonsai-f61b414f": true,
+    "workflow@bonsai-bonsai-f61b414f": true
   },
   "extraKnownMarketplaces": {
-    "bonsai-bonsai-d9e5fa11": {
+    "bonsai-bonsai-f61b414f": {
       "source": {
         "source": "settings",
-        "name": "bonsai-bonsai-d9e5fa11",
+        "name": "bonsai-bonsai-f61b414f",
         "plugins": [
           {
             "name": "base",
@@ -360,7 +360,7 @@
             "source": {
               "source": "github",
               "repo": "LastStep/bonsai-workflow",
-              "sha": "8a171735d8f0f94feaad418dcd26e3d07c8c0844"
+              "sha": "1a9f6b4ec7848b4d31e8d990f96c6a7afd68873d"
             }
           }
         ],

@@ -14,6 +14,11 @@ studio and game packs'), its producer's work kept as `workflow:producer`; CI gre
 (the plugins wait for a fresh Claude Code start, then `bonsai update`). The general rewording of workflow is after
 1.0. **The director's trial on rc.2** (LinkSink, `T-5733`, `records/trial-rc2.md`): Bonsai's machinery passed every
 criterion, the packs' steering partial; rc.3 takes BUG-103 to BUG-108 (their words), the rest after 1.0.
+**rc.3's fixes landed** (`T-5734`; the director: "go with rc.3, tell me when to tag"): workflow `1a9f6b4e` (`T-5735`:
+a run report before any work, STATE as the project moves, notes as memory, `running` from any agent, one task at a
+time; Bonsai pinned and updated); `main` `1bd1a194` (`T-5736`: check's `config-uncommitted` warning, the reload
+words after a pack is added; `T-5737`: the guard's words after a cd it cannot follow, verifier PASS); CI green.
+Next: the director's `v1.0.0-rc.3` tag, then the orchestrator's test (`T-5738`), then 1.0.
 **23 Oct, the 1.0 session: `v1.0.0-rc.2` published and installed in WSL.** rc.2's fixes (`T-5710`, run report
 `records/runs/R-2026-10-23-T-5710-rc2-fixes.md`) landed as one batch at `1cbd0aa4`, CI green: BUG-014 (`T-5725`, a
 pack with a path counts only its own-name tags, the director's rule) and V1's note C; the stop gate's three risks
@@ -287,7 +292,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** their trial on rc.2 is audited (`records/trial-rc2.md`); next, rc.3's plan with its fixes. Their answer: the README's
+- **Now:** the `v1.0.0-rc.3` tag and its release approval, then the WSL install (rc.3's fixes landed, `T-5734`). Their answer: the README's
   first project again on rc.3 before 1.0, or the whole trial once on rc.3.
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
 - **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips

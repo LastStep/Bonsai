@@ -683,8 +683,8 @@
       "id": "workflow",
       "source": "https://github.com/LastStep/bonsai-workflow.git",
       "version": "0.1.0",
-      "commit": "8a171735d8f0f94feaad418dcd26e3d07c8c0844",
-      "sha256": "a5b365a2659d85207b36144e4cd5a39935402cd37e8bf288c4bd2136385ac6be",
+      "commit": "1a9f6b4ec7848b4d31e8d990f96c6a7afd68873d",
+      "sha256": "1f96d3f5c18179934f769bd2575296f66e97d33b476ccd01cbffbd3a43d8e7d0",
       "declares": {
         "lanes": [
           {
@@ -1129,7 +1129,7 @@
     ".claude/settings.json": {
       "kind": "keys",
       "pack": "base",
-      "sha256": "f996e8e35fda242c15b6236e3ec6cf76af3b8b2afe6ce02fde50d947498f48c1"
+      "sha256": "898469ae03d2298cf7a4abc5626581c8407ba402a3e8b022a04ba66895d8af15"
     },
     "CLAUDE.md": {
       "kind": "block",
@@ -1139,7 +1139,7 @@
     "records/protocols/session-start.md": {
       "kind": "pack",
       "pack": "workflow",
-      "sha256": "d2ac27dc16ef6bbf76cff5f1e11143ccd4c5fdaeeceb5c2a6b915e7df2b5171f"
+      "sha256": "ab7c120a1b4fbf63a60055b40e394cc020fe8b3a6dcd52407c05454082e34b6d"
     }
   },
   "format0": {}

@@ -46,9 +46,11 @@ git branch --show-current   # the task's bonsai.branch?
 
 Uncommitted work you did not make is not yours to commit. Report it and leave it alone.
 
-## 5. Open the run report before you write code
+## 5. Open the run report before any work on the task
 
-From the template `base:run`, in the folder `bonsai status --json` names for `run`, now, and append to it as you go.
+Before any work on the task starts, not only code: planning, research, an options write-up, a decision, a spike. From the
+template `base:run`, in the folder `bonsai status --json` names for `run`, now, and append to it as you go. The
+orchestrator keeps one for the task it is working on, and names each brief and report in it.
 It is a log, not a summary written at the end: if your session dies halfway, it is what survives.
 
 ## 6. Then work
