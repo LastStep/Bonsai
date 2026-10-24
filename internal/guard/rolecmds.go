@@ -52,6 +52,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/engine"
@@ -609,8 +610,11 @@ func cmdletName(name string) string {
 
 // mayWrite judges one path a shell call writes, read against the folder dir (this file's comment): bonsai-files from
 // every agent, then, with role set, role-writes-nothing from a role that changes nothing; else allowed. A path whose
-// forms cannot be read (pathForms' error) is refused: role-writes-nothing for such a role, else bad-path.
-func (s *shellRole) mayWrite(dir, p, word string, role, attr bool) Decision {
+// forms cannot be read (pathForms' error) is refused: role-writes-nothing for such a role, else bad-path. lost marks a
+// relative path judged in dir only because a cd before it could not be followed (cd $S, cd -): what is refused is the
+// same, and role-writes-nothing's words say the guard could not tell where the cd went, with a next step that fits
+// (the file named by its full path, BUG-108).
+func (s *shellRole) mayWrite(dir, p, word string, role, attr, lost bool) Decision {
 	writes, into := "writes", "writes into"
 	if attr {
 		writes, into = "changes the permissions, owner, ACL or attributes of", "changes the permissions or attributes of a file in"
@@ -654,6 +658,15 @@ func (s *shellRole) mayWrite(dir, p, word string, role, attr bool) Decision {
 				d.Target = target(j.session, []string{abs})
 				return d
 			}
+		}
+		if role && s.changesNothing() && len(chain) > 0 && lost {
+			d := deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s %s %s, read in the folder the command started in "+
+				"(%s), inside a linked project, since the guard could not tell where a cd before it went; and %s changes "+
+				"nothing (its role's writes: false)", s.rr.in.Tool, word, writes, quote(j.shown(p), 120), quote(j.shown(dir), 120),
+				s.w.shown()), "name the file by its full path, outside the project, instead of after a cd; or put what you "+
+				"would change in your report")
+			d.Target = target(j.session, []string{abs})
+			return d
 		}
 		if role && s.changesNothing() && len(chain) > 0 {
 			d := deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s %s %s, inside a linked project, and %s changes nothing "+
@@ -718,8 +731,11 @@ func (r *delRun) writePath(rs *shellRole, x delExec, t writeTarget, role bool) {
 		if op.away && r.base != "" {
 			dirs = appendNew(dirs, r.base)
 		}
+		// A relative path judged in the command's own folder only because a cd before it could not be followed: the
+		// same judgement, its own words (mayWrite's lost).
+		lost := (x.dirs.unknown || op.away) && !delIsAbs(text)
 		for _, dir := range dirs {
-			if d := rs.mayWrite(dir, text, word, role, t.attr); !d.Allow {
+			if d := rs.mayWrite(dir, text, word, role, t.attr, lost && !slices.Contains(x.dirs.known, dir)); !d.Allow {
 				r.refuse(d)
 				return
 			}

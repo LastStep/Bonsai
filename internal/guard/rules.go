@@ -170,7 +170,8 @@ var Rules = []Rule{
 	{RuleRoleWritesNothing, false, "where the lock declares roles: a role that changes nothing (writes: false, every undeclared type " +
 		"among them) calling Edit, Write, MultiEdit or NotebookEdit, or a shell write the guard can read into a linked project " +
 		"(a redirect, tee, cp, ln or sed -i onto a path there; rm or mv of one; a change of its permissions, owner, ACL or " +
-		"attributes; git's words that change the checkout or its history; bonsai init, update, unlink, check --write)"},
+		"attributes; git's words that change the checkout or its history; bonsai init, update, unlink, check --write); a relative " +
+		"path after a cd the guard cannot follow is read in the folder the command started in, and its refusal says so"},
 	{RuleBudgetSpent, false, "where the lock declares roles: an agent past a limit in force (its minutes, actions or red runs), or " +
 		"whose window is held spent (its state moved aside a second time), or whose call the guard cannot count (its line or " +
 		"state cannot be written or read, even with its access set back: fail closed), every call but the three budget-exempt " +
