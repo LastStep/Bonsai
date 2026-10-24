@@ -286,7 +286,17 @@ type PluginConsent struct {
 	// marketplace name moved (another pack changed, or was taken out): a plugin of theirs that carries code waits for
 	// --allow-exec all the same, a new install under a new name, and the waiting message says why (Plan.PluginConsent).
 	MarketMoved map[string]bool
+	// Fresh: the plan installs the plugins under a marketplace name the checkout's lock did not hold before (a first
+	// link, a pack added, moved to another commit or folder, or taken out, the workspace renamed), so a Claude Code
+	// session already open in the checkout has not loaded them: an install says so (ReloadWords; BUG-107).
+	Fresh bool
 }
+
+// ReloadWords say what a Claude Code session already open in the checkout needs once a pack's plugin is installed
+// there under a new marketplace name (BUG-107: the open session showed every pack skill as "Unknown skill"): Claude
+// Code 2.1.308 to 2.1.310 offer /reload-plugins ("or relaunch"), and a fresh start loads them in any version.
+const ReloadWords = "a Claude Code session already open in this checkout loads the pack's skills only after /reload-plugins " +
+	"in it, or a fresh start of Claude Code"
 
 // InstallPlugins asks Claude Code to install each locked pack's plugin for the checkout at root, at project scope
 // (spec §5: `claude plugin install` is a no-op once installed, and the marketplace name is new whenever a locked
@@ -335,6 +345,7 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 						"not (" + lp.ID + " is still at " + pluginVersion(lp.Commit) + "), but each install under a new name is asked " +
 						"for again"
 				}
+				r.Message += "; once it is installed, " + ReloadWords
 				r.Next, r.Who = "if you consent to that code running on this machine, run: "+again, "person"
 			}
 			r.Message, r.Next = ascii(r.Message), ascii(r.Next)
@@ -354,11 +365,14 @@ func InstallPlugins(root string, cfg *workspace.Config, lock *workspace.Lock, cl
 			if after, _, _ := readFile(root, SettingsFile); !bytes.Equal(before, after) {
 				r.Message += "; Claude Code wrote " + SettingsFile + " again in its own key order (Bonsai's lines are unchanged)"
 			}
+			if consent.Fresh {
+				r.Message += "; " + ReloadWords
+			}
 		case res.FailureCode == "not_found":
 			r.Result = "waiting"
 			r.Message = "Claude Code has not registered this checkout's marketplace " + market + " yet: a Claude Code session " +
 				"in this checkout registers it once a person has trusted the folder (Bonsai never answers that question), " +
-				"then update installs the plugin at " + pluginVersion(lp.Commit)
+				"then update installs the plugin at " + pluginVersion(lp.Commit) + "; once it is installed, " + ReloadWords
 			r.Next, r.Who = TrustNext(len(consent.Code[lp.ID]) > 0), "person"
 		default:
 			r.Result, r.Message, r.Next, r.Who = "failed", strings.TrimSpace(res.Message), "run: "+cmd, "agent"
@@ -599,7 +613,7 @@ func ComparePlugins(r *CheckResult, cli PluginCLI) {
 			if askedOK && !known {
 				r.add("plugin-trust", SettingsFile, "", "Claude Code has not registered this checkout's marketplace "+market+" yet, so the plugin "+
 					want+" ("+lp.ID+" at "+version+") cannot be installed: a Claude Code session in this checkout registers it once a "+
-					"person has trusted the folder", "a person opens Claude Code in this checkout and accepts its trust question (Bonsai "+
+					"person has trusted the folder; once update installs it, "+ReloadWords, "a person opens Claude Code in this checkout and accepts its trust question (Bonsai "+
 					"never answers it), then quits it; a plugin that carries code also needs --allow-exec, a person's consent, which "+
 					"update names; then run: bonsai update")
 				continue

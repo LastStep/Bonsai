@@ -158,9 +158,11 @@ type Plan struct {
 }
 
 // PluginConsent is what the install step needs after the plan (InstallPlugins): each pack's plugin code parts at the
-// commit the plan locks, the request's --allow-exec, and again, the command that repeats the run with --allow-exec.
+// commit the plan locks, the request's --allow-exec, and again, the command that repeats the run with --allow-exec;
+// Fresh when the lock it writes names another marketplace than the lock it read (OldMarket; "" at a first link).
 func (p *Plan) PluginConsent(again string) PluginConsent {
-	return PluginConsent{Code: p.pluginCode, AllowExec: p.AllowExec, Again: again, MarketMoved: p.marketMoved}
+	fresh := p.lock != nil && len(p.lock.Packs) > 0 && p.OldMarket != lockMarket(p.Config, p.lock)
+	return PluginConsent{Code: p.pluginCode, AllowExec: p.AllowExec, Again: again, MarketMoved: p.marketMoved, Fresh: fresh}
 }
 
 // NewLock is the lock the plan writes (or, with nothing to change, the lock as it is).
