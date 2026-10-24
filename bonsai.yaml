@@ -16,7 +16,7 @@ packs:                                # the packs this repository takes (step 5.
   - id: workflow                      # the six roles, lanes and templates (the director's yes, 16 Oct 09:30)
     source: "https://github.com/LastStep/bonsai-workflow.git"   # its own public repository
     path: null                        # the pack is the repository's top
-    ref: "612bc3330742b25f30329d128dddd6020e5d51eb"     # main after T-5796 (no studio walls), the director's yes 22 Oct; a move is the director's step
+    ref: "8a171735d8f0f94feaad418dcd26e3d07c8c0844"     # main after T-5732 (the brief and playtest kinds out), the director's yes 24 Oct; a move is the director's step
     roles:                            # Bonsai's own limits where the pack's would cut a run it needed; the rest the pack's
       builder:
         minutes:                      # builders ran 230 and 416 minutes in 5.4-5.5 (the log's count, 16 Oct)

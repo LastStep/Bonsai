@@ -259,5 +259,5 @@ What Bonsai generates in this project, and how long it keeps each kind: base:gen
 Open base:operating-bonsai before you run any bonsai command, and whenever Bonsai or its guard refuses something.
 Open base:operating-setup before you link or update a project, edit bonsai.yaml or change a pack's version.
 Roles (workflow): the session the person talks to is the orchestrator and opens `workflow:orchestrate` when work starts; builder and verifier (leads) and researcher, auditor and runner (helpers) are called with their brief, or started as `claude --agent workflow:<role>`.
-Lanes light, full and director, each with its pipeline: `workflow:lanes`. Document templates: `workflow:plan`, `workflow:feature`, `workflow:decision`, `workflow:options`, `workflow:spec`, `workflow:playtest`, `workflow:bugs`, and the daily brief's in `workflow:brief`.
+Lanes light, full and director, each with its pipeline: `workflow:lanes`. Document templates: `workflow:plan`, `workflow:feature`, `workflow:decision`, `workflow:options`, `workflow:spec` and `workflow:bugs`. A pack that declares more kinds brings their templates.
 <!-- bonsai:block end -->

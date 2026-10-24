@@ -14,6 +14,7 @@ Active task when none is named: none (no task reads running)
 | T-5793 | Scratch folders, declared in bonsai.yaml: what one is, where it lives, which roles may use it and with what authority | todo | full | | |
 | T-5792 | CI on the branch: a batch's branch pushed and green on CI (its windows jobs among them) before main moves | done | | 2026-10-20 | 2026-10-20 |
 | T-5790 | The tagged pass narrowed to the packages the bonsai_test_fault tag can reach, held there by a test | done | | 2026-10-19 | 2026-10-19 |
+| T-5732 | The workflow split: the brief and playtest kinds and the interview leave workflow for the studio and game packs | done | light | 2026-10-24 | 2026-10-24 |
 | T-5731 | The stop gate reads the run report as bonsai check does (the pi brief's B3) | done | | 2026-10-23 | 2026-10-23 |
 | T-5730 | rc.2's words: CHANGELOG since rc.1, CLAUDE.md's stale lines, the README's step 6, the old demo and old sections out | done | | 2026-10-23 | 2026-10-23 |
 | T-5729 | Bonsai's words from the dry run and BUG-097 | done | | 2026-10-23 | 2026-10-23 |

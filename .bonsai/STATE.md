@@ -1,13 +1,18 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-23
+updated: 2026-10-24
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 23 Oct 2026 (a day session, the director present).
+Rewritten, never appended (`base:state`). Last rewritten 24 Oct 2026 (a day session, the director present).
+**24 Oct: the workflow split** (`T-5732`, on the studio's word in its `P-T-0082.md`, "For Bonsai's sessions",
+first bullet): workflow `8a171735` gives up the `brief` and `playtest` kinds and the `interview` skill (now the
+studio and game packs'), its producer's work kept as `workflow:producer`; CI green; Bonsai pinned to it and updated
+(the plugins wait for a fresh Claude Code start, then `bonsai update`). The general rewording of workflow is after
+1.0. The director's trial on a new project (LinkSink) is under way.
 **23 Oct, the 1.0 session: `v1.0.0-rc.2` published and installed in WSL.** rc.2's fixes (`T-5710`, run report
 `records/runs/R-2026-10-23-T-5710-rc2-fixes.md`) landed as one batch at `1cbd0aa4`, CI green: BUG-014 (`T-5725`, a
 pack with a path counts only its own-name tags, the director's rule) and V1's note C; the stop gate's three risks

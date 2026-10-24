@@ -683,8 +683,8 @@
       "id": "workflow",
       "source": "https://github.com/LastStep/bonsai-workflow.git",
       "version": "0.1.0",
-      "commit": "612bc3330742b25f30329d128dddd6020e5d51eb",
-      "sha256": "62e06e810da70097ee93365b7c99b69d724d3e29a90c73257ead9f1ec3a7ddc6",
+      "commit": "8a171735d8f0f94feaad418dcd26e3d07c8c0844",
+      "sha256": "a5b365a2659d85207b36144e4cd5a39935402cd37e8bf288c4bd2136385ac6be",
       "declares": {
         "lanes": [
           {
@@ -882,28 +882,6 @@
             "stamp": {
               "approved": "approved"
             },
-            "task_field": null
-          },
-          {
-            "kind": "playtest",
-            "path": "work/playtests",
-            "file": null,
-            "id": null,
-            "statuses": [],
-            "person": [],
-            "agent": [],
-            "stamp": {},
-            "task_field": null
-          },
-          {
-            "kind": "brief",
-            "path": "work/briefs",
-            "file": null,
-            "id": null,
-            "statuses": [],
-            "person": [],
-            "agent": [],
-            "stamp": {},
             "task_field": null
           },
           {
@@ -1151,12 +1129,12 @@
     ".claude/settings.json": {
       "kind": "keys",
       "pack": "base",
-      "sha256": "45fc7be5b1515675b2e192834eaef0a2e6670e045313fa27956cccc32348ee34"
+      "sha256": "f996e8e35fda242c15b6236e3ec6cf76af3b8b2afe6ce02fde50d947498f48c1"
     },
     "CLAUDE.md": {
       "kind": "block",
       "pack": "base",
-      "sha256": "b63afc6f140be90e3a67580db80bd0aae4c396e94c1ee601aff4db9b0520e92d"
+      "sha256": "591caf30151fefcfbf398bc0686747ea375ffd4d787cf96d3abef6a54b2bf447"
     },
     "records/protocols/session-start.md": {
       "kind": "pack",
