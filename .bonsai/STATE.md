@@ -21,8 +21,9 @@ words after a pack is added; `T-5737`: the guard's words after a cd it cannot fo
 **rc.3 published and installed** (tag at `474ae7f7`, release run 40094853125, the director's approval, 12:52 UTC; the
 director's WSL install, sha256 `86cb629f...259d7`; the way back: rc.2 in `~/bonsai-checks/prerelease/previous/`).
 **Its test** (`T-5738`, run report `R-2026-10-24-T-5738-rc3-test.md`): every part green (the release on both sides,
-all programs rebuilt byte-identical, the README's first project, each fix seen working, LinkSink) but check 10's
-Windows half, left running at the director's stop: read its files first next session. Then 1.0.
+all programs rebuilt byte-identical, the README's first project, each fix seen working, LinkSink), and check 10's
+Windows half green at the tag (24 Oct, 20:16 UTC: vet plain and tagged clean, tests plain 34 of 34 packages and
+tagged 7 of 7, `cmd/bonsai` with CI's 20-minute limit): **`T-5738` done.** Next: 1.0's batch 5, on the director's word.
 **23 Oct, the 1.0 session: `v1.0.0-rc.2` published and installed in WSL.** rc.2's fixes (`T-5710`, run report
 `records/runs/R-2026-10-23-T-5710-rc2-fixes.md`) landed as one batch at `1cbd0aa4`, CI green: BUG-014 (`T-5725`, a
 pack with a path counts only its own-name tags, the director's rule) and V1's note C; the stop gate's three risks
@@ -296,8 +297,9 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** nothing until check 10's Windows half on rc.3 is read (T-5738); then their word for 1.0 (batch 5). Their answer: the README's
-  first project again on rc.3 before 1.0, or the whole trial once on rc.3.
+- **Now:** their word for 1.0 (batch 5: the `v1.0.0` tag on `474ae7f7`, both installs, the memory line, the packs'
+  tags; then 5.7.6, the floors, the 5.7 end verifier). rc.3 is fully tested (`T-5738`); the orchestrator's test
+  stood in for their second trial (their 24 Oct words, in the task).
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
 - **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips
   <clip>`, then `sh docs/demos/edit.sh`; T-5710 item 12, clip 10 among them, BUG-098); then their word for 1.0.

@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5738
 title: "rc.3 tested by the orchestrator: the release read back, a fresh project from the README, each fix seen working"
-status: running
+status: done
 lane:
 done_when:
   - "the v1.0.0-rc.3 release read back on both sides as rc.2's was: release verify, verify-asset, attestation, checksums, TestDist, the installers to a scratch target, every program rebuilt byte-identical"
@@ -14,7 +14,7 @@ depends_on: [T-5734]
 blocked_by:
 created: 2026-10-24
 started: 2026-10-24
-finished:
+finished: 2026-10-24
 labels:
   bonsai.ladder: []
   bonsai.allows: []
