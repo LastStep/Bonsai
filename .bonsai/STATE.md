@@ -15,8 +15,12 @@ GitHub's latest. 1.0's files read back on both sides (every check rc.3's had; al
 byte-identical). Their installs: WSL `/usr/local/bin/bonsai` `f9b1cd76...f5caf`, Windows `C:\Program
 Files\Bonsai\bonsai.exe` `d1bba8dd...0df3e0`, both `bonsai 1.0.0 (commit 48d5f3f0d387)`; the way back: rc.3 in
 `~/bonsai-checks/prerelease/previous/`, rc.2 in `older-rc2/`. Their memory line in `~/.claude/CLAUDE.md`; `/memory`
-lists `~/.bonsai/personal/INDEX.md`. **Left in 5.7:** 5.7.6 (the packs at 1.0, a Sonnet builder: the workflow roles
-need a fresh Claude Code start, as this session loaded none), then the director's two pack tags, the floors, the
+lists `~/.bonsai/personal/INDEX.md`. **The packs at 1.0** (`T-5706`, 5.7.6): the template's and the workflow repo's CI
+take `bonsai` from the 1.0 archive by its SHA-256, base's `ci` skill the same; `base` and `workflow` at `version:
+"1.0.0"`; landed at `4662da5e` (CI on the branch and on main green, 19 of 19); the workflow repo `0290f701` (CI 4 of 4,
+Windows' zip included). The director's tags: `base-v1.0.0` at `4662da5e` (started nothing), the workflow repo's
+`v1.0.0` at `0290f701` (its release published 10:35 UTC). Bonsai's repo still names both packs by commit (moving to
+the tags waits for the director's word). **Left in 5.7:** the floors, the Haiku audit of `.bonsai/sessions.md`, the
 5.7 end verifier.
 **24 Oct: the workflow split** (`T-5732`, on the studio's word in its `P-T-0082.md`, "For Bonsai's sessions",
 first bullet): workflow `8a171735` gives up the `brief` and `playtest` kinds and the `interview` skill (now the
@@ -273,13 +277,12 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | **Bonsai under pi: the contract plan** (the director, 23 Oct) | `T-5798` | done | `design/pi-contract.md`: the pi side (one plain-JS extension in the director's `~/Servers/pi-harness`, a stopgap mode against today's binary, an envelope mode `bonsai.hook/1` later); four review rounds (FAIL, FAIL, FAIL, PASS), approved by the director 23 Oct; theirs to hand to pi |
 | rc.3's fixes; rc.3 tested | `T-5734` (`T-5735`-`T-5737`); `T-5738` | done | rc.3 at `474ae7f7`; every check green on both sides, check 10's Windows half included |
 | **Bonsai 1.0** (batch 5 to the memory line) | `T-5739` | done | `v1.0.0` at `48d5f3f0`, published 25 Oct 07:37 UTC; read back both sides; installed both sides; memory line loads |
-| 5.7.6, the packs at 1.0; the pack tags | to write | next | needs the workflow roles (a fresh Claude Code start) |
+| 5.7.6, the packs at 1.0; the pack tags | `T-5706` | done | landed `4662da5e`; workflow `0290f701`; tags `base-v1.0.0`, workflow `v1.0.0` (its release made) |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Now: 1.0 is out; 5.7's end** (`T-5739` done). **In this order:** 5.7.6 (the packs at 1.0: plan-5.md's note
-5.7.6, a Sonnet builder; its task the only one `running`); the director's two pack tags (`base-v1.0.0` in Bonsai's
-repo, `v1.0.0` in the workflow repo, on the commits 5.7.6 names); the floors (a `T-579x` task climbed by the installed
-1.0; T-5790 to T-5799 are all taken, so the next free number); the Haiku audit of `.bonsai/sessions.md`; the 5.7 end
+**Now: 1.0 is out; 5.7's end** (`T-5739`, `T-5706` done; both packs tagged and released). **In this order:** the
+floors (a task granting `bonsai.yaml`, climbed by the installed 1.0; T-5790 to T-5799 are all taken, so the next free
+number); the Haiku audit of `.bonsai/sessions.md`; the 5.7 end
 verifier; STATE rewritten and the director's roadmap updated. Go 1.27.2 (govulncheck v1.9.0 cannot load go1.27.3).
 The agent work (the
 pi brief's B1, B4, B5; the envelope, B6, B7) waits for after 1.0. A named session starts with `claude -p --agent
@@ -309,8 +312,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** a fresh Claude Code start in `~/Servers/Bonsai` (`claude --continue`), so the workflow roles load for
-  5.7.6's builder; later, the two pack tags on the commits 5.7.6 names.
+- **Now:** nothing: the floors and the end verifier need no answer (the floors go to them in the part's last line).
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
 - **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips
   <clip>`, then `sh docs/demos/edit.sh`; T-5710 item 12, clip 10 among them, BUG-098); then their word for 1.0.

@@ -43,11 +43,12 @@ Active task when none is named: none (no task reads running)
 | T-5713 | Time, piece B: bonsai now and internal/timefmt | done | | 2026-10-21 | 2026-10-21 |
 | T-5712 | Time, piece A: formats set 11: document times with an offset, now.schema.json | done | | 2026-10-21 | 2026-10-21 |
 | T-5711 | Before 1.0: the README improved, and demo videos showing how Bonsai works for a project | done | full | 2026-10-22 | 2026-10-22 |
-| T-5710 | rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on) | verify | | 2026-10-23 | |
+| T-5710 | rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on) | done | | 2026-10-23 | 2026-10-25 |
 | T-5709 | 5.7.9, the trial's analysis: records/trial-rc1.md for the director, and an agent's dry run of the README's first-project steps | done | | 2026-10-21 | 2026-10-21 |
 | T-5708 | The trial's feature: the stop gate names its rule when it blocks (BUG-089, with BUG-088) | done | | 2026-10-20 | 2026-10-20 |
 | T-5707 | 5.7.7, Bonsai on itself on rc.1: the repo brought to rc.1, the proposals, the director's pick run end to end, its records | done | | 2026-10-20 | 2026-10-20 |
-| T-5705 | 5.7.5, the releases checked: batch 1 read back, each pre-release's and 1.0's files checked on both sides, V2, the director's installs read back | verify | | 2026-10-20 | |
+| T-5706 | 5.7.6, the packs at 1.0: the template's and the workflow repo's CI take bonsai from the 1.0 archive by its SHA-256; base and workflow at version 1.0.0 | done | | 2026-10-25 | 2026-10-25 |
+| T-5705 | 5.7.5, the releases checked: batch 1 read back, each pre-release's and 1.0's files checked on both sides, V2, the director's installs read back | done | | 2026-10-20 | 2026-10-25 |
 | T-5704 | 5.7.4, the words for 1.0 (drafted on its branch; lands after 5.6 closes and the records-database talk) | done | | 2026-10-19 | 2026-10-20 |
 | T-5703 | 5.7.3, the stronger check in the install lines: gh attestation verify before unpacking, and docs/install.md | done | | 2026-10-20 | 2026-10-20 |
 | T-5702 | 5.7.2, the release workflow: release.yml in two jobs, the tag check, the templates, CLAUDE.md's release lines | done | | 2026-10-20 | 2026-10-20 |

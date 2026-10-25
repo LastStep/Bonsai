@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5710
 title: "rc.2's fixes: the list gathered on 20 Oct (each its own task when it starts, T-5712 on)"
-status: verify
+status: done
 lane:
 done_when:
   - "each item below landed as its own task with its proof, or put after 1.0 on the director's word; then rc.2 (note 5.7.10)"
@@ -10,7 +10,7 @@ depends_on: [T-5709]
 blocked_by:
 created: 2026-10-20
 started: 2026-10-23
-finished:
+finished: 2026-10-25
 labels:
   bonsai.ladder: []
   bonsai.allows: []
