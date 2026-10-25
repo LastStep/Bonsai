@@ -311,7 +311,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 --allow-exec` and `update` run `claude plugin install` on the person's machine (on Windows a warm session first).
 
 **Housekeeping:**
-- The roadmap artifact ("Trinetra Roadmap"): Bonsai's cards updated 19 Oct (version 39: 5.5 done, 5.6 closing, 5.7 begun), next at 5.7's planning. The agent design:
+- The roadmap artifact ("Trinetra Roadmap", shared with the studio's sessions): Bonsai's cards updated 25 Oct (version 47: Bonsai 1.0 and 5.7 done, the after-1.0 card up next, move 2's wait on 1.0 over). The agent design:
   "Workflow Pack Redesign" (version 4). The work-files research's page, "Solo to Team AI" (private), is the
   studio's now (a copy in its research folder, solo-to-team-ai).
 - Another of the director's sessions may also work in `~/Servers/Bonsai`: read `origin/main`'s new commits before each
