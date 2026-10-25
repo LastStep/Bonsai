@@ -135,8 +135,8 @@ ladder:                               # the rungs, cheapest first; each command 
     tests: null                       # it prints no tests
     base_setup: null                  # nothing to set up on the base
 ratchets:                             # the floors: counts that may only rise, from the first green climb after the link
-  go_tests: 4756                      # rung 3's tests that passed, at b6623308 (19 Oct, 5.6, T-5695)
-  go_tests_tagged: 2120               # rung 4's tests that passed, its 7 packages, at the audit of 5fc46343 (19 Oct, T-5790; the director's word)
+  go_tests: 5067                      # rung 3's tests that passed, at 815da3ba by the installed 1.0 (25 Oct, 5.7, T-5740)
+  go_tests_tagged: 2341               # rung 4's tests that passed, its 7 packages, at 815da3ba by the installed 1.0 (25 Oct, 5.7, T-5740)
 ci_marked_tests: []                   # no test may skip in CI
 generated:                            # how long generated files are kept, per kind (skill base:generated-files)
   log:                                # the log, in .bonsai/local/log/
