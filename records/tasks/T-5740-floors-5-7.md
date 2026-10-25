@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5740
 title: "5.7's floors: go_tests and go_tests_tagged raised to main's climb by the installed 1.0"
-status: running
+status: verify
 lane:
 done_when:
   - "main climbed once by the installed bonsai 1.0's ladder --task T-5740, green, clean, at main's top"
