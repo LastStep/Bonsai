@@ -8,9 +8,9 @@
 # letter is quoted (format-1 YAML).
 format: bonsai.pack/1                 # the format and its version, always the first key; only bonsai.pack/1
 id: base                              # the pack's id, equal to "name" in .claude-plugin/plugin.json; skills load as base:<name>
-# version: base's version, quoted, as X.Y.Z; its release tag is base- and this (base-v0.1.0), never a bare v tag, so
+# version: base's version, quoted, as X.Y.Z; its release tag is base- and this (base-v1.0.0), never a bare v tag, so
 # Bonsai's own release never fires. plugin.json carries none: a project pins base by commit
-version: "0.1.0"
+version: "1.0.0"
 needs:                                # what a machine needs for base; bonsai status --json lists each
   claude_code: "2.1.294"              # the oldest Claude Code base works with, quoted: Bonsai's own floor
 block: block.md                       # base's part of the block in a project's CLAUDE.md: bonsai/block.md, a few lines

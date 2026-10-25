@@ -14,7 +14,8 @@
 #        [--path <path>] --yes --json), with claude off the PATH, so its plugin step reports skipped and no plugin
 #        is installed on the machine; its Bonsai home is a temporary folder too, removed at the end.
 #     4. bonsai check --json in that project, with no finding (its warnings are printed, never a failure).
-#     <bonsai>  the bonsai program to run: a path to a build of the Bonsai commit the pack pins (bonsai.exe on Windows)
+#     <bonsai>  the bonsai program to run, as it is given: a path to the file (bonsai.exe on Windows); this script builds
+#               nothing, and the pack's CI passes the program of the Bonsai release it pins, checked by its SHA-256
 #     <folder>  the pack's folder on disk, the one that holds bonsai/pack.yaml: . in the pack's own repository
 #     <source>  the git repository the scratch project links the pack from: a local checkout's folder (its commit is
 #               copied first into the temporary folder, so the project's bonsai.yaml names no absolute path) or a URL

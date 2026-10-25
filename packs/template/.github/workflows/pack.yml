@@ -1,5 +1,5 @@
 # .github/workflows/pack.yml: this pack's CI and release, from Bonsai's pack template. On every push and pull request
-# it checks the pack on Linux and Windows with a bonsai built from a pinned Bonsai commit, and validates it as a
+# it checks the pack on Linux and Windows with the bonsai of a pinned Bonsai release, and validates it as a
 # Claude Code plugin with a pinned Claude Code; on a v* tag it also makes the GitHub release, once the tag equals
 # bonsai/pack.yaml's version. Every check is in ci/check.sh (its header documents each); this file gets the tools and
 # calls it. No secret is used anywhere, so a fork's pull request runs the same checks. Every action is pinned by its
@@ -16,16 +16,27 @@ permissions:                                 # what the token may do in every jo
   contents: read                             # read the repository, nothing more
 
 env:                                         # the pins every job reads
-  # BONSAI_COMMIT: the Bonsai commit whose bonsai checks the pack, all 40 characters. Bonsai has no release yet, so
-  # the check job builds it from this commit; from Bonsai 1.0 its release archive, checked by its SHA-256, replaces it
-  BONSAI_COMMIT: "e1437d09832c86c7e6ae430b9336358e1706199a"
+  # BONSAI_VERSION: the Bonsai release whose bonsai checks the pack. The check job downloads that release's archive
+  # for its system from https://github.com/LastStep/Bonsai/releases/download/v<BONSAI_VERSION>/<file> and runs it only
+  # after the archive's SHA-256 matches the one written beside it (the check job's matrix, below). To move it: set the
+  # new version here, then set each matrix entry's bonsai_file and bonsai_sha256 to that release's archive names and
+  # their lines in the release's checksums.txt (the release page lists it); move all three together.
+  BONSAI_VERSION: "1.0.0"
   CLAUDE_CODE_VERSION: "2.1.300"             # the Claude Code whose claude plugin validate checks the pack
 
 jobs:                                        # check, validate, then release
   check:                                     # bonsai check --pack, the README's rows, a scratch link, bonsai check
     strategy:                                # one run per system
-      matrix:                                # the systems it runs on
-        os: [ubuntu-latest, windows-latest]  # Linux, and Windows (its Git Bash)
+      matrix:                                # the systems it runs on, each with its bonsai archive
+        include:                             # one entry per system
+          - os: ubuntu-latest                # Linux
+            bonsai_file: bonsai_1.0.0_linux_amd64.tar.gz   # the release archive's file name, from checksums.txt
+            bonsai_sha256: "5277cad9e36d4b1c520ea3b9be7a698965fa4757a0d4aa9a803b71c2469285e1"   # its SHA-256 line there
+            bonsai_exe: ""                   # the program's suffix: none on Linux
+          - os: windows-latest               # Windows (its Git Bash)
+            bonsai_file: bonsai_1.0.0_windows_amd64.zip    # the release archive's file name, from checksums.txt
+            bonsai_sha256: "465f1a4e8b2004c7556bcf30f5c19b52fcb1daf550577c626806e029fe20413a"   # its SHA-256 line there
+            bonsai_exe: ".exe"               # the program's suffix on Windows
     runs-on: ${{ matrix.os }}                # this run's system
     defaults:                                # for every step of the job
       run:                                   # its run steps
@@ -37,27 +48,21 @@ jobs:                                        # check, validate, then release
           path: pack                         # into pack/
           persist-credentials: false         # no token left in the checkout's git settings
 
-      - name: Check out Bonsai               # Bonsai's source at BONSAI_COMMIT, into bonsai-src/
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
-        with:                                # the step's inputs
-          repository: LastStep/Bonsai        # Bonsai's public repository
-          ref: ${{ env.BONSAI_COMMIT }}      # the pinned commit
-          path: bonsai-src                   # into bonsai-src/
-          persist-credentials: false         # no token left in the checkout's git settings
-
-      - name: Set up Go                      # the Go that Bonsai's go.mod names
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16  # v6.5.0
-        with:                                # the step's inputs
-          go-version-file: bonsai-src/go.mod # Bonsai's go.mod, its toolchain line included
-          cache: false                       # nothing to cache: Bonsai uses Go's standard library only
-
-      - name: Build bonsai                   # a static build beside the two checkouts, bonsai or bonsai.exe
-        working-directory: bonsai-src        # in Bonsai's source
-        run: CGO_ENABLED=0 go build -o "../bonsai$(go env GOEXE)" ./cmd/bonsai   # cgo off, as Bonsai's release builds it
+      - name: Get bonsai                     # the release archive, checked by its SHA-256 before anything in it runs
+        env:                                 # the step's environment
+          BONSAI_FILE: ${{ matrix.bonsai_file }}       # this system's archive
+          BONSAI_SHA256: ${{ matrix.bonsai_sha256 }}   # the SHA-256 written beside it, 64 lower-case hex characters
+        run: |                               # download, check, unpack bonsai or bonsai.exe beside the pack's checkout
+          curl -fsSL -o "$BONSAI_FILE" "https://github.com/LastStep/Bonsai/releases/download/v${BONSAI_VERSION}/${BONSAI_FILE}"
+          echo "$BONSAI_SHA256  $BONSAI_FILE" | sha256sum -c -
+          case $BONSAI_FILE in
+            *.zip) "$SYSTEMROOT/System32/tar.exe" -xf "$BONSAI_FILE" bonsai.exe ;;   # Windows' own tar reads a zip
+            *) tar -xzf "$BONSAI_FILE" bonsai ;;
+          esac
 
       - name: Check the pack                 # ci/check.sh check: the pack's folder and source are its checkout
         working-directory: pack              # in the pack's checkout
-        run: sh ci/check.sh check "../bonsai$(go env GOEXE)" . . "$GITHUB_SHA"   # the commit being checked
+        run: sh ci/check.sh check "../bonsai${{ matrix.bonsai_exe }}" . . "$GITHUB_SHA"   # the commit being checked
 
   validate:                                  # claude plugin validate, on Linux
     runs-on: ubuntu-latest                   # Linux
