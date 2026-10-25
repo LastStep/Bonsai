@@ -17,8 +17,10 @@ Claude Code's plugin cache.
    `pack.yaml`'s `id`, `labels.yaml`'s `namespace` and label names, the role's `skills:` line, the skills' text).
 3. Replace the example role, skill, document kind, label and deny rule with the pack's own, keeping every file
    documented as below, and give each new role or skill file its row under "Role and skill files".
-4. In `.github/workflows/pack.yml`, check `BONSAI_COMMIT` (the Bonsai the pack is checked with) and
-   `CLAUDE_CODE_VERSION`; move either only on purpose.
+4. In `.github/workflows/pack.yml`, check `BONSAI_VERSION` (the Bonsai release the pack is checked with) and
+   `CLAUDE_CODE_VERSION`; move either only on purpose. Moving the Bonsai moves three things together: `BONSAI_VERSION`
+   and, in the `check` job's matrix, each system's `bonsai_file` and `bonsai_sha256` (from that release's
+   `checksums.txt`).
 5. Run the checks locally (below), commit and push: the pack's CI runs them on Linux and Windows.
 
 A project then links the pack by its repository and a tag or commit, for example `bonsai init --name demo --source
@@ -195,7 +197,8 @@ does not hold after a shell `cd`.
   so it can be tried with any name: `sh ci/check.sh release v0.1.0 .`.
 
 `.github/workflows/pack.yml` runs on every push and pull request, a fork's included (it uses no secret): `check` on
-Linux and Windows with a bonsai built from `BONSAI_COMMIT`; `validate` on Linux with the pinned Claude Code; then
+Linux and Windows with the bonsai of the pinned release (`BONSAI_VERSION`), its archive downloaded and checked
+against its SHA-256 before it runs; `validate` on Linux with the pinned Claude Code; then
 `release`, which checks the tag the version needs on every push and, on a `v*` tag only, makes the GitHub release.
 
 ### On Windows
