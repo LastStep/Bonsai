@@ -220,6 +220,15 @@ the log :186].
 | the stop gate blocking a red stop | **probe 1** (and once more while waiting) | the log :60, :126 |
 | the recorder's log | reached | 198 records |
 | the tables by `check --write` | reached | `8fdf63d2` |
+
+**Correction, 25 Oct (5.7's end verifier, T-5741, finding F2; the director's word: the gaps stand, with this note).**
+"The task file and its moves" overstates it: T-5708's file was written `running` (`ecb65520`) and then `done`
+(`8fdf63d2`); no `todo` or `verify` was written, and the log holds no record of a task-file edit (the orchestrator's
+shell writes carry no target) and the run report no tasks-table snapshot. The two stages "not reached" stay so in the
+trial. Later, on the installed 1.0 and outside the trial: a protected file changed under a grant (`T-5706`,
+`packs/base/bonsai/pack.yaml`, granted by its `bonsai.allows`; landed `4662da5e` on a green climb, result sha256
+`70c1f115...bb66ba`), and floors raised to a climb's counts (`T-5740`, `bonsai.yaml`'s ratchets 5067 and 2341,
+`97a04e18`, the tightening accepted with no person).
 | an ask to you and your answer | reached, twice | the asks file |
 | the verifier | reached | `M-2026-10-20-57b77ed9` |
 | the landing rule and CI | reached | CI run 39417827040 |

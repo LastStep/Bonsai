@@ -8,54 +8,31 @@ labels: {}
 # Bonsai: where it stands
 
 Rewritten, never appended (`base:state`). Last rewritten 25 Oct 2026 (a day session, the director present).
-**25 Oct: Bonsai 1.0 released** (`T-5739`, run report `R-2026-10-25-T-5739-release-1-0.md`). The director's word
-("lets go"); the date commit `48d5f3f0` (CHANGELOG's heading only, notes byte-identical to rc.3's), CI 10 of 10
-green; their `v1.0.0` tag on it and approval; release run 40172190980, **published 07:37:52 UTC**, a full release,
-GitHub's latest. 1.0's files read back on both sides (every check rc.3's had; all six programs rebuilt
-byte-identical). Their installs: WSL `/usr/local/bin/bonsai` `f9b1cd76...f5caf`, Windows `C:\Program
-Files\Bonsai\bonsai.exe` `d1bba8dd...0df3e0`, both `bonsai 1.0.0 (commit 48d5f3f0d387)`; the way back: rc.3 in
-`~/bonsai-checks/prerelease/previous/`, rc.2 in `older-rc2/`. Their memory line in `~/.claude/CLAUDE.md`; `/memory`
-lists `~/.bonsai/personal/INDEX.md`. **The packs at 1.0** (`T-5706`, 5.7.6): the template's and the workflow repo's CI
-take `bonsai` from the 1.0 archive by its SHA-256, base's `ci` skill the same; `base` and `workflow` at `version:
-"1.0.0"`; landed at `4662da5e` (CI on the branch and on main green, 19 of 19); the workflow repo `0290f701` (CI 4 of 4,
-Windows' zip included). The director's tags: `base-v1.0.0` at `4662da5e` (started nothing), the workflow repo's
-`v1.0.0` at `0290f701` (its release published 10:35 UTC). Bonsai's repo still names both packs by commit (moving to
-the tags waits for the director's word). **Left in 5.7:** the floors, the Haiku audit of `.bonsai/sessions.md`, the
-5.7 end verifier.
-**24 Oct: the workflow split** (`T-5732`, on the studio's word in its `P-T-0082.md`, "For Bonsai's sessions",
-first bullet): workflow `8a171735` gives up the `brief` and `playtest` kinds and the `interview` skill (now the
-studio and game packs'), its producer's work kept as `workflow:producer`; CI green; Bonsai pinned to it and updated
-(the plugins wait for a fresh Claude Code start, then `bonsai update`). The general rewording of workflow is after
-1.0. **The director's trial on rc.2** (LinkSink, `T-5733`, `records/trial-rc2.md`): Bonsai's machinery passed every
-criterion, the packs' steering partial; rc.3 takes BUG-103 to BUG-108 (their words), the rest after 1.0.
-**rc.3's fixes landed** (`T-5734`; the director: "go with rc.3, tell me when to tag"): workflow `1a9f6b4e` (`T-5735`:
-a run report before any work, STATE as the project moves, notes as memory, `running` from any agent, one task at a
-time; Bonsai pinned and updated); `main` `1bd1a194` (`T-5736`: check's `config-uncommitted` warning, the reload
-words after a pack is added; `T-5737`: the guard's words after a cd it cannot follow, verifier PASS); CI green.
-**rc.3 published and installed** (tag at `474ae7f7`, release run 40094853125, the director's approval, 12:52 UTC; the
-director's WSL install, sha256 `86cb629f...259d7`; the way back: rc.2 in `~/bonsai-checks/prerelease/previous/`).
-**Its test** (`T-5738`, run report `R-2026-10-24-T-5738-rc3-test.md`): every part green (the release on both sides,
-all programs rebuilt byte-identical, the README's first project, each fix seen working, LinkSink), and check 10's
-Windows half green at the tag (24 Oct, 20:16 UTC: vet plain and tagged clean, tests plain 34 of 34 packages and
-tagged 7 of 7, `cmd/bonsai` with CI's 20-minute limit): **`T-5738` done.** Next: 1.0's batch 5, on the director's word.
-**23 Oct, the 1.0 session: `v1.0.0-rc.2` published and installed in WSL.** rc.2's fixes (`T-5710`, run report
-`records/runs/R-2026-10-23-T-5710-rc2-fixes.md`) landed as one batch at `1cbd0aa4`, CI green: BUG-014 (`T-5725`, a
-pack with a path counts only its own-name tags, the director's rule) and V1's note C; the stop gate's three risks
-(`T-5726`, verifier PASS); every agent's marker refuses the person's commands, eight names, and the guard watches
-their exact unset forms (`T-5727`, verifier PASS); `bonsai answer --choice B` (`T-5728`); Bonsai's printed words and
-BUG-097 (`T-5729`); CHANGELOG since rc.1, the old product's sections and `assets/demos/` out, CLAUDE.md's stale lines
-(`T-5730`, on the director's word after the public-files audit `T-5799`; design/ "Keep them all"). The tag's first
-release run failed closed (main's own CI on the commit still running: the orchestrator's mistake), re-run on the
-director's word, approved, published 10:33 UTC; checked on both sides (all six programs rebuilt byte-identical);
-the director's WSL install (sha256 `b45da83b...597e`) and `bonsai update --allow-exec --yes` (the time lines). The way
-back: rc.1 in `~/bonsai-checks/prerelease/previous/`. **The pi brief** (pi-bonsai-work.md in design/, untracked) (the pi side's,
-untracked, not committed: the director's call): B2 is `T-5727`; **B3 landed for rc.3** (`T-5731`: the stop gate
-reads the run report as check does, rule `stop-bad-run-report`; verifier FAIL then PASS; `main` `06ed179c`); B1, B4,
-B5 after 1.0 (the director: "B3 only"). After 1.0 too: `bonsai agents` filters, release.yml's notes A and B
-(BUG-102), BUG-099 to BUG-101. The director's GitHub batch: Pages off, the description, the wiki off, PR #253 closed.
-Earlier: 22 Oct the README and demos (`T-5711`); 21 Oct one system for time (`T-5795`); 20 Oct rc.1 and the trial on
-it (`records/trial-rc1.md`). The floors: `go_tests` 4756, `go_tests_tagged` 2120 (main's climb now about 5,070 and
-2,339).
+
+**Bonsai 1.0 is released, and step 5 (the full 1.0) is done** (25 Oct). Every part of the plan is done: part 0, the
+skeleton's six parts, and steps 5.1 to 5.7, each closed by its end verifier.
+
+- **1.0** (`T-5739`): the director's word ("lets go"); the date commit `48d5f3f0` (CHANGELOG's heading only, the notes
+  byte-identical to rc.3's, which is 1.0's code); their `v1.0.0` tag and approval; release run 40172190980, **published
+  07:37:52 UTC**, a full release, GitHub's latest; read back on both sides (all six programs rebuilt byte-identical).
+  Installed by the director: WSL `/usr/local/bin/bonsai` `f9b1cd76...f5caf`, Windows `C:\Program Files\Bonsai\bonsai.exe`
+  `d1bba8dd...0df3e0`, both `bonsai 1.0.0 (commit 48d5f3f0d387)`. The way back: rc.3 in
+  `~/bonsai-checks/prerelease/previous/`, rc.2 in `older-rc2/`. Their memory line in `~/.claude/CLAUDE.md`; `/memory`
+  lists `~/.bonsai/personal/INDEX.md`.
+- **The packs at 1.0** (`T-5706`, 5.7.6): the template's and the workflow repo's CI take `bonsai` from the 1.0 archive
+  by its SHA-256 (base's `ci` skill the same); `base` and `workflow` at `1.0.0`; landed `4662da5e`; the workflow repo
+  `0290f701`. The director's tags: `base-v1.0.0` at `4662da5e`, the workflow repo's `v1.0.0` at `0290f701` (its release
+  made by its own job). Bonsai's repo still names both packs by commit (moving to the tags waits for their word).
+- **The floors** (`T-5740`): `go_tests` **5067**, `go_tests_tagged` **2341**, climbed by the installed 1.0 (`97a04e18`).
+- **5.7's end verifier** (`T-5741`, `M-2026-10-25-f289b34c`, fresh Opus): every check on the code, the release, the
+  installs and the packs PASS, Windows natively included (test 5001 passed in 34 packages, tagged 2335 in 7); FAIL on
+  three records findings: F3 (STATE's "being rebuilt") fixed; F1 (5.7 about 48 h, past its re-ask line of 24) on the
+  director's word "Accept and close"; F2 (the rc.1 trial's task-file moves and two stages not reached) on "Stand, with
+  a note" (the note in `records/trial-rc1.md`). The re-check skipped on the director's word ("skip the verifier").
+- **The road there in 5.7:** rc.1 and the trial on Bonsai (`records/trial-rc1.md`), one system for time (`T-5795`),
+  the README and demos (`T-5711`), rc.2 and its fixes (`T-5710`), the director's trial on rc.2 (`records/trial-rc2.md`),
+  the workflow split (`T-5732`), rc.3 and its test (`T-5734`, `T-5738`), the pi research and contract (`T-5797`,
+  `T-5798`; `design/agent-neutral.md`, `design/pi-contract.md`).
 
 **No person's name** goes into any file or commit message (the director, 15 Oct; `CLAUDE.md`'s Safety section): "the
 director" in this project's files, "the person" in the product. Files already under `records/` and `design/` keep
@@ -63,8 +40,8 @@ what they hold, on the director's word.
 
 ## In short
 
-Bonsai is being rebuilt as one small Go program that gives every project the same formats, packs, guards, recorder and
-proof ladder (`design/one-pager.md`). The plan is approved (8 Oct). Part 0 and all six parts of the walking skeleton
+Bonsai 1.0 (released 25 Oct) is one small Go program that gives every project the same formats, packs, guards,
+recorder and proof ladder (`design/one-pager.md`). The plan was approved 8 Oct. Part 0 and all six parts of the walking skeleton
 are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the director chose path (a), the full Bonsai
 1.0, and approved the plan for step 5, `design/plan-5.md`; every part's section, 5.1 to 5.7, is written and approved.
 
@@ -86,22 +63,23 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
   read, the installers, the CLI look, the operating split, `workflow`'s changelog, prototype and correct skills; the
   end verifier `T-5611` (FAIL on records), then `T-5616`'s re-check. Tasks `T-5600`-`T-5617`, `T-5690`-`T-5699`; run
   reports `records/runs/R-2026-10-1[689]-T-56*.md`.
-- **Step 5.7, the release** (19-22 Oct): 5.7.0-5.7.4 done; rc.1 published, checked, installed; the trial's feature
-  landed (`T-5707`, `T-5708`); its analysis (`T-5709`); one system for time (`T-5795`); the README and demos (`T-5711`).
-  rc.2 published and installed (23 Oct). Left: the director's own trial, rc.3 (B3 and the trial's fixes), 5.7.6, 1.0. Run reports
-  `records/runs/R-2026-10-{19,20,21,22}-T-57*.md`.
+- **Step 5.7, the release: done** (19-25 Oct). 5.7.0-5.7.6; rc.1, rc.2 and rc.3, each published, checked and
+  installed; the trial on Bonsai and the director's trial on rc.2; **1.0 published 25 Oct**; the packs tagged at 1.0;
+  the floors; the end verifier `T-5741`. Run reports `records/runs/R-2026-10-{19..25}-T-57*.md`.
 
 **Hours** (each run's minutes from the run reports): part 0 45 minutes; the skeleton 6 h 18 min; 5.1 866 minutes; 5.2
 1,061; 5.3 about 2,013 (33 h 33 min); 5.4 about 2,372 (39 h 32 min); **5.5 about 78 h** with its planning and reviews (the end
 verifier's count, under its re-ask line of 138). Questions put to the director in 5.5: twenty-three before 16 Oct, and on 16 Oct
 eight (the workflow limits, the walls' Windows half, the login check, the history, check 5, check 5 on Windows, and the
 morning's install and Windows steps as asks). **5.6 about 21 h** (T-5611's count of about 19 h, a floor since many rows
-were not written, plus about 2 h on 19 Oct's day session), under its re-ask line of 51. **5.7 so far about 9 h**
-(19 Oct: `T-5700` 12 minutes, `T-5704` 16, `T-5790` 24; 20 Oct: `T-5792` 15, `T-5703` 53, `T-5704` 30, `T-5701` 37,
-`T-5702` 73 with V1 twice, the scratch planning 7, `T-5794` 4, `T-5705` about 35, the trial `T-5707`/`T-5708` about 45;
-many side by side), under its re-ask line of 24. **Step 5's Windows-only tally:** 5.5's "about 143 minutes plus 16 Oct's Windows check-10 helpers (about 6 h, side
+were not written, plus about 2 h on 19 Oct's day session), under its re-ask line of 51. **5.7 about 48 h**
+wall-clock (`.bonsai/sessions.md`, minutes any session or subagent was active, 19 Oct to 25 Oct 11:44 UTC, less 5.6's
+rows: 2,882; T-5741's count), **past its re-ask line of 24 with the director's word** (25 Oct, "Accept and close"):
+three pre-releases, two trials and the director's added pieces (the README and demos, the time system, the pi
+research, the workflow split); the plan's figure was 9.5-18.75 h. **Step 5's Windows-only tally:** 5.5's "about 143 minutes plus 16 Oct's Windows check-10 helpers (about 6 h, side
 by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was a second run; every row named in
-`R-2026-10-19-T-5615`); **5.7's about 20 minutes** (the orchestrator's dist and rc.1 runs on 20 Oct).
+`R-2026-10-19-T-5615`); **5.7's about 130 minutes** (rc.1 about 20, rc.2 about 40, rc.3 about 40, 1.0 about 5, the end verifier's about 25;
+`R-2026-10-25-T-5741`).
 
 ## The director's decisions
 
@@ -250,7 +228,7 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 - `LastStep/bonsai-test-pack`: public, `main` at H (`19e3ca5`).
 - The old website stays on GitHub Pages until the director turns Pages off.
 
-## Now: 5.7
+## Step 5.7, the release (done)
 
 | Piece | Task | State | Where |
 |---|---|---|---|
@@ -263,12 +241,12 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | 5.7.1, the release build | `T-5701` | done | `137e419f`; GoReleaser v2.18.3 by `go run`; `release-check` on every push |
 | 5.7.2, the release workflow | `T-5702` | done | `4ec5c432`; V1 failed b93dd719 (the tag check passed an unreadable answer), fixed, V1 again PASS |
 | CI's tagged pass narrowed; Go 1.27.3 | `T-5790`; `T-5794` | done; cut | the director: "Stay on 1.27.2" for rc.1 |
-| Batch 1, the settings; batch 2, rc.1 | `T-5705` | verify | read back; rc.1 run 39410125869; V2 PASS; installs read back; check 10's Windows half after rc.1 not yet run |
+| Batch 1, the settings; batch 2, rc.1; every release checked | `T-5705` | done | read back; rc.1 run 39410125869; V2 PASS; every pre-release and 1.0 checked on both sides |
 | 5.7.7, the trial on rc.1 | `T-5707` | done | climb of main by rc.1 green; proposals; the pick B |
 | 5.7.8, the trial's feature | `T-5708` | done | `7afb9faa`; verifier PASS |
 | 5.7.9, the trial's analysis | `T-5709` | done | `578a8724`; `records/trial-rc1.md`; batch 4: "looks good overall" |
 | **One system for time** (the trial's rough 11; the director: "option 3", before 1.0) | `T-5795` | done | `T-5712`, `T-5713` (`97be0d99`), `T-5714`, `T-5716` (`f0ba50c9`), `T-5717` (`1b2c67f8`) landed; `T-5715` cut (UTC-only: the sessions table already UTC); verifiers PASS; the director's `bonsai update --allow-exec --yes` after rc.2 is installed |
-| rc.2's fixes and rc.2 | `T-5710` (`T-5725`-`T-5730`) | verify | landed `1cbd0aa4`; rc.2 published, checked both sides, installed in WSL 23 Oct; check 10's Windows half on rc.2: cmd/bonsai re-run (the script's own timeout), the rest green |
+| rc.2's fixes and rc.2 | `T-5710` (`T-5725`-`T-5730`) | done | landed `1cbd0aa4`; rc.2 published, checked both sides, installed in WSL 23 Oct; check 10's Windows half on rc.2 green |
 | The public files' audit; the cleanup | `T-5799`; in `T-5730` | done | `assets/demos/` and CHANGELOG's old sections out; design/ kept |
 | The stop gate reads the run report as check does (the pi brief's B3) | `T-5731` | done | landed `06ed179c`, verifier FAIL then PASS; for rc.3 |
 | The README improved and demo videos (the director's added step) | `T-5711` (`T-5718`-`T-5724`) | done | landed `57fa4f97`; `T-5720` cut; facts verifier PASS (round 2); the director filmed the clips (`~/bonsai-clips`) |
@@ -278,20 +256,23 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | rc.3's fixes; rc.3 tested | `T-5734` (`T-5735`-`T-5737`); `T-5738` | done | rc.3 at `474ae7f7`; every check green on both sides, check 10's Windows half included |
 | **Bonsai 1.0** (batch 5 to the memory line) | `T-5739` | done | `v1.0.0` at `48d5f3f0`, published 25 Oct 07:37 UTC; read back both sides; installed both sides; memory line loads |
 | 5.7.6, the packs at 1.0; the pack tags | `T-5706` | done | landed `4662da5e`; workflow `0290f701`; tags `base-v1.0.0`, workflow `v1.0.0` (its release made) |
+| The floors | `T-5740` | done | `97a04e18`: 5067 and 2341 |
+| 5.7's end verifier | `T-5741` | done | FAIL on F1-F3 (records); F3 fixed, F1 and F2 on the director's words; re-check skipped on their word |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Now: 1.0 is out; 5.7's end** (`T-5739`, `T-5706` done; both packs tagged and released). **In this order:** the
-floors (a task granting `bonsai.yaml`, climbed by the installed 1.0; T-5790 to T-5799 are all taken, so the next free
-number); the Haiku audit of `.bonsai/sessions.md`; the 5.7 end
-verifier; STATE rewritten and the director's roadmap updated. Go 1.27.2 (govulncheck v1.9.0 cannot load go1.27.3).
-The agent work (the
-pi brief's B1, B4, B5; the envelope, B6, B7) waits for after 1.0. A named session starts with `claude -p --agent
-workflow:builder` in its worktree, launcher `~/bonsai-checks/scripts/T-5708/run.sh`.
+**Now: after 1.0.** Nothing is running and no task reads `running`. What waits, each on the director's word in turn:
+scratch folders declared in `bonsai.yaml` (`T-5793`, `todo`); the agent work (the pi brief's B1, B4, B5; the
+envelope `bonsai.hook/1`, B6, B7; `design/pi-contract.md`); a cleaner role (the first piece after 1.0, 19 Oct);
+playbooks, hillclimb and pickup (16 Oct); the general rewording of `workflow`; `bonsai agents` filters, release.yml's
+notes A and B (BUG-102), BUG-099 to BUG-101, BUG-107's and BUG-108's rest, BUG-113, BUG-114; Bonsai's repo naming its
+packs by their tags. Go 1.27.2 stays until govulncheck loads a newer patch (GO-2026-6809, crypto/x509, unreached).
+A named session starts with `claude -p --agent workflow:builder` in its worktree, launcher
+`~/bonsai-checks/scripts/T-5708/run.sh`. Task numbers: T-5790 to T-5799 are all taken; 5.7's last were T-5739 to T-5741.
 **Proposed for 5.7's planning** (`workflow:correct`, unproven until shown failing on old input): C3, C4, C5, C6 as
 `R-2026-10-19-T-5615` names them. Every known bug: `records/bugs.md`.
 
 **How work runs now:** agents by role, briefed with `bonsai message`; the shared rules
-`~/bonsai-checks/briefs/common-2026-10-22.md` (over `common-2026-10-21.md`, `common-2026-10-20.md`, `common-2026-10-19-day.md`, `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
+`~/bonsai-checks/briefs/common-2026-10-25.md` (over `common-2026-10-24.md`, `common-2026-10-23.md`, `common-2026-10-22.md`, `common-2026-10-21.md`, `common-2026-10-20.md`, `common-2026-10-19-day.md`, `common-2026-10-19.md` and `common-2026-10-18.md`) (audit first;
 Windows runs by the orchestrator only, one at a time; load modest), plus the director's 19 Oct afternoon rules above. A
 verifier, runner or auditor cannot yet write a scratch file by the Write tool (BUG-013; the sanctioned folder is not
 built): it returns its work in its final reply, or the orchestrator or a builder makes the scratch. Run reports' times
@@ -312,10 +293,10 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** nothing: the floors and the end verifier need no answer (the floors go to them in the part's last line).
+- **Now:** what comes after 1.0, and in what order (the list under "Now: after 1.0" above).
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
-- **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips
-  <clip>`, then `sh docs/demos/edit.sh`; T-5710 item 12, clip 10 among them, BUG-098); then their word for 1.0.
+- **Whenever they like, now 1.0 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh
+  ~/bonsai-clips <clip>`, then `sh docs/demos/edit.sh`; T-5710 item 12, clip 10 among them, BUG-098).
 - **Their own step, from 5.6's close:** take the `"autoMemoryEnabled": true` line out of their local settings file
   (theirs only; the guard refuses agents). Also for them to read: the pin test's one exception, `release.yml` (5.7.2's).
 - **Can wait:** V1's design question: an agent past its budget cannot stop a process it started (exempt it, or accept).

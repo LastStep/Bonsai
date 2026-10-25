@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5741
 title: "5.7's end verifier: plan-5.md's \"5.7 done\" checks 1-17 on the final commit and the published 1.0, both sides"
-status: running
+status: done
 lane:
 done_when:
   - "a fresh Opus verifier runs plan-5.md's \"#### 5.7 done\" checks 1-17 itself on main's final commit and on the published 1.0, on both sides where a check names them, and passes 5.7 (or each blocking finding is fixed and re-checked, or put after 1.0 on the director's word)"
@@ -12,7 +12,7 @@ depends_on: [T-5740]
 blocked_by:
 created: 2026-10-25
 started: 2026-10-25
-finished:
+finished: 2026-10-25
 labels:
   bonsai.ladder: []
   bonsai.allows: []
