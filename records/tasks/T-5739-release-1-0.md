@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task
 id: T-5739
 title: "Bonsai 1.0: the notes' date, the v1.0.0 tag, 1.0's files checked, the director's installs and memory line"
-status: running
+status: done
 lane:
 done_when:
   - "CHANGELOG.md's heading reads ## [1.0.0] - <the date>, in a commit of its own; git diff --stat from 474ae7f7 holds only that line, records/ and .bonsai/STATE.md; every CI check run on that commit complete and green"
@@ -13,7 +13,7 @@ depends_on: [T-5738]
 blocked_by:
 created: 2026-10-25
 started: 2026-10-25
-finished:
+finished: 2026-10-25
 labels:
   bonsai.ladder: []
   bonsai.allows: []

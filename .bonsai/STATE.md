@@ -1,13 +1,23 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-24
+updated: 2026-10-25
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 24 Oct 2026 (a day session, the director present).
+Rewritten, never appended (`base:state`). Last rewritten 25 Oct 2026 (a day session, the director present).
+**25 Oct: Bonsai 1.0 released** (`T-5739`, run report `R-2026-10-25-T-5739-release-1-0.md`). The director's word
+("lets go"); the date commit `48d5f3f0` (CHANGELOG's heading only, notes byte-identical to rc.3's), CI 10 of 10
+green; their `v1.0.0` tag on it and approval; release run 40172190980, **published 07:37:52 UTC**, a full release,
+GitHub's latest. 1.0's files read back on both sides (every check rc.3's had; all six programs rebuilt
+byte-identical). Their installs: WSL `/usr/local/bin/bonsai` `f9b1cd76...f5caf`, Windows `C:\Program
+Files\Bonsai\bonsai.exe` `d1bba8dd...0df3e0`, both `bonsai 1.0.0 (commit 48d5f3f0d387)`; the way back: rc.3 in
+`~/bonsai-checks/prerelease/previous/`, rc.2 in `older-rc2/`. Their memory line in `~/.claude/CLAUDE.md`; `/memory`
+lists `~/.bonsai/personal/INDEX.md`. **Left in 5.7:** 5.7.6 (the packs at 1.0, a Sonnet builder: the workflow roles
+need a fresh Claude Code start, as this session loaded none), then the director's two pack tags, the floors, the
+5.7 end verifier.
 **24 Oct: the workflow split** (`T-5732`, on the studio's word in its `P-T-0082.md`, "For Bonsai's sessions",
 first bullet): workflow `8a171735` gives up the `brief` and `playtest` kinds and the `interview` skill (now the
 studio and game packs'), its producer's work kept as `workflow:producer`; CI green; Bonsai pinned to it and updated
@@ -261,15 +271,17 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | The workflow pack names no studio's files | `T-5796` | done | pack `612bc333`, pin `6f8783ea` |
 | **Bonsai with any agent, pi first: the research** (the director, 22 Oct) | `T-5797` | done | `design/agent-neutral.md` (verifiers PASS, two rounds); walked through with the director 23 Oct, C1-C9 answered (`R-2026-10-22-T-5797`, 23 Oct lines) |
 | **Bonsai under pi: the contract plan** (the director, 23 Oct) | `T-5798` | done | `design/pi-contract.md`: the pi side (one plain-JS extension in the director's `~/Servers/pi-harness`, a stopgap mode against today's binary, an envelope mode `bonsai.hook/1` later); four review rounds (FAIL, FAIL, FAIL, PASS), approved by the director 23 Oct; theirs to hand to pi |
+| rc.3's fixes; rc.3 tested | `T-5734` (`T-5735`-`T-5737`); `T-5738` | done | rc.3 at `474ae7f7`; every check green on both sides, check 10's Windows half included |
+| **Bonsai 1.0** (batch 5 to the memory line) | `T-5739` | done | `v1.0.0` at `48d5f3f0`, published 25 Oct 07:37 UTC; read back both sides; installed both sides; memory line loads |
+| 5.7.6, the packs at 1.0; the pack tags | to write | next | needs the workflow roles (a fresh Claude Code start) |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 
-**Now: the road to 1.0** (the director, 23 Oct: "lets go to 1.0"). **In this order:** the director's own trial on a
-fresh project on rc.2 (the README's "A first project", then a small task in Claude Code; their notes, an interview,
-tasks); rc.3 (B3 and the trial's fixes; each landing by CI on the branch; tag only once every check run on the commit,
-main's own included, is complete: rc.2's first run failed closed on that); the README's first project again on rc.3,
-by the director (the plan's "your own trial runs on the last pre-release"; proposed 23 Oct, their answer pending);
-5.7.6 (the packs at 1.0); batch 5 (their word, the tag, both installs, the memory line, the packs' tags); the floors.
-Go: govulncheck v1.9.0 still cannot load go1.27.3, so go1.27.2 stays (check again before 1.0). The agent work (the
+**Now: 1.0 is out; 5.7's end** (`T-5739` done). **In this order:** 5.7.6 (the packs at 1.0: plan-5.md's note
+5.7.6, a Sonnet builder; its task the only one `running`); the director's two pack tags (`base-v1.0.0` in Bonsai's
+repo, `v1.0.0` in the workflow repo, on the commits 5.7.6 names); the floors (a `T-579x` task climbed by the installed
+1.0; T-5790 to T-5799 are all taken, so the next free number); the Haiku audit of `.bonsai/sessions.md`; the 5.7 end
+verifier; STATE rewritten and the director's roadmap updated. Go 1.27.2 (govulncheck v1.9.0 cannot load go1.27.3).
+The agent work (the
 pi brief's B1, B4, B5; the envelope, B6, B7) waits for after 1.0. A named session starts with `claude -p --agent
 workflow:builder` in its worktree, launcher `~/bonsai-checks/scripts/T-5708/run.sh`.
 **Proposed for 5.7's planning** (`workflow:correct`, unproven until shown failing on old input): C3, C4, C5, C6 as
@@ -297,9 +309,8 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** their word for 1.0 (batch 5: the `v1.0.0` tag on `474ae7f7`, both installs, the memory line, the packs'
-  tags; then 5.7.6, the floors, the 5.7 end verifier). rc.3 is fully tested (`T-5738`); the orchestrator's test
-  stood in for their second trial (their 24 Oct words, in the task).
+- **Now:** a fresh Claude Code start in `~/Servers/Bonsai` (`claude --continue`), so the workflow roles load for
+  5.7.6's builder; later, the two pack tags on the commits 5.7.6 names.
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
 - **After rc.3 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh ~/bonsai-clips
   <clip>`, then `sh docs/demos/edit.sh`; T-5710 item 12, clip 10 among them, BUG-098); then their word for 1.0.
