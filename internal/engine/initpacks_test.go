@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -46,12 +47,13 @@ func TestInitSeveralPacks(t *testing.T) {
 		t.Errorf("init again changes settings: %+v", p.Settings)
 	}
 
-	// The same two, the second added later: --allow-exec, with the reason.
+	// The same two, the second added later: --allow-exec, with the reason. The source is written by hand in double
+	// quotes, so with forward slashes (a Windows path's backslashes are escapes there), as the other tests write it.
 	later := testpack.Project(t, e.tmp, "later")
 	e.apply(t, later, Request{Command: "init", Init: &InitValues{Name: "later", Source: quiet, Ref: qc[0]}})
 	yaml := read(t, later, "bonsai.yaml")
 	i := strings.Index(yaml, "documents:")
-	writeFile(t, later, "bonsai.yaml", yaml[:i]+"  - id: workflow\n    source: \""+wf+"\"\n    path: null\n    ref: \""+wc[0]+"\"\n    roles: null\n"+yaml[i:])
+	writeFile(t, later, "bonsai.yaml", yaml[:i]+"  - id: workflow\n    source: \""+filepath.ToSlash(wf)+"\"\n    path: null\n    ref: \""+wc[0]+"\"\n    roles: null\n"+yaml[i:])
 	p = e.plan(t, later, Request{})
 	if !p.NeedsExec() {
 		t.Fatalf("adding a pack with roles later needs no --allow-exec: %s", items(p))
