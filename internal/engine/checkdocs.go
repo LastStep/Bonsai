@@ -195,6 +195,19 @@ func (r *CheckResult) checkDocuments() {
 			}
 		}
 	}
+	// A pack's kinds: only their stamps (their format is the pack's).
+	for _, k := range kinds {
+		fields := workspace.KindStamps(k)
+		if k.From == "bonsai" || len(fields) == 0 {
+			continue
+		}
+		files, _ := workspace.DocFiles(r.Root, k)
+		for _, p := range files {
+			if raw, exists, err := readFile(r.Root, p); err == nil && exists {
+				r.checkStamps(p, raw, fields)
+			}
+		}
+	}
 	r.checkBudgets()
 	r.checkNamedPaths(named)
 	r.checkRunReports(kinds)
@@ -226,6 +239,7 @@ func (r *CheckResult) checkDocument(short, kind, p string, raw []byte, defs map[
 	if fields != nil {
 		r.checkAbsolute(p, fields)
 	}
+	r.checkStamps(p, raw, workspace.BonsaiStamps(short))
 	if note := memoryCap("note"); short == "memory" && len(raw) > note.Bytes && path.Base(p) != MemoryIndex {
 		r.add("memory-note-size", p, "", fmt.Sprintf("the memory note %s is %d bytes, over its %d (spec section 10)", p, len(raw), note.Bytes),
 			"shorten the note to at most "+KB(note.Bytes)+", or split it into two notes (and their two lines in "+MemoryIndex+")")
@@ -257,6 +271,46 @@ func DocumentFindings(root, main, home string, k workspace.DocKind, p string, ra
 	for _, f := range r.Findings {
 		if f.File == p {
 			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// checkStamps finds each stamp of a document that lies ahead of check's clock (future-stamp, BUG-123): a time more than
+// workspace.StampWindow after the UTC now, a day after the UTC today, the window the guard's time-not-now uses for a
+// fresh stamp. The guard judges a stamp only as it is written by an edit, and not one a shell writes; check judges what
+// is on disk, however it was written. A value that reads as neither a time nor a day is its format's to judge.
+func (r *CheckResult) checkStamps(p string, raw []byte, fields []workspace.StampField) {
+	if len(fields) == 0 {
+		return
+	}
+	values := frontValues(raw)
+	at := now()
+	for _, f := range fields {
+		if why := workspace.FutureStamp(f, values[f.Name], at); why != "" {
+			r.add("future-stamp", p, "", p+"'s "+f.Name+" "+why+": every recorded time is UTC, from Bonsai's clock",
+				"set it to when it happened, in UTC (bonsai now prints the time and the day), then run: bonsai check")
+		}
+	}
+}
+
+// frontValues gives a markdown document's top-level frontmatter fields as text (null as ""), read under format 1 or
+// format 0; none when it reads under neither.
+func frontValues(raw []byte) map[string]string {
+	var m *reader.Map
+	switch r := reader.ReadMarkdown(raw); r.Outcome {
+	case reader.Accepted:
+		m = r.Value
+	case reader.Format0:
+		m, _ = reader.ReadFormat0Markdown(raw).Map()
+	}
+	out := map[string]string{}
+	if m == nil {
+		return out
+	}
+	for _, e := range m.Entries() {
+		if s, ok := e.Value.(string); ok {
+			out[e.Key] = s
 		}
 	}
 	return out

@@ -249,6 +249,11 @@ var checkCases = map[string]func(c *cli){
 		c.link()
 		c.write("CLAUDE.md", c.read("CLAUDE.md")+"\nSee `demo/not-there.md` and @demo/guide.md.\n")
 	},
+	"future-stamp": func(c *cli) {
+		c.link()
+		c.write("work/runs/R-2026-10-26-T-0901.md", "---\nformat: bonsai.run/1\nid: R-2026-10-26-T-0901\ntask: T-0901\nrole: builder\n"+
+			"model: a model\nstarted: \"2026-10-26 11:00\"\nfinished: \"2099-01-01 00:00\"\noutcome: merged\ncommits: []\nlabels: {}\n---\n")
+	},
 	"settings-rule": func(c *cli) {
 		c.link()
 		c.write(".claude/settings.local.json", `{"permissions": {"deny": ["Read(", "Edit(work/ledger.json)"]}}`)

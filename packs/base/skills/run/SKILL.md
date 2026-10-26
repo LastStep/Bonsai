@@ -107,8 +107,8 @@ Concrete, with a task id if one was written.
 ```
 
 **Times.** Every time and day you write comes from `bonsai now` (`--day` for a day), in UTC, never from memory:
-the guard refuses a fresh one far from Bonsai's clock (`time-not-now`). A `finished` set later is still the time you
-set it, taken from `bonsai now` then. Times written before formats set 11 were local, their offset unknown: leave them.
+the guard refuses a fresh one far from Bonsai's clock (`time-not-now`), and `bonsai check` finds one ahead of it, however
+it was written (`future-stamp`). A `finished` set later is still the time you set it, taken from `bonsai now` then. Times written before formats set 11 were local, their offset unknown: leave them.
 
 **Before you finish the session:** set `finished` and `outcome`, list every commit in `commits`, and check that
 `bonsai check --json` reports no finding for the file.
