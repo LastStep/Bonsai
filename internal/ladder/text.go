@@ -118,8 +118,29 @@ func (c *Climb) printSummary(l *format.Ladder, w *Written, d *format.Climb) {
 			}
 			c.say("    %s: %s", strconv.QuoteToASCII(h.Path), h.Why)
 		}
-		c.say("  git keeps a file it saw unchanged in its index; to make git status show each again: git rm -q --cached -- <path> " +
-			"&& git add -- <path> (a submodule's file: inside the submodule), then commit or revert it")
+		indexed, lfs, filtered := false, false, false
+		for _, h := range c.hidden {
+			switch h.Filter {
+			case "":
+				indexed = true
+			case "lfs":
+				lfs = true
+			default:
+				filtered = true
+			}
+		}
+		if indexed {
+			c.say("  git keeps a file it saw unchanged in its index; to make git status show each again: git rm -q --cached -- <path> " +
+				"&& git add -- <path> (a submodule's file: inside the submodule), then commit or revert it")
+		}
+		if lfs {
+			c.say("  a Git LFS file reads clean only as the file its committed pointer names: commit or revert it (git lfs " +
+				"checkout -- <path> restores it), and keep the rules that put files under Git LFS in a committed .gitattributes")
+		}
+		if filtered {
+			c.say("  a file under another filter (git-crypt and the like) cannot be checked by Bonsai and always reads dirty: " +
+				"a proof needs it out of the tested tree, or the filter dropped")
+		}
 	}
 	for _, r := range l.Rungs {
 		if r.Status == statusGreen || r.Status == statusSkipped {
