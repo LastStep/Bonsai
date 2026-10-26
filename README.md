@@ -120,7 +120,7 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    > A Claude Code session already open in the folder when `init` or `update` installs a pack's plugin loads the
    > pack's skills only after `/reload-plugins` in it, or a fresh start; `update` says so.
 
-5. Open Claude Code there again and ask for something small. If Claude Code asks before an edit, that question is
+5. Open Claude Code there again and ask for something small: a line in `README.md` (step 6's rung passes on it). If Claude Code asks before an edit, that question is
    its own permission setting; Bonsai's guard is a separate check, which judges every edit and shell command and
    writes the session's log in `.bonsai/local/`. When `check` warns that a table lags behind, `bonsai check --write`
    rebuilds it.
@@ -147,7 +147,7 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    format: bonsai.task/1
    id: T-0001
    title: First proof
-   status: todo
+   status: running
    lane: null
    done_when:
      - "README.md holds a line"
@@ -180,7 +180,8 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    > Run that `bonsai update` in a terminal of your own. Bonsai refuses it from a Claude Code session, so an agent
    > cannot accept looser checks for itself.
 
-   To have the ladder hold Claude Code to the work, start it with the task named: `BONSAI_TASK=T-0001 claude`. Each
+   To have the ladder hold Claude Code to the work, start it with the task named (its `status` must read `running`,
+   as the template above has it, or the stop gate finds no task to hold): `BONSAI_TASK=T-0001 claude`. Each
    time the session tries to end, its stop gate sends it back with what is missing, until a run report for the task
    is in `work/runs/` (`R-<YYYY-MM-DD>-T-0001.md`; `bonsai check --schema bonsai.run`) and the task's climb is green
    at the commit it ends on, with nothing uncommitted. Claude Code lets a turn end after eight blocks in a row; each
