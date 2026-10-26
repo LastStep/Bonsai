@@ -63,11 +63,20 @@
 //     main checkout's, shared by its worktrees.
 //   - A filter defined in the repository's own configuration is named under filter-local, and switched off for the
 //     contents' read, so a file it changes reads as it is: a file whose contents differ from its blob without the
-//     filter counts as dirty. A filter that does so honestly (Git LFS, git-crypt, in the repository's configuration or
-//     the user's, which these reads do not load) therefore makes every climb of such a checkout dirty: a proof there
-//     needs its filtered files out of the tested tree, or a person's decision to drop the filter.
+//     filter counts as dirty. A file HEAD's committed attributes put under Git LFS is the exception (lfs.go): it reads
+//     as unchanged when its bytes hash to the SHA-256 HEAD's committed pointer names, at its size, with HEAD's
+//     executable bit where core.fileMode is pinned (or when it holds the pointer itself), trusting neither git-lfs nor
+//     the index; which files are tried comes from HEAD's committed attributes only, and none while info/attributes
+//     holds a rule. A pointer with an extension line, or in a form other than the spec's version 1, is not read. Any
+//     other filter that changes a file honestly (git-crypt, in the repository's configuration or the user's, which
+//     these reads do not load) still makes every climb of such a checkout dirty, its reason naming the filter: a proof
+//     there needs its filtered files out of the tested tree, or a person's decision to drop the filter.
 //   - The contents' read hashes every tracked file at every climb's start and end (about 60 ms on Bonsai's own
-//     repository on Linux, against 6 ms for git status), and rung 0 reads them once more.
+//     repository on Linux, against 6 ms for git status), and rung 0 reads them once more; each Git LFS file is hashed
+//     once more by its pointer at each of those reads.
+//   - A Git LFS file inside a submodule whose index keeps stale stat times (touched since the submodule's index was
+//     written, Git LFS not in the submodule's own configuration) makes the top's git status show the submodule, which
+//     counts as dirty: the top's status line for a submodule is not read file by file.
 //   - Inside a submodule, the hiding findings and the contents are judged; test-file-changed, info/exclude's lines
 //     and edits, filter-local, the stash and the base are the top checkout's only. A submodule more than 8 deep is
 //     not read, and named. Its own filters are switched off as the top's are.
@@ -84,7 +93,7 @@
 //     answer; macOS's core.precomposeUnicode (a name in two Unicode forms) is not pinned.
 //   - Conversions on a file's way into git make different bytes read as one blob. Filters are switched off for the
 //     contents' read; the ident and working-tree-encoding attributes are read by the file's bytes against HEAD's blob
-//     (convert.go), so an honest checkout under them always counts as dirty, as one with Git LFS does. Line ends are
+//     (convert.go), so an honest checkout under them always counts as dirty, as one under git-crypt does. Line ends are
 //     the one conversion left on (the text, eol and crlf attributes, core.autocrlf, core.eol), as the user's git
 //     reads them: a CR added before an LF reads as unchanged, which a test reading a file's bytes could see.
 //   - Hooks: the one call that writes an index (the contents' fresh index, in a temporary file) runs with

@@ -35,12 +35,19 @@ type TreeState struct {
 	// repository's own made it read as unchanged), the same inside a submodule (its path from the top: lib/x.go), a file
 	// in a submodule's folder git does not read, and a submodule whose state cannot be read.
 	Hidden []Hidden
+	// Verified are the tracked files under Git LFS whose bytes are those HEAD's committed pointer names (lfs.go), so
+	// they read as unchanged though their bytes differ from HEAD's blob (the pointer), sorted; inside a submodule, its
+	// path from the top. A caller running its own git status drops such a file's " M" entry.
+	Verified []string
 }
 
 // Hidden is one changed path git status does not show.
 type Hidden struct {
 	Path string // relative to the checkout's top, forward slashes; a folder ends in /
 	Why  string // what hid it, in a few ASCII words
+	// Filter is the filter HEAD's committed attributes put the file under ("lfs" for Git LFS, "git-crypt"), when its
+	// contents read as changed with that filter off and it is not the file Git LFS's pointer names; "" otherwise.
+	Filter string
 }
 
 // Tree reads the state of the checkout at in.Root (only in.Root, in.Git and in.Timeout are read).
@@ -55,7 +62,10 @@ type Hidden struct {
 //     filter cannot make a changed file read as HEAD's, and with core.hooksPath naming a folder inside the read's own
 //     temporary one, so no hook the repository names (post-index-change, run when git writes the fresh index) can mark
 //     a file in it as unchanged. A file whose contents with filters off differ from HEAD's counts as changed even where
-//     a filter is honest (Git LFS, git-crypt): such a checkout always counts as dirty. Then each tracked file the
+//     a filter is honest (git-crypt): such a checkout always counts as dirty. The exception is Git LFS (lfs.go): a file
+//     HEAD's committed attributes put under it, changed in the working tree only, reads as unchanged when its bytes
+//     are those HEAD's committed pointer names (its SHA-256 and size), in this read and in the plain status alike, and
+//     is listed in Verified. Then each tracked file the
 //     ident or working-tree-encoding attribute applies to, which git reads through a conversion that makes different
 //     bytes read as one blob, is read by its bytes against HEAD's blob (convert.go), and counts as changed when they
 //     differ: an honest checkout git made under such an attribute (an expanded $Id$, a UTF-16 file) counts as dirty
@@ -82,6 +92,7 @@ func Tree(in Input) (TreeState, error) {
 		return TreeState{Dirty: true}, err
 	}
 	sort.Strings(st.Shown)
+	sort.Strings(st.Verified)
 	sort.Slice(st.Hidden, func(a, b int) bool {
 		if st.Hidden[a].Path != st.Hidden[b].Path {
 			return st.Hidden[a].Path < st.Hidden[b].Path
@@ -114,29 +125,42 @@ func (j *judgment) tree(depth int) (TreeState, error) {
 	if err != nil {
 		return st, fmt.Errorf("git cannot read the checkout's status: %v", err)
 	}
-	shown := map[string]bool{}
-	for _, e := range splitZ(out) {
+	entries := splitZ(out)
+	var modified []string // the paths changed in the working tree only, each a candidate for the Git LFS read
+	for _, e := range entries {
 		if len(e) < 4 {
 			return st, fmt.Errorf("git status gave a line this package does not read: %q", e)
 		}
-		st.Shown = append(st.Shown, e[3:])
-		shown[strings.TrimSuffix(e[3:], "/")] = true
+		if e[:2] == " M" {
+			modified = append(modified, e[3:])
+		}
 	}
-	changed, err := j.contents()
+	changed, verified, err := j.contents(modified)
 	if err != nil {
 		return st, err
+	}
+	shown := map[string]bool{}
+	for _, e := range entries {
+		if e[:2] == " M" && verified[e[3:]] {
+			continue // a Git LFS file whose bytes are those HEAD's pointer names
+		}
+		st.Shown = append(st.Shown, e[3:])
+		shown[strings.TrimSuffix(e[3:], "/")] = true
 	}
 	for _, h := range changed {
 		if !shown[h.Path] {
 			st.Hidden = append(st.Hidden, h)
 		}
 	}
+	for p := range verified {
+		st.Verified = append(st.Verified, p)
+	}
 	subs, err := j.gitlinks()
 	if err != nil {
 		return st, err
 	}
 	for _, s := range subs {
-		h, err := j.submodule(s, depth)
+		h, err := j.submodule(s, depth, &st.Verified)
 		if err != nil {
 			return st, err
 		}
@@ -148,15 +172,18 @@ func (j *judgment) tree(depth int) (TreeState, error) {
 // contents gives the tracked paths whose contents differ from HEAD's (Tree's second read), each with why: changed,
 // deleted or of another type, by a status against a fresh index read from HEAD, the repository's own filters switched
 // off; and a file whose bytes an attribute that converts them on their way into git makes read as HEAD's (converted).
-func (j *judgment) contents() ([]Hidden, error) {
+// A path that read changed in the working tree only (" M"), here or in the plain status (modified), is read by Git
+// LFS's pointer (lfs.go): verified gives those whose bytes are those HEAD's committed pointer names, which are left
+// out of the paths changed; another such path under a filter keeps its place, its reason saying which filter.
+func (j *judgment) contents(modified []string) (changed []Hidden, verified map[string]bool, err error) {
 	tmp, err := os.MkdirTemp("", "bonsai-index-")
 	if err != nil {
-		return nil, fmt.Errorf("no temporary folder for a fresh index: %s", osWords(err))
+		return nil, nil, fmt.Errorf("no temporary folder for a fresh index: %s", osWords(err))
 	}
 	defer removeTree(tmp)
 	off, err := j.filtersOff()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	g := *j.git
 	g.env = append(append([]string{}, j.git.env...), "GIT_INDEX_FILE="+filepath.Join(tmp, "index"))
@@ -164,30 +191,47 @@ func (j *judgment) contents() ([]Hidden, error) {
 		"core.hooksPath="+filepath.ToSlash(filepath.Join(tmp, "no-hooks")))
 	if j.head != "" {
 		if _, err := g.run(nil, "read-tree", j.head); err != nil {
-			return nil, fmt.Errorf("git cannot read HEAD into a fresh index: %v", err)
+			return nil, nil, fmt.Errorf("git cannot read HEAD into a fresh index: %v", err)
 		}
 	}
 	out, err := g.run(nil, statusArgs...)
 	if err != nil {
-		return nil, fmt.Errorf("git cannot compare the checkout's contents with HEAD: %v", err)
+		return nil, nil, fmt.Errorf("git cannot compare the checkout's contents with HEAD: %v", err)
 	}
-	var changed []Hidden
+	var found []Hidden
 	seen := map[string]bool{}
+	candidates := append([]string{}, modified...)
 	for _, e := range splitZ(out) {
 		if len(e) < 4 {
-			return nil, fmt.Errorf("git status gave a line this package does not read: %q", e)
+			return nil, nil, fmt.Errorf("git status gave a line this package does not read: %q", e)
 		}
 		if e[:2] == "??" {
 			continue // an untracked file shows to plain git status as well (or as staged there, when the index has it)
 		}
-		changed = append(changed, Hidden{Path: e[3:], Why: "its contents differ from HEAD's, though git status shows no change"})
+		found = append(found, Hidden{Path: e[3:], Why: "its contents differ from HEAD's, though git status shows no change"})
 		seen[e[3:]] = true
+		if e[:2] == " M" {
+			candidates = append(candidates, e[3:])
+		}
 	}
 	conv, err := j.converted(&g, seen)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return append(changed, conv...), nil
+	lfs, err := j.lfs(&g, candidates)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, h := range found {
+		if lfs.verified[h.Path] {
+			continue
+		}
+		if why, ok := lfs.why[h.Path]; ok {
+			h.Why, h.Filter = why, lfs.filter[h.Path]
+		}
+		changed = append(changed, h)
+	}
+	return append(changed, conv...), lfs.verified, nil
 }
 
 // removeTree removes a temporary folder this package made and everything in it, each file and then each folder, the
@@ -290,7 +334,7 @@ func (j *judgment) gitlinks() ([]string, error) {
 // submodule reads one gitlink's folder (rel, from the checkout's top): a submodule checked out is read as Tree reads a
 // checkout, its paths named from the top; a folder git does not read that holds a file names its files; one past
 // maxDepth, or one that cannot be read, is named as dirty.
-func (j *judgment) submodule(rel string, depth int) ([]Hidden, error) {
+func (j *judgment) submodule(rel string, depth int, verified *[]string) ([]Hidden, error) {
 	dir := filepath.Join(j.git.dir, filepath.FromSlash(rel))
 	fi, err := os.Stat(dir)
 	switch {
@@ -341,7 +385,11 @@ func (j *judgment) submodule(rel string, depth int) ([]Hidden, error) {
 	}
 	var out []Hidden
 	for _, h := range st.Hidden {
-		out = append(out, Hidden{Path: path.Join(rel, h.Path) + trailingSlash(h.Path), Why: h.Why + " (inside the submodule " + rel + ")"})
+		out = append(out, Hidden{Path: path.Join(rel, h.Path) + trailingSlash(h.Path), Why: h.Why + " (inside the submodule " + rel + ")",
+			Filter: h.Filter})
+	}
+	for _, p := range st.Verified {
+		*verified = append(*verified, path.Join(rel, p))
 	}
 	return out, nil
 }
