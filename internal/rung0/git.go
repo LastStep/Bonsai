@@ -120,6 +120,25 @@ func (g git) branch() string {
 	return strings.TrimSpace(string(out))
 }
 
+// upstreamBase is where the base branch's unpushed commits start (BUG-124): the commit of the base's upstream (git's
+// own tracking ref, read offline: no fetch) when it is an ancestor of HEAD, else the merge base of the two. ok is false
+// when the base has no upstream, its tracking ref is not here (never fetched), or the two share no history.
+func (g git) upstreamBase(base string) (commit string, ok bool) {
+	ref, err := g.run("rev-parse", "-q", "--verify", "--symbolic-full-name", base+"@{upstream}")
+	if err != nil || strings.TrimSpace(string(ref)) == "" {
+		return "", false
+	}
+	up, err := g.run("rev-parse", "-q", "--verify", strings.TrimSpace(string(ref))+"^{commit}")
+	if err != nil {
+		return "", false
+	}
+	mb, err := g.run("merge-base", strings.TrimSpace(string(up)), "HEAD")
+	if err != nil || strings.TrimSpace(string(mb)) == "" {
+		return "", false
+	}
+	return strings.TrimSpace(string(mb)), true
+}
+
 // hasHead reports whether HEAD names a commit (not a branch with no commit yet).
 func (g git) hasHead() bool {
 	_, err := g.run("rev-parse", "-q", "--verify", "HEAD^{commit}")

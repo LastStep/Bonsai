@@ -9,6 +9,10 @@
 //     --no-renames, so both sides of a rename), the base branch and the merge base given by the runner (5.4.2 note 13:
 //     the branch the verified main checkout holds, worked out once per run). With no base (the main checkout's HEAD is
 //     detached) or no merge base, the branch's commits are not judged, and the reason says so;
+//   - on the base branch itself (BUG-124), the commits not yet pushed: every path changed since the base's upstream
+//     (git's tracking ref, read offline), or since the merge base of the two when the upstream is not an ancestor of
+//     HEAD, judged as a branch's are; with no upstream (no remote, no tracking, its ref never fetched), the base's
+//     commits are not judged, and the reason says so;
 //   - on any branch, what is staged, unstaged or untracked and not ignored (git status --no-renames
 //     --untracked-files=all; as today's changedFiles). An untracked nested repository (git names its folder with a
 //     trailing slash and does not look inside it) counts as its .git, a checkout planted below the top, which the
@@ -21,7 +25,7 @@
 //
 // Each path (note 2) is judged by guard.ChangeJudge: the guard's one function, re-rooted at the verified main
 // checkout, with the named task's grants at any status, its declared documents' tripwires given the base's bytes
-// (the merge base on a branch, else HEAD) and what the checkout holds now, a deleted path judged as a delete, and a
+// (the merge base on a branch, the upstream's on the base, else HEAD) and what the checkout holds now, a deleted path judged as a delete, and a
 // change made in a worktree meeting command mode's task-outside-main. The named task is the active-task function's
 // answer when it was named (--task or BONSAI_TASK); a task found running is not named, so it grants nothing here
 // (formats/active-task's rung0 section). None named (--ci with no task): nothing is granted, so any protected change
@@ -153,6 +157,13 @@ func judge(ctx context.Context, in Input) Outcome {
 	var notJudged []string
 	fromBranch := ""
 	switch {
+	case onBase && head:
+		if up, ok := g.upstreamBase(in.Base); ok {
+			fromBranch = up
+		} else {
+			notJudged = append(notJudged, "the base branch's commits (no upstream for "+quote(in.Base)+", so only what "+
+				"the working tree changed was judged)")
+		}
 	case onBase:
 	case in.Base == "":
 		notJudged = append(notJudged, "the branch's commits (no base branch: the main checkout's HEAD is detached, so "+

@@ -187,16 +187,18 @@ func TestRung0PersonOnlyInCommandMode(t *testing.T) {
 }
 
 // What rung 0 did not judge stays in a green result: its reason is null there, its not_judged capture is not. A
-// machine finding (this home's install record) is listed and does not count; with the main checkout on a detached HEAD
-// there is no base, so the branch's commits are not judged (a protected change committed on the branch passes), and the
-// result says so; the human lines print both as notes.
+// machine finding (this home's install record) is listed and does not count, after the base's commits (the main
+// checkout's base has no upstream, BUG-124); with the main checkout on a detached HEAD there is no base, so the
+// branch's commits are not judged (a protected change committed on the branch passes), and the result says so; the
+// human lines print both as notes.
 func TestRung0NotJudgedKept(t *testing.T) {
 	f := r0Project(t)
 	f.writeIn(f.home, "install.json", "not the installed bonsai's record\n")
 	a := f.climb("", Options{Task: "T-0901"})
 	r := f.result("T-0901").Rungs[0]
 	if a.Exit != 0 || r.Status != "green" || r.Reason != nil ||
-		r.Captures.String("not_judged") != "bonsai check's findings about this machine, not the commit (bonsai-path)" {
+		r.Captures.String("not_judged") != `the base branch's commits (no upstream for "main", so only what the working `+
+			"tree changed was judged); bonsai check's findings about this machine, not the commit (bonsai-path)" {
 		t.Fatalf("a machine finding: exit %d, %+v, %s\n%s", a.Exit, r, showOf(r.Captures, "not_judged"), f.out.String())
 	}
 	if !strings.Contains(f.out.String(), "note: not judged here: bonsai check's findings about this machine") {

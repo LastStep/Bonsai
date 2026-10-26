@@ -263,7 +263,9 @@ func TestCheckFindings(t *testing.T) {
 		if !strings.Contains(o.Reason, "not judged here: bonsai check's findings about this machine, not the commit (bonsai-path)") {
 			t.Errorf("the machine finding is not listed as not judged: %q", o.Reason)
 		}
-		if got := o.Captures.String("not_judged"); got != "bonsai check's findings about this machine, not the commit (bonsai-path)" {
+		// On a base with no upstream (BUG-124), the base's commits come first.
+		if got := o.Captures.String("not_judged"); got != `the base branch's commits (no upstream for "main", so only what `+
+			"the working tree changed was judged); bonsai check's findings about this machine, not the commit (bonsai-path)" {
 			t.Errorf("not_judged %q", got)
 		}
 	})
@@ -615,4 +617,76 @@ func TestASubfolderReadsAsTheTop(t *testing.T) {
 		t.Errorf("from the top:\n%s\nfrom src/:\n%s", at.Reason, below.Reason)
 	}
 	red(t, below, `"assets/old/a.txt" (protected)`)
+}
+
+// TestBaseUpstream is BUG-124: work built straight on the base branch has its unpushed commits judged, those after the
+// base's upstream (found offline, from git's own refs), as a branch's are after its merge base; a base whose commits
+// are all pushed judges nothing more; a base with no upstream says its commits were not judged.
+func TestBaseUpstream(t *testing.T) {
+	withOrigin := func(t *testing.T) *fx {
+		f := newProject(t, nil)
+		origin := filepath.Join(f.tmp, "origin.git")
+		testpack.Git(t, f.tmp, "init", "-q", "--bare", origin)
+		testpack.Git(t, f.main, "remote", "add", "origin", origin)
+		testpack.Git(t, f.main, "push", "-q", "-u", "origin", "main")
+		return f
+	}
+	t.Run("an unpushed commit to a protected path is refused", func(t *testing.T) {
+		f := withOrigin(t)
+		write(t, f.main, "assets/old/a.txt", "changed on the base\n")
+		write(t, f.main, "src/main.txt", "changed too\n")
+		commit(t, f.main, "a protected change, committed on the base, not pushed")
+		o := f.climb(t, f.main, "T-0901")
+		if want := map[string]string{"assets/old/a.txt": guard.RuleProtected}; !reflect.DeepEqual(refusedRules(o), want) {
+			t.Errorf("refused %v, want %v", refusedRules(o), want)
+		}
+		red(t, o, `"assets/old/a.txt" (protected)`, "1 of 2 changed paths refused")
+		if strings.Contains(o.Reason, "not judged here") {
+			t.Errorf("a base with an upstream says something was not judged: %s", o.Reason)
+		}
+		// Pushed, nothing is left to judge.
+		testpack.Git(t, f.main, "push", "-q", "origin", "main")
+		o = f.climb(t, f.main, "T-0901")
+		green(t, o, 0)
+		if o.Reason != "" {
+			t.Errorf("a pushed base has a reason: %s", o.Reason)
+		}
+	})
+	t.Run("a pushed base judges only the working tree", func(t *testing.T) {
+		f := withOrigin(t)
+		write(t, f.main, "src/new.txt", "uncommitted\n")
+		o := f.climb(t, f.main, "T-0901")
+		green(t, o, 1)
+		if o.Reason != "" {
+			t.Errorf("a pushed base has a reason: %s", o.Reason)
+		}
+	})
+	t.Run("an upstream not an ancestor: the merge base", func(t *testing.T) {
+		f := withOrigin(t)
+		// Someone else's commit on the upstream, fetched; a local commit beside it.
+		other := filepath.Join(f.tmp, "other")
+		testpack.Git(t, f.tmp, "clone", "-q", filepath.Join(f.tmp, "origin.git"), other)
+		write(t, other, "src/theirs.txt", "theirs\n")
+		commit(t, other, "theirs")
+		testpack.Git(t, other, "push", "-q", "origin", "main")
+		testpack.Git(t, f.main, "fetch", "-q", "origin")
+		write(t, f.main, "assets/old/a.txt", "mine\n")
+		commit(t, f.main, "mine")
+		o := f.climb(t, f.main, "T-0901")
+		if want := map[string]string{"assets/old/a.txt": guard.RuleProtected}; !reflect.DeepEqual(refusedRules(o), want) {
+			t.Errorf("refused %v, want %v", refusedRules(o), want)
+		}
+		red(t, o, "1 of 1 changed paths refused")
+	})
+	t.Run("no upstream: the base's commits are not judged, and it says so", func(t *testing.T) {
+		f := newProject(t, nil)
+		write(t, f.main, "src/main.txt", "committed on the base\n")
+		commit(t, f.main, "a commit on a base with no upstream")
+		o := f.climb(t, f.main, "T-0901")
+		green(t, o, 0)
+		if !strings.Contains(o.Reason, `not judged here: the base branch's commits (no upstream for "main", so only what `+
+			"the working tree changed was judged)") {
+			t.Errorf("no upstream: the reason does not say the base's commits were not judged: %q", o.Reason)
+		}
+	})
 }
