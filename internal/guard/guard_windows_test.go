@@ -107,7 +107,7 @@ func TestDecideReadsDevicePaths(t *testing.T) {
 		// BUG-112: an empty device would build a path with no device, which the guard rightly reads as outside the project.
 		t.Skipf("QueryDosDevice(%q) gave an empty device: the test cannot build a device path (setup, not the guard)", vol)
 	}
-	rest := dir[len(vol):]                   // \Users\...
+	rest := dir[len(vol):] // \Users\...
 	refused(t, dir, `\\?\GLOBALROOT`+device+rest+`\protected.txt`)
 	refused(t, dir, `\\?\GLOBALROOT`+device+rest+`\docs\new.md`)
 	mp, err := syscall.UTF16PtrFromString(vol + `\`)
