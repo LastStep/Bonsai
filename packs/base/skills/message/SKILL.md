@@ -94,6 +94,9 @@ Budget: <only when not the role's default: minutes, actions, red runs, and why>
 BRIEF
 ```
 
+With `--json`, the new message's id is at `.message.id` (the document's `message` object), not at the top: read it with
+`jq -r .message.id`, and do not write a second message because the top of the output has no `id`.
+
 ## The report
 
 Write it back to the brief's writer, in the brief's thread, before you stop; it is the last thing you do.
