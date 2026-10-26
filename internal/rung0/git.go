@@ -134,7 +134,10 @@ type entry struct{ path string }
 // against HEAD show changed though git status does not (vergit.Tree's hidden paths: a file whose stat times the index
 // kept from a look while a filter made it read as unchanged, one under an index flag, one whose bytes the ident or
 // working-tree-encoding attribute reads as HEAD's, one inside a submodule, a file in a submodule's folder git does not
-// read), so a change hidden from git status is judged by the guard's function, not only made dirty. git status runs
+// read), so a change hidden from git status is judged by the guard's function, not only made dirty. A file git status
+// shows changed in the working tree only (" M") is left out when it is a Git LFS file whose bytes are those HEAD's
+// committed pointer names (vergit's Tree, its Verified): its bytes differ from HEAD's blob, the pointer, only as Git
+// LFS keeps every such file. git status runs
 // with what the file system can hold pinned (vergit.FileSystemSettings), so a stale core.ignorecase, core.fileMode or
 // core.symlinks in the repository's configuration hides no untracked file or change from it. An untracked nested
 // repository (git names its folder with a trailing slash and does not look inside) is its .git, a checkout planted
@@ -156,6 +159,7 @@ func (g git) changed(from, main string) ([]entry, error) {
 	if err != nil {
 		return nil, err
 	}
+	var modified []string // " M": changed in the working tree only, dropped below when it is a Git LFS file Tree verified
 	for _, e := range splitZ(out) {
 		if len(e) < 4 || e[2] != ' ' {
 			return nil, fmt.Errorf("git status gave a line rung 0 does not read: %q", e)
@@ -166,6 +170,10 @@ func (g git) changed(from, main string) ([]entry, error) {
 				continue
 			}
 			p += ".git"
+		}
+		if e[:2] == " M" {
+			modified = append(modified, p)
+			continue
 		}
 		paths = append(paths, p)
 	}
@@ -181,6 +189,15 @@ func (g git) changed(from, main string) ([]entry, error) {
 	}
 	for _, h := range tree.Hidden {
 		paths = append(paths, strings.TrimSuffix(h.Path, "/"))
+	}
+	verified := map[string]bool{}
+	for _, p := range tree.Verified {
+		verified[p] = true
+	}
+	for _, p := range modified {
+		if !verified[p] {
+			paths = append(paths, p)
+		}
 	}
 	var out2 []entry
 	for _, p := range sortedUnique(paths) {
