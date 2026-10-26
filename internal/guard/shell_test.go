@@ -520,21 +520,29 @@ var delTable = []delRow{
 	// BUG-130: a git mv whose operands come from a loop's variable, xargs or a pipeline passes as a move (git moves
 	// only what it tracks; rung 0 judges what moved); its named operands are still judged; plain mv and every delete
 	// fed the same way stay refused.
-	{tB, "", `for f in *.md; do git mv "$f" docs/; done`, RuleMoveUnnamed, ""},
+	{tB, "", `for f in *.md; do git mv "$f" src/; done`, RuleMoveUnnamed, ""},
 	{tB, "", "while read -r f; do git mv \"$f\" old/; done < list.txt", RuleMoveUnnamed, ""},
-	{tB, "", "git ls-files '*.md' | xargs -I{} git mv {} docs/", RuleMoveUnnamed, ""},
+	{tB, "", "git ls-files '*.md' | xargs -I{} git mv {} src/", RuleMoveUnnamed, ""},
 	{tB, "", "ls *.md | xargs git mv -k", RuleMoveUnnamed, ""},
-	{tP, "", "foreach ($f in Get-ChildItem *.md) { git mv $f.Name docs/ }", RuleMoveUnnamed, ""},
-	{tP, "", "Get-ChildItem *.md | ForEach-Object { git mv $_.Name docs/ }", RuleMoveUnnamed, ""},
+	{tP, "", "foreach ($f in Get-ChildItem *.md) { git mv $f.Name src/ }", RuleMoveUnnamed, ""},
+	{tP, "", "Get-ChildItem *.md | ForEach-Object { git mv $_.Name src/ }", RuleMoveUnnamed, ""},
 	{tB, "", `for f in *.md; do mv "$f" docs/; done`, RuleDeleteUnnamed, ""},
 	{tB, "", `for f in *.md; do rm "$f"; done; for f in *.md; do git mv "$f" docs/; done`, RuleDeleteUnnamed, ""},
 	{tB, "", `for f in *.md; do git rm "$f"; done`, RuleDeleteUnnamed, ""},
 	{tB, "", "ls | xargs git rm", RuleDeleteUnnamed, ""},
 	{tP, "", "foreach ($f in Get-ChildItem *.md) { Move-Item $f docs/ }", RuleDeleteUnnamed, ""},
 	{tB, "", "ls | xargs -I{} git mv {} bonsai.yaml", RuleDeleteProtected, ""},
-	// Into a guarded folder, the names that land there are not known: a shell write (BUG-048's limit), as cp into it
-	// is; rung 0 judges what moved. The verifier's security lens reads this row.
-	{tB, "", `for f in *.md; do git mv "$f" .claude/; done`, RuleMoveUnnamed, ""},
+	// Into a named guarded folder: the destination is named, so it is judged, the folder and what it holds, and
+	// refused as a named git mv into it is. Only a destination that is itself unnamed is left to rung 0.
+	{tB, "", `for f in *.md; do git mv "$f" .claude/; done`, RuleDeleteProtected, ""},
+	{tB, "", "ls *.md | xargs -I{} git mv {} .claude/", RuleDeleteProtected, ""},
+	{tB, "", "git ls-files '*.json' | xargs git mv -k -t .claude", RuleDeleteProtected, ""},
+	{tP, "", "Get-ChildItem *.md | ForEach-Object { git mv $_.Name .claude/ }", RuleDeleteProtected, ""},
+	{tP, "", "foreach ($f in Get-ChildItem *.md) { git mv $f.Name .git/ }", RuleDeleteProtected, ""},
+	{tB, "", `for f in *.md; do git mv "$f" docs/secret; done`, RuleDeleteProtected, ""},
+	// A folder holding a guarded path (docs/ holds docs/secret/ here) is judged whole too, as a move of it is.
+	{tB, "", `for f in *.md; do git mv "$f" docs/; done`, RuleDeleteProtected, ""},
+	{tB, "", `for f in *.md; do git mv "$f" "$DEST"; done`, RuleMoveUnnamed, ""},
 	{tB, "", `for f in *.md; do git mv bonsai.yaml "$f"; done`, RuleDeleteProtected, ""},
 	{tB, "", "mv -t .claude settings.json", RuleDeleteProtected, ""},
 	{tB, "", "mv .git .git-old", RuleDeleteProtected, ""},
@@ -1128,6 +1136,7 @@ func init() {
 			wantRule(t, dir, bashIn(dir, c.tool, c.line), RuleMoveUnnamed)
 		}
 		wantRule(t, dir, bashIn(dir, "Bash", "ls | xargs -I{} git mv {} bonsai.yaml"), RuleDeleteProtected)
+		wantRule(t, dir, bashIn(dir, "Bash", `for f in *.md; do git mv "$f" .git/; done`), RuleDeleteProtected)
 		wantRule(t, dir, bashIn(dir, "Bash", `for f in *.md; do mv "$f" docs/; done`), RuleDeleteUnnamed)
 	}
 }

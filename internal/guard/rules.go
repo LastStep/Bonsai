@@ -150,7 +150,8 @@ var Rules = []Rule{
 	{RuleDeleteNamed, true, "a shell call whose deletes and moves all name what they take, none of it guarded"},
 	{RuleMoveUnnamed, true, "a shell call's git mv whose operands come from a loop's variable, xargs or a pipeline: git " +
 		"moves only what it tracks and keeps both sides in the next commit, so rung 0 judges what moved after the fact; " +
-		"what it names is still judged, and plain mv and every delete fed the same way stay delete-unnamed"},
+		"what it names is still judged, a named destination folder with everything below it (delete-protected), and " +
+		"plain mv and every delete fed the same way stay delete-unnamed"},
 	{RulePersonCommand, false, "bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes an agent marker (CLAUDE_CODE_CHILD_SESSION, " +
 		"AI_AGENT or another of the list the error code person-command names): " +
 		"a person's commands, allowed to an agent only in a project in command mode under a running task's grant of " +

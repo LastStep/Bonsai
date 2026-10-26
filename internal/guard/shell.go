@@ -25,8 +25,8 @@ package guard
 //     leaves both folders), and each delete judged. Rule 3 (delete-unnamed): a recursive or bulk delete with an
 //     operand that is not a plain name (shell_paths.go's delPlain), a delete of several files by a glob, a delete or a
 //     plain mv fed its operands by xargs, a pipeline or a loop's variable (a git mv fed so passes, move-unnamed: git
-//     moves only what it tracks and rung 0 judges what moved; what it names is still judged; BUG-130), git clean with
-//     no path, a git pathspec with magic other
+//     moves only what it tracks and rung 0 judges what moved; what it names is still judged, a named destination
+//     folder with everything below it, by rule 4; BUG-130), git clean with no path, a git pathspec with magic other
 //     than :/, :(top) or :(literal) (delGitMagic, which reads those three), and always git clean -x or -X, git stash
 //     --all and rm --no-preserve-root. bash's ~+/x is read in the command's folder, ~-/x in one that cannot be told. Rule 4 (delete-protected): every operand, and both sides of a move,
 //     read in the command's folder and judged by the guard's one function for a delete (may.go's mayDelete); a
@@ -39,8 +39,8 @@ package guard
 //
 // What it leaves (note 5; question A): a shell write to a guarded path (a redirect, cp or ln over it, an
 // interpreter such as python -c or node -e) is not judged, nor what a git mv fed by a loop, xargs or a pipeline moves
-// (move-unnamed: only what it names is judged; what lands in a guarded folder is a shell write too), nor a delete
-// inside a script run by name, nor, in
+// (move-unnamed: only what it names is judged, its named destination folder with everything below it; a destination
+// itself unnamed is left to rung 0), nor a delete inside a script run by name, nor, in
 // another linked project, a named delete below its top and floor folders (5.3.2 rule 8); rung 0 and the Desk catch
 // them after the fact. Nor, being a splitter and not a shell, does it see: deletes made by a program's own calls
 // ([IO.File]::Delete, $item.Delete(), Start-Process with arguments, shutil.rmtree) or by programs outside its
@@ -614,7 +614,8 @@ func (r *delRun) judge(a delAct, x delExec) {
 	// what it tracks and keeps both sides in the next commit, which rung 0 judges after the fact. What it names is
 	// still judged below; plain mv and every delete fed the same way stay refused.
 	gitMove := a.move && a.word == "git mv"
-	if gitMove && x.feed != "" {
+	unnamedSrc := gitMove && x.feed != "" // its sources are not known: a named destination is judged whole, below
+	if unnamedSrc {
 		r.moveUnnamed = true
 	}
 	if x.feed != "" && !gitMove {
@@ -659,7 +660,7 @@ func (r *delRun) judge(a delAct, x delExec) {
 		why, next := "", ""
 		switch {
 		case (op.pipeVar || x.loop && op.expand) && gitMove:
-			r.moveUnnamed = true
+			r.moveUnnamed, unnamedSrc = true, true
 		case op.pipeVar || x.loop && op.expand:
 			why = fmt.Sprintf("%s takes its operand from a pipeline or a loop's variable, one item after another, so "+
 				"the check cannot see what it %s", a.word, verb)
@@ -698,7 +699,13 @@ func (r *delRun) judge(a delAct, x delExec) {
 			if dest.text == "" || dest.expand || dest.item {
 				continue
 			}
-			r.path(x, dest, false, "moves onto")
+			// With sources it cannot see (a fed git mv), what lands in a named destination folder may be any name,
+			// so the folder is judged with everything below it, as a move of the folder is: a guarded folder, or one
+			// holding a guarded path, is refused (delete-protected). A destination itself unnamed is skipped above.
+			r.path(x, dest, unnamedSrc, "moves onto")
+			if r.deny != nil {
+				return
+			}
 			if a.destDir {
 				for _, src := range a.ops {
 					base := delBase(src.text)
