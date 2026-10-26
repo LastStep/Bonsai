@@ -172,7 +172,7 @@ func lfsMatch(name string, pointer []byte, oid string, size int64, exec, modePin
 	if err != nil {
 		return "a file that cannot be read: " + osWords(err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	fi, err := f.Stat()
 	switch {
 	case err != nil:
