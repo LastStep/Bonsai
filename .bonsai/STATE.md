@@ -7,7 +7,30 @@ labels: {}
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 25 Oct 2026 (a day session, the director present).
+Rewritten, never appended (`base:state`). Last rewritten 26 Oct 2026 (a day session, the director present).
+
+## Now (26 Oct), two sessions side by side
+
+- **Session 1 (the LFS session; it holds T-6002, T-6003, T-6005).** The studio's B-053: a Git LFS checkout's climbs
+  read `dirty: true` (BUG-054). **T-6002** fixes it: an LFS file reads clean when its bytes hash to the SHA-256 and
+  size HEAD's committed pointer names (`internal/vergit/lfs.go`; rung 0 the same), the attribute from HEAD only, the
+  executable bit checked; plan `records/plans/P-T-6002.md` (reviewed, approved), verifier PASS
+  `M-2026-10-26-91a81fe9`. **T-6003** clubs BUG-091, 112, 113, 114's half, 022. **Both done, landed 11:15** at
+  `df549bbd` (CI green, every job), `main` at `c91891aa` and after (the other session's two records commits replayed
+  on top, content unchanged). A 1.0.1 release is the director's to decide.
+  **T-6005** (running, sonnet builder, branch `t-6005-link-fixes-small`, green at `7051a440`, rebasing onto `main`): BUG-119, 120, 125, 129, 127
+  (the director's option 3 of the split). Run reports `records/runs/R-2026-10-26-T-6002-lfs-dirty.md`,
+  `R-2026-10-26-T-6003-small-fixes.md`.
+- **Session 2 (fresh, to start now): `T-6004`**, the rest of the first link's bugs: BUG-121 to BUG-124, BUG-126,
+  BUG-128, BUG-130. Start with group B's options (BUG-124 rung 0 on the base branch; BUG-126 a result per climb, a
+  format change; BUG-121 never_edit and reads; BUG-123 future times), one question at a time to the director, no code
+  needed; then group C (BUG-130, BUG-122: guard and link, a fresh Opus verifier); then BUG-128 (the workflow pack).
+  `main` now holds T-6002/T-6003 (`internal/rung0`, `internal/ladder`): build on it. Keep out of T-6005's files (`internal/engine/checkdocs.go`, `internal/message/pointer.go`, base's
+  message and memory skills, the workflow repo's orchestrate and verification-ladder skills).
+- **Rules for two sessions here:** every task has empty `bonsai.allows`, so several `running` tasks grant nothing
+  either way; always climb with `--task`. Before any push, read `origin/main`'s new commits; never stage a file the
+  session did not write; each session lands its own branches; records commits only for its own files. The machine is
+  loaded: timing tests (TestStatusLineSpeed, TestCleaning) went red under load on 26 Oct and passed alone.
 
 **Bonsai 1.0 is released, and step 5 (the full 1.0) is done** (25 Oct). Every part of the plan is done: part 0, the
 skeleton's six parts, and steps 5.1 to 5.7, each closed by its end verifier.
@@ -260,13 +283,16 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | 5.7's end verifier | `T-5741` | done | FAIL on F1-F3 (records); F3 fixed, F1 and F2 on the director's words; re-check skipped on their word |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
 | **The first existing project linked: ZenGarden-AI-API** (the director, 26 Oct, "A, AI-API first") | `T-6001` | done | linked `d6355c7` in that project, old agent system retired, one fix landed locally (not pushed, the director's); `records/trial-zengarden-ai-api.md`; issues BUG-119 to BUG-130 |
-| Fix what that link found (the director: "a fresh session needs to pick them up and fix") | `T-6004` | todo | for a fresh orchestrator; start when no other task reads `running` (T-6002, T-6003 were `verify` on 26 Oct) |
+| Git LFS checkouts climb clean (the studio's B-053, BUG-054) | `T-6002` | done | verifier PASS; landed `df549bbd` with T-6003, CI green |
+| Five small open bugs clubbed with it (BUG-091, 112, 113, 114's half, 022) | `T-6003` | done | in T-6002's batch |
+| The first link's small fixes (BUG-119, 120, 125, 129, 127), split from T-6004 | `T-6005` | running | session 1; the director's option 3 |
+| Fix what that link found: the rest (BUG-121 to 124, 126, 128, 130) | `T-6004` | todo | **for a fresh session, now**, beside session 1 (see "Now (26 Oct)") |
 
-**Now: after 1.0.** Next for a fresh session: `T-6004` (BUG-119 to BUG-130). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
+**Now: after 1.0.** Next for a fresh session: `T-6004` (see "Now (26 Oct)" at the top). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
 scratch folders declared in `bonsai.yaml` (`T-5793`, `todo`); the agent work (the pi brief's B1, B4, B5; the
 envelope `bonsai.hook/1`, B6, B7; `design/pi-contract.md`); a cleaner role (the first piece after 1.0, 19 Oct);
 playbooks, hillclimb and pickup (16 Oct); the general rewording of `workflow`; `bonsai agents` filters, release.yml's
-notes A and B (BUG-102), BUG-099 to BUG-101, BUG-107's and BUG-108's rest, BUG-113, BUG-114; Bonsai's repo naming its
+notes A and B (BUG-102), BUG-099 to BUG-101, BUG-107's and BUG-108's rest, BUG-114's first half; Bonsai's repo naming its
 packs by their tags. Go 1.27.2 stays until govulncheck loads a newer patch (GO-2026-6809, crypto/x509, unreached).
 A named session starts with `claude -p --agent workflow:builder` in its worktree, launcher
 `~/bonsai-checks/scripts/T-5708/run.sh`. Task numbers: T-5790 to T-5799 are all taken; 5.7's last were T-5739 to T-5741.
