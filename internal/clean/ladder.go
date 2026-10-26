@@ -1,7 +1,8 @@
 package clean
 
 // The ladder kind (contract §11): <task id>.json in .bonsai/local/ladder/ (a task's result; ci.json, a --ci run's,
-// names no task and is left alone), aged by the result's finished, and kept while its task is not done or cut.
+// names no task and is left alone), and the copies of a task's results, <task id>/<commit>.json, one per commit climbed
+// (BUG-126); each aged by the result's finished, and kept while its task is not done or cut.
 //
 // The task's status is read from the main checkout's task files (bonsai.yaml's documents.task, through
 // workspace.ReadTaskFiles, the one reader of the task folder), once a run. A task is done only when a task file with
@@ -32,6 +33,25 @@ var ladderKind = fileKind{
 	protect: ladderProtected,
 }
 
+// ladderCopyName is a copy's name in its task's folder (BUG-126): the commit's full id (SHA-1's 40 hex digits, or
+// SHA-256's 64) and .json.
+var ladderCopyName = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})\.json$`)
+
+// ladderTaskFolder is a task's folder of copies: the task id pattern alone.
+var ladderTaskFolder = regexp.MustCompile(workspace.TaskIDPattern)
+
+// ladderCopyKind is the copies of a task's results, one per commit climbed, at <task>/<sha>.json (BUG-126): the same
+// rule (generated.ladder), the same clock and the same protection as the results, the task read from the folder's
+// name and the copy's task field. keep_newest ranks the copies among themselves, apart from the results.
+var ladderCopyKind = fileKind{
+	name:    Ladder,
+	folder:  LadderFolder,
+	match:   ladderCopyName.MatchString,
+	sub:     ladderTaskFolder.MatchString,
+	age:     ladderAge,
+	protect: ladderProtected,
+}
+
 // ladderResult is what the cleaner reads of a result: its task field.
 type ladderResult struct {
 	task *string
@@ -58,7 +78,11 @@ func ladderAge(_ *run, f *file) time.Time {
 // ladderProtected keeps a result whose task is not done or cut.
 func ladderProtected(r *run, f *file) (bool, error) {
 	ts := r.taskStates()
-	if !ts.done(strings.TrimSuffix(f.name, ".json")) {
+	id := strings.TrimSuffix(f.name, ".json")
+	if folder, _, ok := strings.Cut(f.name, "/"); ok { // a copy: <task>/<sha>.json
+		id = folder
+	}
+	if !ts.done(id) {
 		return true, nil
 	}
 	if f.ladder != nil && f.ladder.task != nil && !ts.done(*f.ladder.task) {

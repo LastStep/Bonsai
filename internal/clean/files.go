@@ -61,6 +61,10 @@ type fileKind struct {
 	folder string
 	// match reports one of the names Bonsai writes in the folder.
 	match func(name string) bool
+	// sub, when set, makes the kind's files live one folder down: in each real folder of the kind's folder whose name
+	// sub reports (the ladder's copies, one folder per task), the files whose names match reports. A file's name is
+	// then "<folder>/<name>".
+	sub func(folder string) bool
 	// age reads a file's age by the kind's own clock, its modification time when that does not read.
 	age func(r *run, f *file) time.Time
 	// protect judges one file (log, ladder): true keeps it. An error keeps it too, and is noted.
@@ -223,7 +227,8 @@ func (r *run) readDir(dir string, each func(fs.DirEntry)) error {
 	}
 }
 
-// list lists a kind's folder in the main checkout's .bonsai/local/: the names Bonsai writes there, regular files only,
+// list lists a kind's folder in the main checkout's .bonsai/local/ (or, for a kind with sub, the folders one down): the
+// names Bonsai writes there, regular files only,
 // oldest modification time first, read a batch at a time (readDir: errStopped when the budget runs out first). The
 // folder, and .bonsai and .bonsai/local above it, must be real folders: a link (or a Windows junction) is never
 // followed, and then nothing is listed. A folder not there holds nothing.
@@ -242,17 +247,44 @@ func (r *run) list(k fileKind) ([]*file, error) {
 		}
 	}
 	var out []*file
-	err := r.readDir(dir, func(de fs.DirEntry) {
-		if !de.Type().IsRegular() || !k.match(de.Name()) {
-			return
+	files := func(dir, prefix string) func(fs.DirEntry) {
+		return func(de fs.DirEntry) {
+			if !de.Type().IsRegular() || !k.match(de.Name()) {
+				return
+			}
+			fi, err := de.Info()
+			if err != nil || !fi.Mode().IsRegular() {
+				return // gone since the folder was read, or not a regular file after all
+			}
+			out = append(out, &file{kind: k.name, name: prefix + de.Name(), path: filepath.Join(dir, de.Name()),
+				target: target(k.folder, prefix+de.Name()), mtime: fi.ModTime(), size: fi.Size()})
 		}
-		fi, err := de.Info()
-		if err != nil || !fi.Mode().IsRegular() {
-			return // gone since the folder was read, or not a regular file after all
+	}
+	var err error
+	if k.sub == nil {
+		err = r.readDir(dir, files(dir, ""))
+	} else {
+		// One folder down: only a real folder (a link or a junction reads as no folder, and is never followed).
+		var subs []string
+		err = r.readDir(dir, func(de fs.DirEntry) {
+			if de.Type() == fs.ModeDir && k.sub(de.Name()) {
+				subs = append(subs, de.Name())
+			}
+		})
+		sort.Strings(subs)
+		for _, s := range subs {
+			if err != nil {
+				break
+			}
+			sd := filepath.Join(dir, s)
+			if fi, lerr := os.Lstat(sd); lerr != nil || fi.Mode().Type() != fs.ModeDir {
+				continue
+			}
+			if serr := r.readDir(sd, files(sd, s+"/")); serr != nil && !errors.Is(serr, fs.ErrNotExist) {
+				err = serr
+			}
 		}
-		out = append(out, &file{kind: k.name, name: de.Name(), path: filepath.Join(dir, de.Name()),
-			target: target(k.folder, de.Name()), mtime: fi.ModTime(), size: fi.Size()})
-	})
+	}
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}

@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"time"
 
@@ -91,6 +92,20 @@ func (c *Climb) ResultRel() string {
 	}
 	return workspace.LocalDir + "/ladder/" + name + ".json"
 }
+
+// CopyRel is where a climb keeps a copy of its result named by the commit it proves (BUG-126):
+// .bonsai/local/ladder/<task>/<sha>.json; "" for a --ci climb, a climb with no task, or a result that names no
+// commit (no git, or a branch with no commit yet). The copy is byte for byte the result; <task>.json stays the latest,
+// and every reader reads that one.
+func (c *Climb) CopyRel(sha string) string {
+	if c.CI || c.TaskID() == "" || !commitID.MatchString(sha) {
+		return ""
+	}
+	return workspace.LocalDir + "/ladder/" + c.TaskID() + "/" + sha + ".json"
+}
+
+// commitID is a commit's full id: SHA-1's 40 hex digits, or SHA-256's 64.
+var commitID = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
 
 // mode is the result's mode.
 func (c *Climb) mode() string {

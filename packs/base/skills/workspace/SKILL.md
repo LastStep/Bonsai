@@ -55,7 +55,7 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 | `generated.<kind>.keep_days` | Clean what is older than this many days; null: no age rule | a whole number from 0, or null | `30` |
 | `generated.<kind>.keep_newest` | Keep only this many of the newest; null: no count rule | a whole number from 0, or null | `100` |
 | `generated.asks` | Questions for a person and their answers, in .bonsai/local/asks/; default: kept | a mapping (its fields below) | under Mappings, below |
-| `generated.ladder` | Ladder results, one per task, in .bonsai/local/ladder/; default: 7 days after the result's finished | a mapping (its fields below) | under Mappings, below |
+| `generated.ladder` | Ladder results by task and commit, in .bonsai/local/ladder/; default: 7 days after the result's finished | a mapping (its fields below) | under Mappings, below |
 | `generated.run` | Run reports, committed history, in the run reports' folder (documents.run); default: kept | a mapping (its fields below) | under Mappings, below |
 | `generated.sessions` | Rows of the sessions table, in .bonsai/sessions.md; default: kept | a mapping (its fields below) | under Mappings, below |
 | `generated.messages` | Messages between agents, in .bonsai/local/messages/; default: 30 days after a thread's last message | a mapping (its fields below) | under Mappings, below |
@@ -120,7 +120,7 @@ generated:
   asks:                               # questions for a person and their answers, in .bonsai/local/asks/; default: kept
     keep_days: null                   # clean what is older than this many days; null: no age rule
     keep_newest: null                 # keep only this many of the newest; null: no count rule
-  # ladder results, one per task, in .bonsai/local/ladder/; default: 7 days after the result's finished
+  # ladder results by task and commit, in .bonsai/local/ladder/; default: 7 days after the result's finished
   ladder:
     keep_days: 7                      # clean what is older than this many days; null: no age rule
     keep_newest: null                 # keep only this many of the newest; null: no count rule

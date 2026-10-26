@@ -402,6 +402,28 @@ func TestLinkedFolderIsNotFollowed(t *testing.T) {
 	}
 }
 
+// A task's folder of copies that is a link is never followed (BUG-126): nothing behind it is cleaned. The junction is
+// junction_windows_test.go's.
+func TestLinkedCopyFolderIsNotFollowed(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("making a link on Windows needs a privilege or developer mode; the Linux run holds this")
+	}
+	l := project(t, allRules)
+	taskFile(t, l, "T-0001", "done")
+	elsewhere := projectAt(t, filepath.Join(filepath.Dir(l.Main), "elsewhere"))
+	copyName := "T-0001/" + strings.Repeat("a", 40) + ".json"
+	behind := ladderFile(t, elsewhere, copyName, ptr("T-0001"), daysAgo(20))
+	if err := os.Symlink(filepath.Dir(behind), filepath.Join(l.Main, ".bonsai", "local", "ladder", "T-0001")); err != nil {
+		t.Fatal(err)
+	}
+	if d := Files(opts(l), Ladder); len(d.Cleaned) != 0 || len(d.Errs) != 0 {
+		t.Errorf("cleaned %v, errors %v", d.Cleaned, d.Errs)
+	}
+	if _, err := os.Stat(behind); err != nil {
+		t.Errorf("the copy behind the link: %v", err)
+	}
+}
+
 // The ladder runner's own result is never cleaned by the run that wrote it.
 func TestKeepNamesTheRunnersResult(t *testing.T) {
 	l := project(t, "  ladder:\n    keep_days: 0\n")
@@ -497,5 +519,41 @@ func TestARecordThatFailsStopsTheRun(t *testing.T) {
 	}
 	if got := names(t, l, "ladder"); len(got) != 2 {
 		t.Errorf("ladder holds %v, want two left", got)
+	}
+}
+
+// BUG-126: the copies of a task's results, one per commit in .bonsai/local/ladder/<task>/<sha>.json, are cleaned by
+// the same generated.ladder rule as the results: aged by finished, kept while their task is not done or cut, and the
+// ladder runner's own (o.Keep) never. A name the runner does not write, and a folder not named by a task, are left.
+func TestLadderCopies(t *testing.T) {
+	l := project(t, "  ladder:\n    keep_days: 7\n")
+	taskFile(t, l, "T-0001", "done")
+	taskFile(t, l, "T-0002", "running")
+	sha := func(c string) string { return strings.Repeat(c, 40) }
+	ladderFile(t, l, "T-0001.json", ptr("T-0001"), daysAgo(1))
+	ladderFile(t, l, "T-0001/"+sha("a")+".json", ptr("T-0001"), daysAgo(20)) // old, task done: goes
+	ladderFile(t, l, "T-0001/"+sha("b")+".json", ptr("T-0001"), daysAgo(1))  // new: stays
+	ladderFile(t, l, "T-0001/"+sha("c")+".json", ptr("T-0001"), daysAgo(20)) // old, but the runner's own: stays
+	ladderFile(t, l, "T-0002/"+sha("d")+".json", ptr("T-0002"), daysAgo(20)) // its task runs: stays
+	ladderFile(t, l, "T-0001/notes.json", ptr("T-0001"), daysAgo(20))        // not a name the runner writes
+	ladderFile(t, l, "other/"+sha("e")+".json", ptr("T-0001"), daysAgo(20))  // not a task's folder
+	o := opts(l)
+	o.Keep = []string{".bonsai/local/ladder/T-0001.json", ".bonsai/local/ladder/T-0001/" + sha("c") + ".json"}
+	d := LadderResults(o)
+	if len(d.Errs) > 0 || len(d.Cleaned) != 1 || d.Cleaned[0].Target != ".bonsai/local/ladder/T-0001/"+sha("a")+".json" ||
+		d.Cleaned[0].Reason != "generated.ladder.keep_days=7" {
+		t.Fatalf("cleaned %v, errors %v", d.Cleaned, d.Errs)
+	}
+	if got := names(t, l, "ladder/T-0001"); !same(got, []string{sha("b") + ".json", sha("c") + ".json", "notes.json"}) {
+		t.Errorf("T-0001/ holds %v", got)
+	}
+	if got := names(t, l, "ladder/T-0002"); len(got) != 1 {
+		t.Errorf("T-0002/ holds %v", got)
+	}
+	if got := names(t, l, "ladder/other"); len(got) != 1 {
+		t.Errorf("other/ holds %v", got)
+	}
+	if got := names(t, l, "ladder"); !same(got, []string{"T-0001.json", "T-0001/", "T-0002/", "other/"}) {
+		t.Errorf("ladder holds %v", got)
 	}
 }

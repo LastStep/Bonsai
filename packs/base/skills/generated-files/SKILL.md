@@ -35,9 +35,9 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 
 ### `ladder`
 
-- What: ladder results, one per task.
+- What: ladder results by task and commit.
 - Where it lives: .bonsai/local/ladder/.
-- Written by: the ladder runner, one file per task.
+- Written by: the ladder runner: <task>.json, the task's latest, and the same bytes at <task>/<commit>.json.
 - Default: 7 days after the result's finished.
 - Never cleaned: the result of a task that is not done or cut (a task not found, or whose file does not read, counts as not done).
 - Cleaned: at a session's end, and by the ladder runner after each run.

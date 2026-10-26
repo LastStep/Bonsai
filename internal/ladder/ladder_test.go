@@ -852,3 +852,56 @@ func TestDirtyDuringTheClimb(t *testing.T) {
 		})
 	}
 }
+
+// BUG-126: each climb also keeps a copy of its result named by the commit it proves, .bonsai/local/ladder/<task>/<sha>.json,
+// byte for byte the result; <task>.json stays the latest. Two climbs at two commits under one task leave both copies,
+// and the latest is the second's. A --ci climb keeps no copy.
+func TestEachCommitKeepsACopy(t *testing.T) {
+	f := project(t, yamlOf("[1]", "{}", "[]", rung{n: 1, name: "one", command: "echo one", required: true}),
+		map[string]string{"work/tasks/T-0901-a.md": taskText("T-0901", "running", "")})
+	dir := filepath.Join(f.root, ".bonsai", "local", "ladder")
+	first := f.head()
+	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 {
+		t.Fatalf("the first climb: exit %d, %v\n%s", a.Exit, a.Error, f.out.String())
+	}
+	f.commit("a second commit")
+	second := f.head()
+	if a := f.climb("", Options{Task: "T-0901"}); a.Exit != 0 {
+		t.Fatalf("the second climb: exit %d, %v\n%s", a.Exit, a.Error, f.out.String())
+	}
+	latest, err := os.ReadFile(filepath.Join(dir, "T-0901.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l := f.result("T-0901"); l.Git.SHA != second {
+		t.Errorf("T-0901.json proves %s, want the second commit %s", l.Git.SHA, second)
+	}
+	for _, sha := range []string{first, second} {
+		raw, err := os.ReadFile(filepath.Join(dir, "T-0901", sha+".json"))
+		if err != nil {
+			t.Fatalf("no copy for %s: %v", sha, err)
+		}
+		fits(t, "ladder", raw)
+		l, err := format.ReadLadder(raw)
+		if err != nil || l.Git.SHA != sha {
+			t.Errorf("the copy for %s proves %v (%v)", sha, l, err)
+		}
+		if sha == second && !bytes.Equal(raw, latest) {
+			t.Errorf("the second commit's copy differs from T-0901.json")
+		}
+	}
+	entries, _ := os.ReadDir(filepath.Join(dir, "T-0901"))
+	if len(entries) != 2 {
+		t.Errorf("T-0901/ holds %d files, want 2", len(entries))
+	}
+	// A --ci climb writes ci.json and no copy.
+	if a := f.climb("", Options{Task: "T-0901", CI: true}); a.Exit != 0 {
+		t.Fatalf("the --ci climb: exit %d, %v\n%s", a.Exit, a.Error, f.out.String())
+	}
+	if entries, _ := os.ReadDir(filepath.Join(dir, "T-0901")); len(entries) != 2 {
+		t.Errorf("after a --ci climb T-0901/ holds %d files, want 2", len(entries))
+	}
+	if _, err := os.Stat(filepath.Join(dir, "ci")); err == nil {
+		t.Error("a --ci climb kept a copy")
+	}
+}

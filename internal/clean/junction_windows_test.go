@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -28,5 +29,23 @@ func TestJunctionIsNotFollowed(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(outside, ".bonsai", "local", "ladder", "T-0001.json")); err != nil {
 		t.Errorf("the result behind the junction: %v", err)
+	}
+}
+
+// A task's folder of copies that is a junction (BUG-126) is never followed either: nothing behind it is cleaned.
+func TestCopyJunctionIsNotFollowed(t *testing.T) {
+	l := project(t, allRules)
+	taskFile(t, l, "T-0001", "done")
+	elsewhere := projectAt(t, filepath.Join(filepath.Dir(l.Main), "elsewhere"))
+	behind := ladderFile(t, elsewhere, "T-0001/"+strings.Repeat("a", 40)+".json", ptr("T-0001"), daysAgo(20))
+	link := filepath.Join(l.Main, ".bonsai", "local", "ladder", "T-0001")
+	if out, err := exec.Command("cmd", "/c", "mklink", "/J", link, filepath.Dir(behind)).CombinedOutput(); err != nil {
+		t.Fatalf("mklink /J: %v %s", err, out)
+	}
+	if d := Files(opts(l), Ladder); len(d.Cleaned) != 0 || len(d.Errs) != 0 {
+		t.Errorf("cleaned %v, errors %v", d.Cleaned, d.Errs)
+	}
+	if _, err := os.Stat(behind); err != nil {
+		t.Errorf("the copy behind the junction: %v", err)
 	}
 }

@@ -203,6 +203,9 @@ func Files(o Options, kinds ...string) *Done {
 			r.files(asksKind)
 		case Ladder:
 			r.files(ladderKind)
+			if !r.out() && !r.halt {
+				r.files(ladderCopyKind)
+			}
 		case Messages:
 			r.messages()
 		case Agents:

@@ -1,9 +1,10 @@
 package ladder
 
 // The result and what follows it (notes 6, 7 and 9): bonsai.ladder/1 written through its writer at the main checkout's
-// .bonsai/local/ladder/<task>.json (ci.json under --ci), whole; the fingerprint, one ladder record in the log naming
-// the runner's own path and SHA-256; the cleaner's ladder kind, never the result just written; the Bless step
-// (kinds.go); and the climb document, bonsai.climb/1.
+// .bonsai/local/ladder/<task>.json (ci.json under --ci), whole, and then its copy by commit at <task>/<sha>.json
+// (BUG-126; none under --ci, and none when the result was not written); the fingerprint, one ladder record in the log
+// naming the runner's own path and SHA-256; the cleaner's ladder kind, never the result just written or its copy; the
+// Bless step (kinds.go); and the climb document, bonsai.climb/1.
 
 import (
 	"crypto/sha256"
@@ -90,6 +91,16 @@ func (c *Climb) finish() *Answer {
 			Next: "check that " + shown(filepath.Join(c.Main, ".bonsai", "local")) + " can be written; then run: bonsai ladder " + c.taskFlag() + " --json"}
 		return refused(c, e)
 	}
+	keep := []string{rel}
+	if cp := c.CopyRel(l.Git.SHA); cp != "" {
+		// The copy by commit (BUG-126): the same bytes, so the same sha256 and the one ladder record. A copy that
+		// cannot be written is a note: the result above is the proof, and every reader reads it.
+		if err := writeFile(filepath.Join(c.Main, filepath.FromSlash(cp)), raw); err != nil {
+			c.printNote("note: the copy " + cp + " of the result cannot be written (" + oneLine(err.Error()) + ")")
+		} else {
+			keep = append(keep, cp)
+		}
+	}
 	sum := sha256.Sum256(raw)
 	w := &Written{Rel: rel, SHA256: hex.EncodeToString(sum[:]), Result: l}
 	doc := c.doc(w)
@@ -101,7 +112,7 @@ func (c *Climb) finish() *Answer {
 			Next: "check that " + shown(filepath.Join(c.Main, ".bonsai", "local", "log")) + " can be written; then run: bonsai ladder " +
 				c.taskFlag() + " --json"}
 	}
-	done := clean.LadderResults(clean.Options{Local: c.local(), Getenv: c.Getenv, Now: c.Now, Keep: []string{rel}})
+	done := clean.LadderResults(clean.Options{Local: c.local(), Getenv: c.Getenv, Now: c.Now, Keep: keep})
 	for _, it := range done.Cleaned {
 		doc.Cleaned = append(doc.Cleaned, it.Target)
 	}
