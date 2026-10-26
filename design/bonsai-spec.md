@@ -440,6 +440,7 @@ protected: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "studio/protocols/
 # person_only: of those, the paths only a person grants (an approve or grant tap)
 person_only: [".claude/**", "bonsai.yaml", ".bonsai/lock.json", "studio/protocols/**", ".github/**"]
 never_edit: ["studio/ledger.json"]  # paths no agent ever changes; written as deny rules, Edit(/<path>)
+never_read: []                      # paths no agent reads (BUG-121); written as deny rules, Read(/<path>)
 ladder_floor: [0, 1, 2, 3, 4]       # the rungs every task climbs, whatever the task lists
 ladder: []                          # the rungs: what each runs and what it proves (left out here)
 ratchets: {}                        # counts that may only rise; they rise when a person taps Bless
@@ -747,6 +748,11 @@ protected path); another shell route is caught after the fact, as question A say
   whatever folder a shell has since moved to. One such rule stops the Edit, Write, Bash (redirects, in-place edits,
   copies) and PowerShell routes in bypass mode, on both machines (P2, 5 Oct); only a write wrapped in another
   interpreter gets past. Today's ledger guard becomes this rule.
+- `Read(/<path>)` for each `never_read` path (the director, 26 Oct, BUG-121: "New never_read list"), anchored as
+  `never_edit`'s. Claude Code's docs: a Read deny also denies Edit and Write on the path, and is applied best effort to
+  Grep, Glob, `@` mentions and the shell reads Claude Code recognises (`cat`, `head`, ...), not to a script that opens
+  the file; shell reads are blocked only by Claude Code's sandbox (`sandbox.filesystem.denyRead`, off by default, none
+  on native Windows). A path taken out of `never_read` is looser (config-looser), one added stricter.
 
   > **Changed 11 Oct (5.3.5; `records/runs/R-2026-10-11-5.3.5-deny.md`):** the rule was `Edit(<path>)` since part 3. It
   > did not hold after a shell `cd` into a subfolder (measured on Claude Code 2.1.296 in WSL and 2.1.294 on Windows: a

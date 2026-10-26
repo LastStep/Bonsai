@@ -267,6 +267,7 @@ Bonsai file a person edits. Beside it, `.bonsai/` holds the lock, STATE and the 
       log/w-<YYYY-MM-DD>.ndjson        records outside a session (§8.4)
       asks/<YYYY-MM-DD>.ndjson         asks and answers (§9)
       ladder/<task id>.json            ladder results (§11)
+      ladder/<task id>/<sha>.json      a copy of each climb's result, by its commit (§11; BUG-126)
 ```
 
 - **Worktrees share the main checkout's `.bonsai/local/`**: a worktree finds its main checkout through git (`git
@@ -988,6 +989,13 @@ proves. (Today: `<runs folder>/.ladder/` in the checkout the ladder ran in.) A `
 `ladder/ci.json` (as today's `ci.json`), never a task's. A result whose `finished` is older than
 `generated.ladder.keep_days` (default 7) is cleaned, never the result of a task that is not `done` or `cut` (Bonsai spec
 §6, Rohan, 7 Oct).
+
+**One copy per commit** (the director, 26 Oct, BUG-126: "Keep one per commit"): after a climb writes
+`<task id>.json`, it writes the same bytes to `ladder/<task id>/<git.sha>.json`, so a later climb of another commit
+under the same task (a branch, then `main`) does not take the branch's proof away. Every reader keeps reading
+`<task id>.json` alone; a climb that writes no task's result (`--ci`, no task, no commit) writes no copy; a copy that
+cannot be written is a note, not a red climb. The copies are cleaned by the same `generated.ladder` rule, counted
+apart from the results, and the cleaner never follows a link or junction into a task's folder.
 
 Today's fields stay (`ladder.mjs`): `task`, `started`, `finished`, `git {sha, branch, dirty}`, `requested`, `green`,
 `rungs` (each: `rung`, `name`, `kind`, `required`, `command`, `means`, `status`, `reason`, `duration_ms`, `tests`,

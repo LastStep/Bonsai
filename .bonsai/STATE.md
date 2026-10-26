@@ -9,31 +9,29 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 26 Oct 2026 (a day session, the director present).
 
-## Now (26 Oct), two sessions side by side
+## Now (26 Oct): the first link's bugs are fixed; 1.0.1 is next
 
-- **Session 1 (the LFS session; it holds T-6002, T-6003, T-6005).** The studio's B-053: a Git LFS checkout's climbs
-  read `dirty: true` (BUG-054). **T-6002** fixes it: an LFS file reads clean when its bytes hash to the SHA-256 and
-  size HEAD's committed pointer names (`internal/vergit/lfs.go`; rung 0 the same), the attribute from HEAD only, the
-  executable bit checked; plan `records/plans/P-T-6002.md` (reviewed, approved), verifier PASS
-  `M-2026-10-26-91a81fe9`. **T-6003** clubs BUG-091, 112, 113, 114's half, 022. **Both done, landed 11:15** at
-  `df549bbd` (CI green, every job), `main` at `c91891aa` and after (the other session's two records commits replayed
-  on top, content unchanged). A 1.0.1 release is the director's to decide.
-  **T-6005** (done, landed `beff8bee` 11:55, CI green; the workflow repo's `11f78db` waits for the director's push and tag): BUG-119, 120, 125, 129, 127
-  (the director's option 3 of the split). Run reports `records/runs/R-2026-10-26-T-6002-lfs-dirty.md`,
-  `R-2026-10-26-T-6003-small-fixes.md`.
-- **Session 2 (fresh, to start now): `T-6004`**, the rest of the first link's bugs: BUG-121 to BUG-124, BUG-126,
-  BUG-128, BUG-130. Start with group B's options (BUG-124 rung 0 on the base branch; BUG-126 a result per climb, a
-  format change; BUG-121 never_edit and reads; BUG-123 future times), one question at a time to the director, no code
-  needed; then group C (BUG-130, BUG-122: guard and link, a fresh Opus verifier); then BUG-128 (the workflow pack).
-  `main` now holds T-6002/T-6003 (`internal/rung0`, `internal/ladder`): build on it. T-6005 has landed; its workflow-repo commit `11f78db` (orchestrate, verification-ladder) is local: build BUG-128 on it.
-- **Rules for two sessions here:** every task has empty `bonsai.allows`, so several `running` tasks grant nothing
-  either way; always climb with `--task`. Before any push, read `origin/main`'s new commits; never stage a file the
-  session did not write; each session lands its own branches; records commits only for its own files. The machine is
-  loaded: timing tests went red under load on 26 Oct and passed alone (BUG-131). **The director's word (26 Oct,
-  11:23): "for the timing failures, i think we can assume them green, especially when the specified tests havent been
-  changed".** So a climb red only on BUG-131's tests (TestStatusLineSpeed, TestCleaning, TestNewTestsOnBase), none of
-  them changed by the branch, counts as green for the landing, with CI green on the branch as before; the run report
-  quotes the red result, the failing test and this word. The result file stays red: the stop gate does not know it.
+- **Every bug the first existing project's link found (T-6001) is fixed and landed**, CI green on every job:
+  - **T-6002, T-6003** (session 1, landed 11:15 at `df549bbd`): a Git LFS checkout climbs clean (BUG-054); BUG-091,
+    112, 113, 114's half, 022. Plan `records/plans/P-T-6002.md`.
+  - **T-6005** (landed `beff8bee` 11:55): BUG-119, 120, 125, 129, 127.
+  - **T-6004** (session 2, landed `67062c5b` 14:23): BUG-121 (`never_read`, formats set 12), 122 (`init` takes
+    several packs), 123 (`check`'s `future-stamp`), 124 (rung 0 judges `main`'s unpushed commits), 126 (a ladder
+    result copy per commit, `.bonsai/local/ladder/<task>/<sha>.json`), 130 (a fed `git mv` passes as
+    `move-unnamed`; named guarded paths stay refused), 128 (the workflow pack). Plan `records/plans/P-T-6004.md`,
+    every fix the director's choice of 12:03; run report `records/runs/R-2026-10-26-T-6004-first-link-fixes.md`.
+- **Next: Bonsai 1.0.1** (the director, 14:08: "and then we will tag to 1.0.1"). **T-6006** writes CHANGELOG's
+  `## [1.0.1]` section from T-6002 to T-6005 and lands it with CI green on `main`; then the director tags `v1.0.1`
+  and approves the release run (only they tag and release).
+- **The workflow repo** (`~/bonsai-checks/bonsai-workflow`): `11f78db` (BUG-127), `8b3166c`, `5e3b92e` (BUG-128) are
+  local, for the director's push and tag.
+- **Open from today:** BUG-131 (timing tests red under load) and BUG-132 (a ladder test red when WSL's clock steps
+  back): the director's word of 26 Oct, 11:23, still holds ("for the timing failures, i think we can assume them
+  green, especially when the specified tests havent been changed"): a climb red only on such a test, unchanged by the
+  branch, counts as green for a landing, CI green as before, the run report quoting it. BUG-133 (loop forms the
+  guard does not read for a fed `git mv`; rung 0 catches what moved).
+- **Rules for two sessions here:** always climb with `--task`; before any push, read `origin/main`'s new commits;
+  never stage a file the session did not write; each session lands its own branches.
 
 **Bonsai 1.0 is released, and step 5 (the full 1.0) is done** (25 Oct). Every part of the plan is done: part 0, the
 skeleton's six parts, and steps 5.1 to 5.7, each closed by its end verifier.

@@ -6,7 +6,7 @@ Active task when none is named: none (no task reads running)
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
 | T-6005 | The first link's small fixes, split from T-6004: BUG-119 and BUG-120 (missing-path skips git-ignored paths), BUG-125 (a worktree's pointer into .bonsai/local), BUG-129 (base's words), BUG-127 (the workflow pack: land only what the verifier saw) | done | light | 2026-10-26 | 2026-10-26 |
-| T-6004 | Fix what the first existing project's link found: BUG-121 to BUG-124, BUG-126, BUG-128, BUG-130 (the design questions, the guard and link, the workflow pack's reporting) | todo | | | |
+| T-6004 | Fix what the first existing project's link found: BUG-121 to BUG-124, BUG-126, BUG-128, BUG-130 (the design questions, the guard and link, the workflow pack's reporting) | done | | 2026-10-26 | 2026-10-26 |
 | T-6003 | Five small open bugs, built beside T-6002 and landed in its batch: BUG-091, BUG-112, BUG-114's next step, BUG-022, BUG-113 | done | light | 2026-10-26 | 2026-10-26 |
 | T-6002 | A checkout with Git LFS climbs clean: an LFS file checked by its pointer's SHA-256 (BUG-054, the studio's B-053; a 1.0.1 candidate) | done | | 2026-10-26 | 2026-10-26 |
 | T-6001 | Bonsai's first existing project: link ZenGarden-AI-API (the pilot), retire its own agent system, and record the trial | done | | 2026-10-26 | 2026-10-26 |

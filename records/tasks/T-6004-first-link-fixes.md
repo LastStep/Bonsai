@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6004
 title: "Fix what the first existing project's link found: BUG-121 to BUG-124, BUG-126, BUG-128, BUG-130 (the design questions, the guard and link, the workflow pack's reporting)"
-status: todo
+status: done
 lane: null
 done_when:
   - "A plan records/plans/P-T-6004.md, reviewed by a fresh Opus agent and approved by the director, says for each of BUG-121, BUG-122, BUG-123, BUG-124, BUG-126, BUG-128 and BUG-130 one of: fixed in Bonsai, fixed in a pack, or left with the director's word (a known limit, or after a later piece)"
@@ -12,12 +12,13 @@ done_when:
 depends_on: [T-6001]
 blocked_by: null
 created: 2026-10-26
-started: null
-finished: null
+started: 2026-10-26
+finished: 2026-10-26
 labels:
   bonsai.ladder: []
-  bonsai.allows: []
-  bonsai.wants: []
+  bonsai.allows: ["formats/active-task/**/bonsai.yaml"]
+  bonsai.wants: ["formats/active-task/**/bonsai.yaml"]
+  bonsai.branch: t-6004-config-check
   workflow.model: opus
 ---
 
