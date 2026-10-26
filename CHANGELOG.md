@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-10-26
+
+> Fixes from linking Bonsai 1.0 to its first existing projects. No format is removed or renamed: `bonsai.yaml` gains
+> one optional list, and every file written by 1.0.0 reads as before.
+
+### Added
+- **`never_read`** in `bonsai.yaml`: paths no agent reads, written as Claude Code's own `Read(/<path>)` deny rules
+  (`bonsai init --never-read`). Claude Code applies them best effort to its file tools and the shell reads it
+  recognises; its sandbox is what blocks other shell reads. Taking a path out is a looser setting, as for
+  `never_edit` (formats set 12).
+- **`bonsai init` links several packs at once**: `--source`, `--ref` and `--path` are given once per pack and paired
+  by order, so a project with two packs is linked in one step. A pack with roles added later by `bonsai update`
+  still asks for `--allow-exec`, and the preview says why.
+- **`bonsai check` finds a time stamp in the future** (`future-stamp`): a stamp more than 10 minutes after the UTC
+  now, or a day after the UTC today, however the file was written.
+- **The ladder keeps a copy of each climb's result by commit**, `.bonsai/local/ladder/<task>/<sha>.json`, so a later
+  climb of another commit under the same task no longer takes the earlier proof away. `<task>.json` stays the latest;
+  the copies are cleaned by the same `generated.ladder` rule.
+
+### Changed
+- **Rung 0 on the base branch** judges the commits the base branch has that its upstream does not (work built
+  straight on `main` and not yet pushed); with no upstream, the result's `not_judged` says those commits went
+  unjudged.
+- **The guard lets a `git mv` fed by a loop, `xargs` or a pipeline pass** (`move-unnamed`): a move loses nothing git
+  cannot undo, and rung 0 judges what moved. A named guarded destination, or a guarded file named in the loop's list,
+  is still refused; plain `mv` and every delete fed the same way are still refused.
+
+### Fixed
+- **Git LFS checkouts climb clean**: an LFS file reads clean when its bytes hash to the SHA-256 and size HEAD's
+  committed pointer names, with HEAD's executable bit; git-lfs need not be installed, and no filter is trusted.
+- `bonsai check`'s `missing-path` no longer judges a backticked path git ignores, so a clone and the real checkout
+  give the same findings.
+- A relative `bonsai message --pointer` into `.bonsai/local/` sent from a worktree is read in the main checkout,
+  where Bonsai keeps it.
+- `config-uncommitted`'s next step for a first commit names the exact command; the README's first project asks for
+  the line its rung checks.
+- The `base` pack's words: the `message` skill says a new message's id is at `.message.id` in `--json`; the `memory`
+  skill says a title holding `: ` is quoted.
+
 ## [1.0.0] - 2026-10-25
 
 > **Bonsai 1.0 is a new product.** It gives a project the structure Claude Code agents work inside: formats, packs,
