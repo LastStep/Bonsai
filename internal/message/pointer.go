@@ -17,7 +17,8 @@ package message
 //
 // At --show a pointer is read again the same way, from the checkout --show runs in (or the home): unchanged, changed
 // (its fingerprint is not the one written) or missing (no file there, or one that is not a regular file now). A
-// project-relative pointer is read in the checkout of the command that reads it, so a builder's report read in the
+// project-relative pointer is read in the checkout of the command that reads it (one into .bonsai/local/ in the main
+// checkout, where Bonsai keeps those files), so a builder's report read in the
 // main checkout before its branch has landed shows its files as they stand there.
 
 import (
@@ -60,6 +61,7 @@ func Pointer(p Place, given, cwd string) (format.MessagePointer, *Error) {
 	}
 	home, herr := p.home()
 	abs := given
+	base := p.Local.Root // the checkout a project-relative path is written against
 	switch {
 	case given == "~" || strings.HasPrefix(given, "~/"):
 		if herr != nil || home == "" {
@@ -68,6 +70,10 @@ func Pointer(p Place, given, cwd string) (format.MessagePointer, *Error) {
 		abs = filepath.Join(home, filepath.FromSlash(strings.TrimPrefix(strings.TrimPrefix(given, "~"), "/")))
 	case !filepath.IsAbs(given):
 		abs = filepath.Join(cwd, given)
+		if inLocal(given) && p.Local.Main != "" {
+			// Bonsai keeps .bonsai/local/ in the main checkout only: a linked worktree's pointer into it is read there.
+			abs, base = filepath.Join(p.Local.Main, filepath.FromSlash(cleanSlash(given))), p.Local.Main
+		}
 	}
 	abs = filepath.Clean(abs)
 	if name := deviceIn(abs); name != "" {
@@ -83,7 +89,7 @@ func Pointer(p Place, given, cwd string) (format.MessagePointer, *Error) {
 	case !fi.Mode().IsRegular():
 		return format.MessagePointer{}, missing(notRegular(fi))
 	}
-	rel, ok := within(p.Local.Root, abs)
+	rel, ok := within(base, abs)
 	if !ok && herr == nil && home != "" {
 		if r, inHome := within(home, abs); inHome {
 			rel, ok = "~/"+r, true
@@ -105,6 +111,17 @@ func Pointer(p Place, given, cwd string) (format.MessagePointer, *Error) {
 		return format.MessagePointer{}, missing(why)
 	}
 	return format.MessagePointer{Path: rel, SHA256: sum}, nil
+}
+
+// cleanSlash is a relative path written with forward slashes and cleaned.
+func cleanSlash(given string) string {
+	return filepath.ToSlash(filepath.Clean(filepath.FromSlash(given)))
+}
+
+// inLocal reports whether a relative path's first folders are .bonsai/local: Bonsai's own files, kept in the main
+// checkout (a ladder result, the messages), where a linked worktree reads them from.
+func inLocal(given string) bool {
+	return strings.HasPrefix(cleanSlash(given), ".bonsai/local/")
 }
 
 // notRegular says what a path that is not a regular file is (its mode, links followed), for a pointer refused.
@@ -257,6 +274,9 @@ func PointerState(p Place, ptr format.MessagePointer) string {
 		path = filepath.Join(home, filepath.FromSlash(rest))
 	} else {
 		path = filepath.Join(p.Local.Root, filepath.FromSlash(ptr.Path))
+		if inLocal(ptr.Path) && p.Local.Main != "" {
+			path = filepath.Join(p.Local.Main, filepath.FromSlash(ptr.Path))
+		}
 	}
 	if deviceIn(path) != "" {
 		return PointerMissing

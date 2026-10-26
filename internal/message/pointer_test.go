@@ -162,3 +162,43 @@ func TestPointerWindowsDevices(t *testing.T) {
 		t.Errorf("nullish.md: %v", e)
 	}
 }
+
+// A relative pointer into .bonsai/local/ sent from a linked worktree is read in the main checkout, where Bonsai keeps
+// those files (the ladder's result, the messages); any other relative pointer keeps reading against the worktree
+// (BUG-125). A worktree's own .bonsai/local is never looked at for such a path.
+func TestPointerIntoLocalFromWorktree(t *testing.T) {
+	f := newFixture(t)
+	wt := t.TempDir()
+	f.p.Local = workspace.Local{Root: wt, Main: f.main, Branch: "t-0901"}
+	write := func(root, rel, body string) {
+		t.Helper()
+		p := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(f.main, ".bonsai/local/ladder/T-0901.json", "{\"green\":true}\n")
+	write(wt, "work/a.md", "words\n")
+	ptr, e := Pointer(f.p, ".bonsai/local/ladder/T-0901.json", wt)
+	if e != nil {
+		t.Fatalf("a pointer to the ladder result from a worktree: %v", e)
+	}
+	if ptr.Path != ".bonsai/local/ladder/T-0901.json" {
+		t.Errorf("the path as written: %q", ptr.Path)
+	}
+	if got := PointerState(f.p, ptr); got != PointerUnchanged {
+		t.Errorf("read at --show from the worktree: %s", got)
+	}
+	// Another relative pointer is read against the worktree, as before.
+	if ptr, e := Pointer(f.p, "work/a.md", wt); e != nil || ptr.Path != "work/a.md" {
+		t.Errorf("a worktree file: %+v %v", ptr, e)
+	}
+	// A file named like the main's but only in the worktree's own tree outside .bonsai/local is unchanged: not found
+	// in main, still found in the worktree.
+	if _, e := Pointer(f.p, ".bonsai/other/x.json", wt); e == nil {
+		t.Errorf("a path outside .bonsai/local that is in neither checkout was accepted")
+	}
+}
