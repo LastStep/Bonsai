@@ -26,7 +26,8 @@ package guard
 //     operand that is not a plain name (shell_paths.go's delPlain), a delete of several files by a glob, a delete or a
 //     plain mv fed its operands by xargs, a pipeline or a loop's variable (a git mv fed so passes, move-unnamed: git
 //     moves only what it tracks and rung 0 judges what moved; what it names is still judged, a named destination
-//     folder with everything below it, by rule 4; BUG-130), git clean with no path, a git pathspec with magic other
+//     folder with everything below it and each literal word of the loop's list (delLoopItems), by rule 4; BUG-130),
+//     git clean with no path, a git pathspec with magic other
 //     than :/, :(top) or :(literal) (delGitMagic, which reads those three), and always git clean -x or -X, git stash
 //     --all and rm --no-preserve-root. bash's ~+/x is read in the command's folder, ~-/x in one that cannot be told. Rule 4 (delete-protected): every operand, and both sides of a move,
 //     read in the command's folder and judged by the guard's one function for a delete (may.go's mayDelete); a
@@ -39,8 +40,9 @@ package guard
 //
 // What it leaves (note 5; question A): a shell write to a guarded path (a redirect, cp or ln over it, an
 // interpreter such as python -c or node -e) is not judged, nor what a git mv fed by a loop, xargs or a pipeline moves
-// (move-unnamed: only what it names is judged, its named destination folder with everything below it; a destination
-// itself unnamed is left to rung 0), nor a delete inside a script run by name, nor, in
+// (move-unnamed: only what it names is judged, its named destination folder with everything below it and its loop's
+// literal list words; a destination itself unnamed, a glob or variable in the list, and text printf or echo writes
+// into xargs are left to rung 0), nor a delete inside a script run by name, nor, in
 // another linked project, a named delete below its top and floor folders (5.3.2 rule 8); rung 0 and the Desk catch
 // them after the fact. Nor, being a splitter and not a shell, does it see: deletes made by a program's own calls
 // ([IO.File]::Delete, $item.Delete(), Start-Process with arguments, shutil.rmtree) or by programs outside its
@@ -193,6 +195,7 @@ type delRun struct {
 	base        string    // the payload's folder: where an operand is read when its folder cannot be told
 	found       bool      // a delete was judged
 	moveUnnamed bool      // a git mv fed by a loop, xargs or a pipeline was let through (BUG-130): rung 0 judges it
+	loopItems   []shWord  // the words of the lists of the loops being walked (delLoopItems): a fed git mv's named items
 	bonsai      bool      // a bonsai command was judged, and allowed
 	first       string    // the first operand judged, project-relative, for an allow's target
 	firstSet    bool      // first is set (it may be "": an operand outside the project)
@@ -273,6 +276,10 @@ func (r *delRun) list(l *shList, d shDialect, dirs delDirs, loop bool) delDirs {
 	var stack []delDirs // pushd's
 	loops := 0          // bash's do ... done
 	var prevOut []string
+	// The loops' lists (delLoopItems): what this list adds is gone when it ends; a bash for's stays until its done.
+	entry := len(r.loopItems)
+	defer func() { r.loopItems = r.loopItems[:entry] }()
+	var forMarks []int // per bash for ... in whose done is still to come, the length before its words
 	for k := range l.cmds {
 		if r.deny != nil {
 			return cur
@@ -280,6 +287,16 @@ func (r *delRun) list(l *shList, d shDialect, dirs delDirs, loop bool) delDirs {
 		c := &l.cmds[k]
 		inLoop := loop || loops > 0
 		nestLoop := inLoop || delLoopCmd(c, d)
+		mark := len(r.loopItems)
+		var prev *shCommand
+		if k > 0 {
+			prev = &l.cmds[k-1]
+		}
+		items, bashFor := delLoopItems(c, prev, d)
+		r.loopItems = append(r.loopItems, items...)
+		if bashFor {
+			forMarks = append(forMarks, mark)
+		}
 		for _, n := range c.nested {
 			end := r.list(n.list, d, cur, nestLoop)
 			if !n.sub {
@@ -314,6 +331,14 @@ func (r *delRun) list(l *shList, d shDialect, dirs delDirs, loop bool) delDirs {
 				stdin = append(stdin, prevOut...)
 			}
 			cd = r.simple(c, d, l.depth, cur, inLoop, stdin, &loops)
+		}
+		switch {
+		case bashFor:
+		case d == shBash && delEndsLoop(c) && len(forMarks) > 0:
+			r.loopItems = r.loopItems[:forMarks[len(forMarks)-1]]
+			forMarks = forMarks[:len(forMarks)-1]
+		case d != shBash:
+			r.loopItems = r.loopItems[:mark] // PowerShell's loop body is this command's own block
 		}
 		prevOut = delOutput(c, d)
 		switch cd.kind {
@@ -392,6 +417,95 @@ func delOutput(c *shCommand, d shDialect) []string {
 		return out
 	}
 	return nil
+}
+
+// delLoopItems gives the words of a loop's list the command c starts (BUG-130's named items): bash's for NAME in
+// WORDS (bashFor: they stand until the matching done, a later command of the same list); PowerShell's foreach
+// (NAME in WORDS), and ForEach-Object or % fed by a pipe from prev, a list of literal words or one @(...) of them
+// (for c's own block). The judge reads only the literal ones; a glob or a variable stays unnamed. Text a command
+// writes into xargs (printf, echo) is not read here.
+func delLoopItems(c, prev *shCommand, d shDialect) (items []shWord, bashFor bool) {
+	w := c.words
+	switch d {
+	case shBash:
+		if len(w) >= 3 && !w[0].quoted && (w[0].text == "for" || w[0].text == "select") && !w[2].quoted && w[2].text == "in" {
+			return append([]shWord(nil), w[3:]...), true
+		}
+	case shPower:
+		w = delPSAssign(w)
+		if len(w) == 0 || w[0].quoted {
+			return nil, false
+		}
+		switch strings.ToLower(w[0].text) {
+		case "foreach":
+			if len(w) < 2 || len(c.nested) == 0 || !strings.HasPrefix(w[1].text, "(") {
+				return nil, false
+			}
+			for _, n := range c.nested {
+				if !n.sub || n.list == nil || len(n.list.cmds) != 1 {
+					continue
+				}
+				nw := n.list.cmds[0].words
+				for i := 0; i+1 < len(nw); i++ {
+					if !nw[i+1].quoted && strings.EqualFold(nw[i+1].text, "in") {
+						return append([]shWord(nil), nw[i+2:]...), false
+					}
+				}
+			}
+		case "foreach-object", "%":
+			if prev == nil || !c.piped || prev.group != nil {
+				return nil, false
+			}
+			pw := prev.words
+			if len(pw) == 1 && strings.HasPrefix(pw[0].text, "@(") {
+				for _, n := range prev.nested {
+					if n.sub && n.list != nil && len(n.list.cmds) == 1 {
+						return append([]shWord(nil), n.list.cmds[0].words...), false
+					}
+				}
+				return nil, false
+			}
+			for _, x := range pw {
+				if !x.quoted || x.expand || x.param {
+					return nil, false // a command, not a list of literal words
+				}
+			}
+			return append([]shWord(nil), pw...), false
+		}
+	}
+	return nil, false
+}
+
+// delEndsLoop reports a bash command that starts with done, ending the innermost do ... done.
+func delEndsLoop(c *shCommand) bool {
+	return len(c.words) > 0 && !c.words[0].quoted && c.words[0].text == "done"
+}
+
+// namedItems are the loop lists' literal words as a git mv's operands (BUG-130), read as its own operands are (bash's
+// tilde forms; a git pathspec's :/ and :(top)): not a variable, a substitution, a glob or a parameter. why is set when
+// one holds pathspec magic the check does not read: the move is then refused as one that does not name what it moves.
+func (r *delRun) namedItems(x delExec) (items []delOp, why string) {
+	var words []shWord
+	for _, w := range r.loopItems {
+		if !w.param && w.text != "" {
+			words = append(words, w)
+		}
+	}
+	for _, op := range delOps(words, x.d, false, true) {
+		if op.expand || op.glob || op.pipeVar {
+			continue
+		}
+		if x.d == shBash {
+			delTildeOp(&op)
+		}
+		if strings.HasPrefix(op.text, ":") {
+			if w := delGitMagic(&op); w != "" {
+				return nil, "the loop's list word " + r.shownText(op.text) + " " + w
+			}
+		}
+		items = append(items, op)
+	}
+	return items, ""
 }
 
 // delExec is a command from its program on, as it runs.
@@ -692,6 +806,35 @@ func (r *delRun) judge(a delAct, x delExec) {
 		r.path(x, op, a.tree, verb)
 		if r.deny != nil {
 			return
+		}
+	}
+	// A fed git mv in a loop whose list names its items (for f in bonsai.yaml): each literal item is judged as a
+	// named source, and, when a destination is the loop's variable too, as a named destination (BUG-130).
+	if gitMove && x.loop {
+		items, why := r.namedItems(x)
+		if why != "" {
+			r.refuse(Decision{Rule: RuleDeleteUnnamed, Why: fmt.Sprintf("%s refused: %s does not name what it moves: %s "+
+				"(rule %s)", r.tool, r.head(x), why, RuleDeleteUnnamed),
+				Next: "name the paths in the loop's list plainly, or with :/ or :(top) for the checkout's top"})
+			return
+		}
+		for _, list := range []struct {
+			ops  []delOp
+			verb string
+			tree bool
+		}{{a.ops, verb, a.tree}, {a.dests, "moves onto", false}} {
+			fed := false
+			for _, op := range list.ops {
+				fed = fed || op.pipeVar || op.expand
+			}
+			if !fed {
+				continue
+			}
+			for _, it := range items {
+				if r.path(x, it, list.tree, list.verb); r.deny != nil {
+					return
+				}
+			}
 		}
 	}
 	if a.move {

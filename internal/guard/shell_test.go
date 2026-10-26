@@ -536,7 +536,20 @@ var delTable = []delRow{
 	// refused as a named git mv into it is. Only a destination that is itself unnamed is left to rung 0.
 	{tB, "", `for f in *.md; do git mv "$f" .claude/; done`, RuleDeleteProtected, ""},
 	{tB, "", "ls *.md | xargs -I{} git mv {} .claude/", RuleDeleteProtected, ""},
-	{tB, "", "git ls-files '*.json' | xargs git mv -k -t .claude", RuleDeleteProtected, ""},
+	{tB, "", "git ls-files '*.json' | xargs -I{} git mv -k {} .claude/", RuleDeleteProtected, ""},
+	// A loop's list written literally names its items: each literal word is judged as a named source (or destination)
+	// of the fed git mv, as a named git mv of it is; a glob or a variable in the list stays unnamed.
+	{tB, "", `for f in bonsai.yaml; do git mv "$f" x.yaml; done`, RuleDeleteProtected, ""},
+	{tB, "", `for f in src/main.go .claude/settings.json; do git mv "$f" old/; done`, RuleDeleteProtected, ""},
+	{tB, "", `for f in a.txt; do git mv -f x.yaml "$f"; git mv x.yaml "$f"; done; for g in bonsai.yaml; do git mv -f a.txt "$g"; done`, RuleDeleteProtected, ""},
+	{tB, "", `for f in a.txt *.md "$X"; do git mv "$f" src/; done`, RuleMoveUnnamed, ""},
+	{tB, "", `for f in bonsai.yaml; do echo "$f"; done; for g in *.md; do git mv "$g" src/; done`, RuleMoveUnnamed, ""},
+	{tP, "", "foreach ($f in 'bonsai.yaml','b') { git mv $f x.yaml }", RuleDeleteProtected, ""},
+	{tP, "", "@('a.txt','.claude/settings.json') | ForEach-Object { git mv $_ old/ }", RuleDeleteProtected, ""},
+	{tP, "", "'bonsai.yaml' | % { git mv $_ x.yaml }", RuleDeleteProtected, ""},
+	{tP, "", "foreach ($f in 'a.txt','file.txt') { git mv $f src/ }", RuleMoveUnnamed, ""},
+	{tB, "src", `for f in :/bonsai.yaml; do git mv "$f" x.yaml; done`, RuleDeleteProtected, ""},
+	{tB, "", `for f in ':(icase)BONSAI.YAML'; do git mv "$f" src/; done`, RuleDeleteUnnamed, ""},
 	{tP, "", "Get-ChildItem *.md | ForEach-Object { git mv $_.Name .claude/ }", RuleDeleteProtected, ""},
 	{tP, "", "foreach ($f in Get-ChildItem *.md) { git mv $f.Name .git/ }", RuleDeleteProtected, ""},
 	{tB, "", `for f in *.md; do git mv "$f" docs/secret; done`, RuleDeleteProtected, ""},
@@ -1137,6 +1150,9 @@ func init() {
 		}
 		wantRule(t, dir, bashIn(dir, "Bash", "ls | xargs -I{} git mv {} bonsai.yaml"), RuleDeleteProtected)
 		wantRule(t, dir, bashIn(dir, "Bash", `for f in *.md; do git mv "$f" .git/; done`), RuleDeleteProtected)
+		// A loop's list that names its items literally: each is judged as a named source.
+		wantRule(t, dir, bashIn(dir, "Bash", `for f in bonsai.yaml; do git mv "$f" x.yaml; done`), RuleDeleteProtected)
+		wantRule(t, dir, bashIn(dir, "PowerShell", "foreach ($f in '.claude/settings.json') { git mv $f x.json }"), RuleDeleteProtected)
 		wantRule(t, dir, bashIn(dir, "Bash", `for f in *.md; do mv "$f" docs/; done`), RuleDeleteUnnamed)
 	}
 }
