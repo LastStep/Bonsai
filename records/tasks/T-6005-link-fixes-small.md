@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6005
 title: "The first link's small fixes, split from T-6004: BUG-119 and BUG-120 (missing-path skips git-ignored paths), BUG-125 (a worktree's pointer into .bonsai/local), BUG-129 (base's words), BUG-127 (the workflow pack: land only what the verifier saw)"
-status: running
+status: done
 lane: light
 done_when:
   - "BUG-119, BUG-120: bonsai check's missing-path does not judge a backticked path git ignores, so a clone and the real checkout give the same findings; a path neither tracked nor ignored that is missing is still a finding; tests shown failing on the old code first"
@@ -14,7 +14,7 @@ depends_on: [T-6002, T-6003]
 blocked_by: null
 created: 2026-10-26
 started: 2026-10-26
-finished: null
+finished: 2026-10-26
 labels:
   bonsai.ladder: []
   bonsai.allows: []

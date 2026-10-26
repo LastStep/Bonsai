@@ -18,19 +18,22 @@ Rewritten, never appended (`base:state`). Last rewritten 26 Oct 2026 (a day sess
   `M-2026-10-26-91a81fe9`. **T-6003** clubs BUG-091, 112, 113, 114's half, 022. **Both done, landed 11:15** at
   `df549bbd` (CI green, every job), `main` at `c91891aa` and after (the other session's two records commits replayed
   on top, content unchanged). A 1.0.1 release is the director's to decide.
-  **T-6005** (running, sonnet builder, branch `t-6005-link-fixes-small`, green at `7051a440`, rebasing onto `main`): BUG-119, 120, 125, 129, 127
+  **T-6005** (done, landed `beff8bee` 11:55, CI green; the workflow repo's `11f78db` waits for the director's push and tag): BUG-119, 120, 125, 129, 127
   (the director's option 3 of the split). Run reports `records/runs/R-2026-10-26-T-6002-lfs-dirty.md`,
   `R-2026-10-26-T-6003-small-fixes.md`.
 - **Session 2 (fresh, to start now): `T-6004`**, the rest of the first link's bugs: BUG-121 to BUG-124, BUG-126,
   BUG-128, BUG-130. Start with group B's options (BUG-124 rung 0 on the base branch; BUG-126 a result per climb, a
   format change; BUG-121 never_edit and reads; BUG-123 future times), one question at a time to the director, no code
   needed; then group C (BUG-130, BUG-122: guard and link, a fresh Opus verifier); then BUG-128 (the workflow pack).
-  `main` now holds T-6002/T-6003 (`internal/rung0`, `internal/ladder`): build on it. Keep out of T-6005's files (`internal/engine/checkdocs.go`, `internal/message/pointer.go`, base's
-  message and memory skills, the workflow repo's orchestrate and verification-ladder skills).
+  `main` now holds T-6002/T-6003 (`internal/rung0`, `internal/ladder`): build on it. T-6005 has landed; its workflow-repo commit `11f78db` (orchestrate, verification-ladder) is local: build BUG-128 on it.
 - **Rules for two sessions here:** every task has empty `bonsai.allows`, so several `running` tasks grant nothing
   either way; always climb with `--task`. Before any push, read `origin/main`'s new commits; never stage a file the
   session did not write; each session lands its own branches; records commits only for its own files. The machine is
-  loaded: timing tests (TestStatusLineSpeed, TestCleaning) went red under load on 26 Oct and passed alone.
+  loaded: timing tests went red under load on 26 Oct and passed alone (BUG-131). **The director's word (26 Oct,
+  11:23): "for the timing failures, i think we can assume them green, especially when the specified tests havent been
+  changed".** So a climb red only on BUG-131's tests (TestStatusLineSpeed, TestCleaning, TestNewTestsOnBase), none of
+  them changed by the branch, counts as green for the landing, with CI green on the branch as before; the run report
+  quotes the red result, the failing test and this word. The result file stays red: the stop gate does not know it.
 
 **Bonsai 1.0 is released, and step 5 (the full 1.0) is done** (25 Oct). Every part of the plan is done: part 0, the
 skeleton's six parts, and steps 5.1 to 5.7, each closed by its end verifier.
@@ -285,7 +288,7 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | **The first existing project linked: ZenGarden-AI-API** (the director, 26 Oct, "A, AI-API first") | `T-6001` | done | linked `d6355c7` in that project, old agent system retired, one fix landed locally (not pushed, the director's); `records/trial-zengarden-ai-api.md`; issues BUG-119 to BUG-130 |
 | Git LFS checkouts climb clean (the studio's B-053, BUG-054) | `T-6002` | done | verifier PASS; landed `df549bbd` with T-6003, CI green |
 | Five small open bugs clubbed with it (BUG-091, 112, 113, 114's half, 022) | `T-6003` | done | in T-6002's batch |
-| The first link's small fixes (BUG-119, 120, 125, 129, 127), split from T-6004 | `T-6005` | running | session 1; the director's option 3 |
+| The first link's small fixes (BUG-119, 120, 125, 129, 127), split from T-6004 | `T-6005` | done | landed `beff8bee`; workflow repo `11f78db` unpushed (the director's) |
 | Fix what that link found: the rest (BUG-121 to 124, 126, 128, 130) | `T-6004` | todo | **for a fresh session, now**, beside session 1 (see "Now (26 Oct)") |
 
 **Now: after 1.0.** Next for a fresh session: `T-6004` (see "Now (26 Oct)" at the top). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
