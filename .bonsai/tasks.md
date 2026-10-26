@@ -5,6 +5,7 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-6006 | Bonsai 1.0.1's notes: CHANGELOG's [1.0.1] section from T-6002 to T-6005, landed with CI green, for the director's tag | done | light | 2026-10-26 | 2026-10-26 |
 | T-6005 | The first link's small fixes, split from T-6004: BUG-119 and BUG-120 (missing-path skips git-ignored paths), BUG-125 (a worktree's pointer into .bonsai/local), BUG-129 (base's words), BUG-127 (the workflow pack: land only what the verifier saw) | done | light | 2026-10-26 | 2026-10-26 |
 | T-6004 | Fix what the first existing project's link found: BUG-121 to BUG-124, BUG-126, BUG-128, BUG-130 (the design questions, the guard and link, the workflow pack's reporting) | done | | 2026-10-26 | 2026-10-26 |
 | T-6003 | Five small open bugs, built beside T-6002 and landed in its batch: BUG-091, BUG-112, BUG-114's next step, BUG-022, BUG-113 | done | light | 2026-10-26 | 2026-10-26 |

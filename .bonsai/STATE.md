@@ -9,7 +9,7 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 26 Oct 2026 (a day session, the director present).
 
-## Now (26 Oct): the first link's bugs are fixed; 1.0.1 is next
+## Now (26 Oct): Bonsai 1.0.1 is released and installed
 
 - **Every bug the first existing project's link found (T-6001) is fixed and landed**, CI green on every job:
   - **T-6002, T-6003** (session 1, landed 11:15 at `df549bbd`): a Git LFS checkout climbs clean (BUG-054); BUG-091,
@@ -20,9 +20,11 @@ Rewritten, never appended (`base:state`). Last rewritten 26 Oct 2026 (a day sess
     result copy per commit, `.bonsai/local/ladder/<task>/<sha>.json`), 130 (a fed `git mv` passes as
     `move-unnamed`; named guarded paths stay refused), 128 (the workflow pack). Plan `records/plans/P-T-6004.md`,
     every fix the director's choice of 12:03; run report `records/runs/R-2026-10-26-T-6004-first-link-fixes.md`.
-- **Next: Bonsai 1.0.1** (the director, 14:08: "and then we will tag to 1.0.1"). **T-6006** writes CHANGELOG's
-  `## [1.0.1]` section from T-6002 to T-6005 and lands it with CI green on `main`; then the director tags `v1.0.1`
-  and approves the release run (only they tag and release).
+- **Bonsai 1.0.1 is released** (T-6006): CHANGELOG's `## [1.0.1]` at `3c93a464` (CI green, every job, CodeQL
+  too); the director's tag `v1.0.1` and approval; release run 40349239011, **published 15:33 UTC**, GitHub's latest;
+  read back (six checksums OK). Installed by the director: WSL `/usr/local/bin/bonsai` `f40f01f8...96f8`, Windows
+  `C:\Program Files\Bonsai\bonsai.exe` `16a60c04...1df2`, both `bonsai 1.0.1 (commit 3c93a4640b84)`. The way back:
+  1.0.0 in `~/bonsai-checks/prerelease/previous/` (its INSTALL.md), rc.3 in `older-rc3/`.
 - **The workflow repo** (`~/bonsai-checks/bonsai-workflow`): `11f78db` (BUG-127), `8b3166c`, `5e3b92e` (BUG-128) are
   local, for the director's push and tag.
 - **Open from today:** BUG-131 (timing tests red under load) and BUG-132 (a ladder test red when WSL's clock steps
