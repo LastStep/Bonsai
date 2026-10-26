@@ -403,23 +403,37 @@ func mustKey(t *testing.T, main string) string {
 	return k
 }
 
-// A path that git ignores is there in this checkout only: a clone, a fresh worktree or CI does not have it, so check
-// counts it as missing, as they would. A path git tracks, and one that is simply there, are not findings.
-func TestAPathGitIgnoresIsMissing(t *testing.T) {
+// A path in backticks that git ignores is not judged (BUG-119, BUG-120): a project names such a path to its agents
+// on purpose (a virtualenv's python, a log file), and the checkout and a clone must give the same findings, whether
+// the ignored file or its folder is there or not. A path git tracks, one that is there, and one neither tracked nor
+// ignored that is missing are judged as before: the last is a finding. An @import or a link to an ignored file that is
+// there is still a finding, as a clone lacks a file Claude Code reads.
+func TestAPathGitIgnoresIsNotJudged(t *testing.T) {
 	e := setup(t)
 	root := testpack.Project(t, e.tmp, "ignored")
 	e.link(t, root, e.pack.A)
 	writeFile(t, root, "notes/kept.md", "kept\n")
 	writeFile(t, root, "local-only/notes.md", "mine\n")
-	writeFile(t, root, ".gitignore", "local-only/\n")
-	writeFile(t, root, BlockFile, read(t, root, BlockFile)+"\nSee `notes/kept.md`.\n")
+	writeFile(t, root, "logs/old.log", "x\n") // logs/ is there in this checkout, app.log is not
+	writeFile(t, root, ".gitignore", "local-only/\nlogs/\n")
+	base := read(t, root, BlockFile)
+	writeFile(t, root, BlockFile, base+"\nSee `notes/kept.md`.\n")
 	if r, err := checkLocal(t, root, e.home); err != nil || findingsOf(r) != "" {
 		t.Fatalf("a path that is there: %v %s", err, findingsOf(r))
 	}
-	writeFile(t, root, BlockFile, read(t, root, BlockFile)+"\nSee `local-only/notes.md` and [the folder](local-only).\n")
+	writeFile(t, root, BlockFile, base+"\nSee `local-only/notes.md`, `logs/app.log`, `logs/old.log` and `local-only/never.md`.\n")
+	if r, err := checkLocal(t, root, e.home); err != nil || findingsOf(r) != "" {
+		t.Fatalf("backticked paths git ignores: %v %s", err, findingsOf(r))
+	}
+	writeFile(t, root, BlockFile, base+"\nSee `notes/gone.md` and `logs/app.log`.\n")
 	r, err := checkLocal(t, root, e.home)
+	if err != nil || findingsOf(r) != "missing-path CLAUDE.md" || !strings.Contains(r.Findings[0].Message, "notes/gone.md") {
+		t.Fatalf("a path neither tracked nor ignored that is missing: %v %s", err, findingsOf(r))
+	}
+	writeFile(t, root, BlockFile, base+"\nSee [the folder](local-only) and [the file](local-only/notes.md).\n")
+	r, err = checkLocal(t, root, e.home)
 	if err != nil || findingsOf(r) != "missing-path CLAUDE.md, missing-path CLAUDE.md" {
-		t.Fatalf("a path git ignores: %v %s", err, findingsOf(r))
+		t.Fatalf("a link to a path git ignores: %v %s", err, findingsOf(r))
 	}
 	for _, f := range r.Findings {
 		if !strings.Contains(f.Message, "local-only") || !strings.Contains(f.Message, "git ignores") {

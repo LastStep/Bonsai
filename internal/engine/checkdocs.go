@@ -23,8 +23,9 @@ package engine
 //   - block-size, memory-index-size, memory-note-size: the fixed budgets (spec §6, §10; the memory caps' one home is
 //     MemoryCaps);
 //   - missing-path: a project path that CLAUDE.md, STATE or a memory note names and that does not exist (doc
-//     freshness), or that exists here only because git ignores it, so a clone does not have it: an @import, a
-//     markdown link, or a path in backticks whose first part is in the project. Bonsai's own
+//     freshness), or an @import or link that names a file existing here only because git ignores it, so a clone does not
+//     have it: an @import, a markdown link, or a path in backticks whose first part is in the project. A path in
+//     backticks that git ignores is not judged, there or not (the checkout and a clone give the same findings). Bonsai's own
 //     block in CLAUDE.md is left out: the lock checks it, its protocol imports are pack files the lock lists, and its
 //     memory-index import is written before the index exists, by design (spec §6, §10: the memory skill writes the
 //     index), so a project linked a moment ago has no finding for it;
@@ -538,13 +539,14 @@ var (
 )
 
 // checkNamedPaths finds project paths that CLAUDE.md (outside Bonsai's block), STATE and the memory notes name and
-// that do not exist, or exist only here because git ignores them (gitIgnored): a clone, a fresh worktree or CI does
-// not have such a path, so it is missing there.
+// that do not exist, or that an @import or link names and exist only here because git ignores them (gitIgnored): a
+// clone, a fresh worktree or CI does not have such a file. A path in backticks that git ignores is not judged.
 func (r *CheckResult) checkNamedPaths(files []string) {
 	type named struct {
 		file, ref, target string
 		line              int
 		there             bool
+		backticked        bool // a path in backticks, not an @import or a link
 	}
 	var refsFound []named
 	check := func(file string, text string, firstLine int) {
@@ -591,7 +593,7 @@ func (r *CheckResult) checkNamedPaths(files []string) {
 					continue
 				}
 				_, err := os.Stat(filepath.Join(r.Root, filepath.FromSlash(target)))
-				refsFound = append(refsFound, named{file: file, ref: ref.p, target: target, line: n, there: err == nil})
+				refsFound = append(refsFound, named{file: file, ref: ref.p, target: target, line: n, there: err == nil, backticked: !ref.fromFile})
 			}
 		}
 	}
@@ -613,15 +615,23 @@ func (r *CheckResult) checkNamedPaths(files []string) {
 			check(f, strings.ReplaceAll(string(raw), "\r\n", "\n"), 1)
 		}
 	}
-	var there []string
+	// One git check-ignore for every path in backticks, there or not (git answers for a path that is not there): a
+	// project names a git-ignored path to its agents on purpose (.venv/bin/python, a log file), and a clone does not
+	// have it, so the path is not judged, in the checkout or in a clone alike. An @import or a link to an ignored file
+	// that is there still is a finding: the file a clone lacks is one Claude Code reads.
+	var ticked, there []string
 	for _, f := range refsFound {
-		if f.there {
+		if f.backticked {
+			ticked = append(ticked, f.target)
+		} else if f.there {
 			there = append(there, f.target)
 		}
 	}
-	ignored := gitIgnored(r.Root, there)
+	ignored := gitIgnored(r.Root, append(ticked, there...))
 	for _, f := range refsFound {
 		switch {
+		case f.backticked && ignored[f.target]:
+			// git ignores it: not judged.
 		case !f.there:
 			r.add("missing-path", f.file, "", fmt.Sprintf("%s line %d names %s, which does not exist in the project", f.file, f.line, ascii(f.ref)),
 				fmt.Sprintf("fix line %d of %s: name the path that exists now, or take the reference out", f.line, f.file))

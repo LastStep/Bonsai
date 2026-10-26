@@ -200,7 +200,7 @@ error words.
 | `block-size` | finding | person | - | Bonsai's block in CLAUDE.md is over its fixed 40 lines (spec section 6) |
 | `memory-index-size` | finding | agent | - | the memory index is over its fixed 120 lines or 12 KB (spec section 10) |
 | `memory-note-size` | finding | agent | - | a memory note is over 4 KB (spec section 10) |
-| `missing-path` | finding | agent | - | a project path named in CLAUDE.md, STATE or a memory note does not exist, or exists here only because git ignores it, so a clone does not have it (Bonsai's own block left out: the lock checks it) |
+| `missing-path` | finding | agent | - | a project path named in CLAUDE.md, STATE or a memory note does not exist (a path in backticks that git ignores is not judged), or an @import or link names a file that exists here only because git ignores it, so a clone does not have it (Bonsai's own block left out: the lock checks it) |
 | `secret` | finding | agent | - | a memory note or the memory index in the working tree holds a secret-shaped string, as Bonsai's redactor finds one: the finding names the note, the line and the kind of secret (the secret kinds' list), never the value; a person decides whether to rotate it (spec section 6) |
 | `settings-rule` | finding | person | - | a permission rule in .claude/settings.json or .claude/settings.local.json is not valid on its own |
 | `hooks-off` | finding | person | - | disableAllHooks is true in .claude/settings.json or .claude/settings.local.json, which turns off every hook, Bonsai's guard among them |
