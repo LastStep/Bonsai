@@ -43,7 +43,7 @@ func TestCheckUncommitted(t *testing.T) {
 	c.link()
 	msg, next, who := uncommittedWarning(t, c)
 	if !strings.Contains(msg, "no commit yet") || !strings.Contains(msg, "a climb and the stop gate refuse") ||
-		!strings.Contains(next, "commits what bonsai init wrote") || who != "person" {
+		!strings.Contains(next, "commits what bonsai init wrote") || !strings.Contains(next, `git add -A && git commit -m "link Bonsai"`) || who != "person" {
 		t.Errorf("no commit: %q %q %q", msg, next, who)
 	}
 	if _, text, _ := c.run("", "check"); !strings.Contains(text, "config-uncommitted") {
@@ -72,7 +72,7 @@ func TestCheckUncommitted(t *testing.T) {
 	testpack.Git(t, d.root, "commit", "-q", "--allow-empty", "-m", "before")
 	d.link()
 	msg, next, _ = uncommittedWarning(t, d)
-	if !strings.Contains(msg, "never committed") || !strings.Contains(next, "commits what bonsai init wrote") {
+	if !strings.Contains(msg, "never committed") || !strings.Contains(next, `git add -A && git commit -m "link Bonsai"`) {
 		t.Errorf("not in HEAD: %q %q", msg, next)
 	}
 }

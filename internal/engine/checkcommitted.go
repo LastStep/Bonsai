@@ -18,8 +18,7 @@ type Uncommitted struct {
 }
 
 // UncommittedInitNext is the person's step while HEAD holds no bonsai.yaml: the first commit of what init wrote.
-const UncommittedInitNext = "a person commits what bonsai init wrote, in the main checkout (git status lists it; then git add " +
-	"and git commit)"
+const UncommittedInitNext = "a person commits what bonsai init wrote, in the main checkout: git add -A && git commit -m \"link Bonsai\""
 
 // CompareCommitted adds the config-uncommitted warning for u, when it found one.
 func CompareCommitted(r *CheckResult, u Uncommitted) {
