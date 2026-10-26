@@ -82,7 +82,7 @@ func TestInitCommand(t *testing.T) {
 	if code != 4 || !strings.HasPrefix(out, "bonsai init  the preview\n") || !strings.Contains(flat(out), " add hook PreToolUse") ||
 		!strings.Contains(flat(out), " add hook 16 Bonsai 15, demo-pack 1 ") ||
 		!strings.Contains(flat(out), "next a person: to write it, run: bonsai init --name demo --source ") ||
-		!strings.HasSuffix(nextOf(out), "--never-edit ledger.json --allow-exec --yes") {
+		!endsWith(out, "--never-edit ledger.json --allow-exec --yes") {
 		t.Errorf("init without --yes: %d\n%s", code, out)
 	}
 	if len(c.files()) != 0 {
@@ -93,7 +93,7 @@ func TestInitCommand(t *testing.T) {
 	code, out, _ = c.run("y\n", noExec...)
 	if code != 4 || strings.Contains(out, "[y/N]") || !strings.Contains(flat(out), "Runs code 1 item, which needs --allow-exec as well as --yes") ||
 		!strings.Contains(flat(out), "add hook SessionStart (startup): echo demo hook A (demo-pack)") ||
-		!strings.HasSuffix(nextOf(out), "--never-edit ledger.json --allow-exec --yes") || len(c.files()) != 0 {
+		!endsWith(out, "--never-edit ledger.json --allow-exec --yes") || len(c.files()) != 0 {
 		t.Errorf("init without --allow-exec at a terminal: %d\n%s", code, out)
 	}
 	// At a terminal: y/N; n writes nothing.
