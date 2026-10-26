@@ -349,7 +349,8 @@ the same way, each a new schema file: an addition.
     what Claude Code's docs promise for such a rule: the Edit and Write tools denied too, Grep, Glob, `@` mentions and
     the shell reads Claude Code recognises best effort, a script that opens the file not at all, and Claude Code's
     sandbox (`sandbox.filesystem.denyRead`, off by default, none on native Windows) for shell reads.
-  - **Examples:** `workspace.yaml` and `workspace.json` carry one `never_read` path.
+  - **Examples:** `workspace.yaml` and `workspace.json` carry one `never_read` path; each active-task fixture's
+    `bonsai.yaml` ends with `never_read: []`.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,

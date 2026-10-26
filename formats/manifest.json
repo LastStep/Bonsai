@@ -4,7 +4,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "6910ad8f869923fca42a415098186caabeef0efc323e7584855e66a253e90ddc"
+      "sha256": "a650c2cc8e444e1111458452300747eae00f7c46ea71073c8344c19bf1781b14"
     },
     {
       "path": "active-task/answers.json",
@@ -16,7 +16,7 @@
     },
     {
       "path": "active-task/broken-beside-running/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/broken-beside-running/main/work/tasks/T-0901-running.md",
@@ -32,7 +32,7 @@
     },
     {
       "path": "active-task/env-other-project/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/env-other-project/main/work/tasks/T-0901-session.md",
@@ -40,7 +40,7 @@
     },
     {
       "path": "active-task/env-other-project/other/bonsai.yaml",
-      "sha256": "562632bea5c8481cb966af738b500646b795c7786bff859f0b14c32c09ddec87"
+      "sha256": "d6b2fc3a7cb6faf5a2ef4cf3661301222cdfc62ff222ddd304dd25e6dd3ee23f"
     },
     {
       "path": "active-task/env-other-project/other/work/tasks/T-0950-other.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "active-task/format0-running/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/format0-running/main/work/tasks/T-0901-format0.md",
@@ -68,7 +68,7 @@
     },
     {
       "path": "active-task/named-differ/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/named-differ/main/work/tasks/T-0901-flag.md",
@@ -84,7 +84,7 @@
     },
     {
       "path": "active-task/named-duplicate/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/named-duplicate/main/work/tasks/T-0901-first.md",
@@ -100,7 +100,7 @@
     },
     {
       "path": "active-task/named-env/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/named-env/main/work/tasks/T-0901-named.md",
@@ -116,7 +116,7 @@
     },
     {
       "path": "active-task/named-garbage/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/named-garbage/main/work/tasks/T-0901-running.md",
@@ -132,7 +132,7 @@
     },
     {
       "path": "active-task/named-missing/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/named-missing/main/work/tasks/T-0901-running.md",
@@ -144,7 +144,7 @@
     },
     {
       "path": "active-task/named-verify/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/named-verify/main/work/tasks/T-0901-verify.md",
@@ -156,7 +156,7 @@
     },
     {
       "path": "active-task/named/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/named/main/work/tasks/T-0901-named.md",
@@ -172,7 +172,7 @@
     },
     {
       "path": "active-task/none-running/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/none-running/main/work/tasks/T-0901-todo.md",
@@ -188,7 +188,7 @@
     },
     {
       "path": "active-task/one-running/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/one-running/main/work/tasks/T-0901-running.md",
@@ -204,7 +204,7 @@
     },
     {
       "path": "active-task/stop-gate-named-broken/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/stop-gate-named-broken/main/work/tasks/T-0901-broken.md",
@@ -220,7 +220,7 @@
     },
     {
       "path": "active-task/stop-gate-nothing-named/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/stop-gate-nothing-named/main/work/tasks/T-0901-todo.md",
@@ -232,7 +232,7 @@
     },
     {
       "path": "active-task/two-running/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/two-running/main/work/tasks/T-0901-first.md",
@@ -248,7 +248,7 @@
     },
     {
       "path": "active-task/worktree-ladder-from-main/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/worktree-ladder-from-main/main/work/tasks/T-0901-running.md",
@@ -260,7 +260,7 @@
     },
     {
       "path": "active-task/worktree-task-from-main/main/bonsai.yaml",
-      "sha256": "b710cae196d17e4465e881ad54015ed51083e8adedba0343c0589c30a13be7ce"
+      "sha256": "a3fc783cd050a3fc831f2180a95f4ef82d9f6898f493d9aa25aa6a32fc443583"
     },
     {
       "path": "active-task/worktree-task-from-main/main/work/tasks/T-0901-main-running.md",
