@@ -328,28 +328,36 @@ func Build(req Request) (_ *Plan, err error) {
 		if err := checkValues(req.Init); err != nil {
 			return nil, err
 		}
-		ref := workspace.PackRef{Source: req.Init.Source, Path: req.Init.Path, Ref: req.Init.Ref}
-		commit, err := c.fetch(ref.Source, ref.Ref)
-		if err != nil {
-			return nil, err
-		}
-		c.recordResolved(ref.Source, ref.Ref, commit)
-		pd, err := c.packAt(ref, commit)
-		if err != nil {
-			return nil, err
+		// Each pack init names, in the order given (BUG-122: several in one first link, so Bonsai's own lines for
+		// them, the roles' among them, are a first link's, which --yes writes).
+		var read []*PackData
+		for _, in := range req.Init.Packs() {
+			ref := workspace.PackRef{Source: in.Source, Path: in.Path, Ref: in.Ref}
+			commit, err := c.fetch(ref.Source, ref.Ref)
+			if err != nil {
+				return nil, err
+			}
+			c.recordResolved(ref.Source, ref.Ref, commit)
+			pd, err := c.packAt(ref, commit)
+			if err != nil {
+				return nil, err
+			}
+			read = append(read, pd)
 		}
 		id, err := NewID()
 		if err != nil {
 			return nil, errorf("unexpected", ExitRuntime, "run the command again", "no random id: %v", err)
 		}
-		if rawConfig, err = ConfigYAML(id, *req.Init, pd); err != nil {
+		if rawConfig, err = ConfigYAMLPacks(id, *req.Init, read); err != nil {
 			return nil, errorf("bad-value", ExitInput, "bonsai init --help shows each value's form", "init's values cannot be written as bonsai.yaml: %v", err)
 		}
 		if cfg, err = workspace.ReadConfigFull(rawConfig); err != nil {
 			return nil, fileError(err, "", "bad-value", ExitInput)
 		}
-		pd.Ref = cfg.Packs[0]
-		newPacks = []*PackData{pd}
+		for i, pd := range read {
+			pd.Ref = cfg.Packs[i]
+		}
+		newPacks = read
 		p.NewConfig = true
 	}
 	p.Config = cfg
@@ -1144,13 +1152,15 @@ func sameValues(cfg *workspace.Config, v *InitValues) bool {
 	if v.Name != "" && v.Name != cfg.Name {
 		return false
 	}
-	if v.Source != "" || v.Ref != "" || v.Path != "" {
-		if len(cfg.Packs) != 1 {
+	if packs := v.Packs(); len(packs) > 0 {
+		if len(cfg.Packs) != len(packs) {
 			return false
 		}
-		r := cfg.Packs[0]
-		if (v.Source != "" && v.Source != r.Source) || (v.Ref != "" && v.Ref != r.Ref) || v.Path != r.Path {
-			return false
+		for i, in := range packs {
+			r := cfg.Packs[i]
+			if (in.Source != "" && in.Source != r.Source) || (in.Ref != "" && in.Ref != r.Ref) || in.Path != r.Path {
+				return false
+			}
 		}
 	}
 	if len(v.NeverEdit) > 0 && strings.Join(v.NeverEdit, "\n") != strings.Join(cfg.NeverEdit, "\n") {
@@ -1176,21 +1186,32 @@ func missingValues(v *InitValues) []string {
 	if v.Ref == "" {
 		missing = append(missing, "--ref")
 	}
+	for i, p := range v.More {
+		if p.Source == "" || p.Ref == "" {
+			missing = append(missing, "--source and --ref for pack "+strconv.Itoa(i+2))
+		}
+	}
 	return missing
 }
 
 // checkValues holds init's values to what bonsai.yaml may say, before anything is fetched.
 func checkValues(v *InitValues) error {
 	next := "bonsai init --help shows each value's form"
-	for _, s := range append(append([]string{v.Name, v.Source, v.Path, v.Ref}, v.NeverEdit...), v.NeverRead...) {
+	values := []string{v.Name}
+	for _, p := range v.Packs() {
+		values = append(values, p.Source, p.Path, p.Ref)
+	}
+	for _, s := range append(append(values, v.NeverEdit...), v.NeverRead...) {
 		for _, r := range s {
 			if r < 0x20 || r == 0x7f {
 				return errorf("bad-value", ExitInput, next, "init's values may not hold a control character")
 			}
 		}
 	}
-	if strings.HasPrefix(v.Source, "-") || strings.HasPrefix(v.Ref, "-") {
-		return errorf("bad-value", ExitInput, next, "--source and --ref may not start with -, which git would read as an option")
+	for _, p := range v.Packs() {
+		if strings.HasPrefix(p.Source, "-") || strings.HasPrefix(p.Ref, "-") {
+			return errorf("bad-value", ExitInput, next, "--source and --ref may not start with -, which git would read as an option")
+		}
 	}
 	// The rest (the name's form, the path, each never_edit and never_read path) bonsai.yaml's own reader checks, on
 	// the bonsai.yaml init would write, before it is written.

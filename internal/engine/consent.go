@@ -223,6 +223,7 @@ func pluginItems(pd, old *PackData) []CodeItem {
 // the plan's own changes when it writes the file, or, for a conflict on the file, the changes --adopt would make.
 func (p *Plan) consent(settings []SettingsChange, newPacks []*PackData, oldPacks map[string]*PackData) {
 	p.RunsCode, p.OwnHooks = nil, nil
+	rolesBy := rolesBringer(newPacks, oldPacks)
 	for _, c := range settings {
 		if !c.RunsCode {
 			continue
@@ -239,6 +240,12 @@ func (p *Plan) consent(settings []SettingsChange, newPacks []*PackData, oldPacks
 		}
 		why := "A hook line of the pack " + pack + ", which Claude Code runs on its events."
 		switch {
+		case c.Own && rolesBy != "" && rolesLine(c.Line):
+			// BUG-122: the project's first pack with roles changes Bonsai's guard line and adds the second. Still a
+			// person's --allow-exec: an agent never changes Bonsai's own guard line.
+			why = "Bonsai's own hook line, in its roles' form: the pack " + rolesBy + " brings roles, so Bonsai's guard " +
+				"then judges agent calls too (Agent, Task, SendMessage, Workflow) and counts every other call against the " +
+				"roles' budgets. Claude Code runs it on its events."
 		case c.Own && c.Change == "change":
 			why = "Bonsai's own hook line, changed: Claude Code runs it on its events."
 		case c.Own:
@@ -360,3 +367,31 @@ func namesPath(command, path string) bool {
 
 // NeedsExec reports whether the plan writes anything that runs code, which needs --allow-exec as well as --yes.
 func (p *Plan) NeedsExec() bool { return len(p.RunsCode) > 0 }
+
+// rolesBringer names the first pack that brings roles to the project: one that declares roles now and did not at its
+// locked commit (or was not linked); "" for none.
+func rolesBringer(newPacks []*PackData, oldPacks map[string]*PackData) string {
+	for _, pd := range newPacks {
+		if !manifestRoles(pd.Manifest) {
+			continue
+		}
+		if od := oldPacks[pd.Ref.ID]; od == nil || !manifestRoles(od.Manifest) {
+			return pd.Ref.ID
+		}
+	}
+	return ""
+}
+
+// rolesLine reports whether a settings line is one of Bonsai's own lines in the form only a lock with roles has.
+func rolesLine(line string) bool {
+	plain := map[string]bool{}
+	for _, l := range ownHooks {
+		plain[l.Text()] = true
+	}
+	for _, l := range ownRolesHooks {
+		if l.Text() == line && !plain[line] {
+			return true
+		}
+	}
+	return false
+}

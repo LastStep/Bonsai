@@ -20,6 +20,7 @@ import (
 	"encoding/base32"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -28,14 +29,30 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// InitValues are the values init needs to write a new bonsai.yaml: spec §14 check 1's "required values".
+// InitValues are the values init needs to write a new bonsai.yaml: spec §14 check 1's "required values". Source, Path
+// and Ref are the first pack's; More, the packs after it, in the order given (BUG-122: init links several packs in one
+// first link).
 type InitValues struct {
-	Name      string   // the workspace's name, a slug
-	Source    string   // the pack's git repository
-	Path      string   // the pack's folder inside it, "" for its root
-	Ref       string   // the release tag or 40-character commit to take
-	NeverEdit []string // paths no agent ever changes
-	NeverRead []string // paths no agent reads (BUG-121)
+	Name      string     // the workspace's name, a slug
+	Source    string     // the first pack's git repository
+	Path      string     // its folder inside it, "" for its root
+	Ref       string     // the release tag or 40-character commit to take
+	More      []InitPack // the packs after the first, each linked in the same first link
+	NeverEdit []string   // paths no agent ever changes
+	NeverRead []string   // paths no agent reads (BUG-121)
+}
+
+// InitPack is one pack init links: its repository, its folder there ("" for the top) and its ref.
+type InitPack struct {
+	Source, Path, Ref string
+}
+
+// Packs gives every pack the values name, the first one first; none when no value of the first is given.
+func (v InitValues) Packs() []InitPack {
+	if v.Source == "" && v.Ref == "" && v.Path == "" && len(v.More) == 0 {
+		return nil
+	}
+	return append([]InitPack{{Source: v.Source, Path: v.Path, Ref: v.Ref}}, v.More...)
 }
 
 // DefaultProtected is the protected list and person_only list init writes: bonsai.yaml, the lock and Claude Code's
@@ -161,8 +178,14 @@ func quoted(path string) bool {
 var listIndex = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`\[[0-9]+\]`) })
 
 // ConfigYAML is a new bonsai.yaml from the template: id, init's values and the pack read at its ref (its id, and its
-// document kinds, each written under documents at the pack's default place).
+// document kinds, each written under documents at the pack's default place). With several packs, ConfigYAMLPacks.
 func ConfigYAML(id string, v InitValues, pack *PackData) ([]byte, error) {
+	return ConfigYAMLPacks(id, v, []*PackData{pack})
+}
+
+// ConfigYAMLPacks is ConfigYAML for every pack init links: packs[i], read at its ref, is v.Packs()[i] (nil for one not
+// read), written in that order.
+func ConfigYAMLPacks(id string, v InitValues, packs []*PackData) ([]byte, error) {
 	w := &format.Workspace{ID: id, Name: v.Name, Documents: DefaultDocuments, Protected: DefaultProtected,
 		PersonOnly: DefaultProtected, NeverEdit: v.NeverEdit, LadderFloor: []int64{}, Ladder: []format.Rung{},
 		Ratchets: schema.Object{}, CIMarkedTests: []string{}, Generated: format.DefaultGenerated()}
@@ -172,30 +195,34 @@ func ConfigYAML(id string, v InitValues, pack *PackData) ([]byte, error) {
 	if w.NeverRead = v.NeverRead; w.NeverRead == nil {
 		w.NeverRead = []string{}
 	}
-	ref := format.WorkspacePack{Source: v.Source, Ref: v.Ref}
-	if v.Path != "" {
-		path := v.Path
-		ref.Path = &path
-	}
 	kinds := map[string]string{}
 	w.Documents.Extra = nil
-	if pack != nil {
-		ref.ID = pack.Manifest.ID
-		if pack.Declares != nil {
-			for _, k := range pack.Declares.Documents {
-				what, place := "folder (one file per document)", k.Path
-				if k.File != nil {
-					what, place = "file", k.File
+	w.Packs = []format.WorkspacePack{}
+	for i, in := range v.Packs() {
+		ref := format.WorkspacePack{Source: in.Source, Ref: in.Ref}
+		if in.Path != "" {
+			path := in.Path
+			ref.Path = &path
+		}
+		if i < len(packs) && packs[i] != nil {
+			pack := packs[i]
+			ref.ID = pack.Manifest.ID
+			if pack.Declares != nil {
+				for _, k := range pack.Declares.Documents {
+					what, place := "folder (one file per document)", k.Path
+					if k.File != nil {
+						what, place = "file", k.File
+					}
+					if place == nil {
+						continue
+					}
+					w.Documents.Extra = append(w.Documents.Extra, schema.Member{Key: k.Kind, Value: *place})
+					kinds[k.Kind] = "the pack " + ref.ID + "'s document kind " + k.Kind + ": its " + what
 				}
-				if place == nil {
-					continue
-				}
-				w.Documents.Extra = append(w.Documents.Extra, schema.Member{Key: k.Kind, Value: *place})
-				kinds[k.Kind] = "the pack " + ref.ID + "'s document kind " + k.Kind + ": its " + what
 			}
 		}
+		w.Packs = append(w.Packs, ref)
 	}
-	w.Packs = []format.WorkspacePack{ref}
 	body, err := w.EncodeYAMLWith(format.YAMLOptions{Comment: comment(kinds), Quote: quoted})
 	if err != nil {
 		return nil, err
@@ -217,11 +244,13 @@ func probeYAML(v InitValues) []byte {
 	}
 	var b strings.Builder
 	b.WriteString("format: " + workspace.WorkspaceFormat + "\nid: ws-aaaaaaaaaaaaaaaaaaaaaaaaaa\nname: " + v.Name + "\npacks:\n")
-	b.WriteString("  - id: probe\n    source: " + q(v.Source) + "\n")
-	if v.Path != "" {
-		b.WriteString("    path: " + q(v.Path) + "\n")
+	for i, p := range v.Packs() {
+		b.WriteString("  - id: probe-" + strconv.Itoa(i+1) + "\n    source: " + q(p.Source) + "\n")
+		if p.Path != "" {
+			b.WriteString("    path: " + q(p.Path) + "\n")
+		}
+		b.WriteString("    ref: " + q(p.Ref) + "\n")
 	}
-	b.WriteString("    ref: " + q(v.Ref) + "\n")
 	var never []string
 	for _, p := range v.NeverEdit {
 		never = append(never, q(p))

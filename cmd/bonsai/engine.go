@@ -55,14 +55,35 @@ type engineFlags struct {
 	yes, diff, explain, newID, allowExec bool
 	keep, adopt                          []string
 	values                               engine.InitValues
+	unpaired                             string   // why the packs' flags do not pair up, "" when they do
 	typed                                []string // the flags as typed that a next step repeats (not --yes, --diff, --explain or --json)
 }
 
 func readEngineFlags(c *call) *engineFlags {
 	f := &engineFlags{yes: c.has("--yes"), diff: c.has("--diff"), explain: c.has("--explain"), newID: c.has("--new-id"), allowExec: c.has("--allow-exec"),
 		keep: c.all("--keep"), adopt: c.all("--adopt")}
-	f.values = engine.InitValues{Name: c.value("--name"), Source: c.value("--source"), Ref: c.value("--ref"), Path: c.value("--path"),
-		NeverEdit: c.all("--never-edit"), NeverRead: c.all("--never-read")}
+	f.values = engine.InitValues{Name: c.value("--name"), NeverEdit: c.all("--never-edit"), NeverRead: c.all("--never-read")}
+	// The packs (BUG-122): the n-th --ref, and the n-th --path when --path is given, go with the n-th --source.
+	sources, refs, paths := c.all("--source"), c.all("--ref"), c.all("--path")
+	switch {
+	case len(sources) <= 1 && len(refs) <= 1 && len(paths) <= 1:
+		f.values.Source, f.values.Ref, f.values.Path = c.value("--source"), c.value("--ref"), c.value("--path")
+	case len(refs) != len(sources) || (len(paths) != 0 && len(paths) != len(sources)):
+		f.unpaired = fmt.Sprintf("init takes --ref once per --source, and --path not at all or once per --source "+
+			"(\"\" for a repository's top): here --source %d, --ref %d, --path %d", len(sources), len(refs), len(paths))
+	default:
+		for i := range sources {
+			p := engine.InitPack{Source: sources[i], Ref: refs[i]}
+			if len(paths) > 0 {
+				p.Path = paths[i]
+			}
+			if i == 0 {
+				f.values.Source, f.values.Ref, f.values.Path = p.Source, p.Ref, p.Path
+			} else {
+				f.values.More = append(f.values.More, p)
+			}
+		}
+	}
 	exec := false
 	for _, g := range c.given {
 		switch g.name {
@@ -96,6 +117,9 @@ func runEngine(c *call) int {
 		return c.refuse(c.flagError("%s takes no %+q", word, c.rest[0]))
 	}
 	f := readEngineFlags(c)
+	if f.unpaired != "" {
+		return c.refuse(c.flagError("%s", f.unpaired))
+	}
 	cmdline := "bonsai " + word
 	for _, t := range f.typed {
 		cmdline += " " + engine.ShellArg(t)

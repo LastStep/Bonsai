@@ -25,9 +25,9 @@ bonsai update does; run again with nothing changed, it changes no byte.
 ` + engine.HookPlaceWords(),
 	Flags: []Flag{
 		{Name: "--name", Value: "N", Help: "the workspace's name: a lower-case letter, then lower-case letters, digits and dashes"},
-		{Name: "--source", Value: "URL", Help: "the pack's git repository (fetched with this machine's git, into the Bonsai home's cache)"},
-		{Name: "--ref", Value: "R", Help: "the pack's release tag, or a 40-character commit"},
-		{Name: "--path", Value: "P", Help: "the pack's folder inside its repository (default: the repository's top)"},
+		{Name: "--source", Value: "URL", Many: true, Help: "a pack's git repository (fetched with this machine's git, into the Bonsai home's cache); once per pack"},
+		{Name: "--ref", Value: "R", Many: true, Help: "a pack's release tag, or a 40-character commit; once per --source, in its order"},
+		{Name: "--path", Value: "P", Many: true, Help: "a pack's folder in its repository (default: its top); none, or once per --source (\"\" for a top)"},
 		{Name: "--never-edit", Value: "P", Many: true, Help: "a path no agent may ever edit, written as a deny rule; give it once per path"},
 		{Name: "--never-read", Value: "P", Many: true, Help: "a path no agent may read, written as a Read deny rule (best effort for shell reads); once per path"},
 		{Name: "--new-id", Help: "give this project a new workspace id and empty .bonsai/local/: for a copy meant as a new project"},
@@ -40,6 +40,11 @@ bonsai update does; run again with nothing changed, it changes no byte.
 		{Name: "--json", Help: "print the changes document (bonsai.changes/1) instead of text; never asks"},
 	},
 	Notes: `Without bonsai.yaml, --name, --source and --ref are required.
+Several packs: give --source once per pack, in the order they apply, and --ref once per --source: the n-th --ref
+(and the n-th --path, when --path is given) goes with the n-th --source. All are linked in one first link, so
+Bonsai's own lines for them are written by --yes. A pack added later goes into bonsai.yaml's packs, then
+bonsai update; when it is the project's first pack with roles, Bonsai's guard line changes to judge agent calls
+too, which needs --allow-exec, a person's.
 Runs code: Bonsai's own hook lines are the link's purpose, so --yes writes them. A pack's hook lines, the pack
 files they run and a plugin's own code parts (hooks, MCP and LSP servers, monitors, mods) are the pack's code: the
 preview lists each under "Runs code", and nothing is written without --allow-exec as well as --yes, at a terminal
