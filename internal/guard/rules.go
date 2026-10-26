@@ -39,6 +39,7 @@ const (
 	RuleDeleteProtected = "delete-protected"
 	RuleDeleteUnsplit   = "delete-unsplit"
 	RuleDeleteNamed     = "delete-named"
+	RuleMoveUnnamed     = "move-unnamed"
 
 	// Bonsai's own commands in a shell call (commands.go).
 	RulePersonCommand = "person-command"
@@ -140,13 +141,16 @@ var Rules = []Rule{
 		"that does not read in its form (contract section 23)"},
 	{RuleDeleteUnnamed, false, "a shell call's recursive or bulk delete that does not name what it deletes (an operand " +
 		"holding a glob, a variable or a substitution, or one that is ., .., /, ~ or a drive's root; xargs, a pipeline or a " +
-		"loop feeding it; git clean with no path; a delete of several files by a glob; a git pathspec with magic other than " +
+		"loop feeding it, or a plain mv, but not a git mv: move-unnamed; git clean with no path; a delete of several files by a glob; a git pathspec with magic other than " +
 		":/, :(top) or :(literal)), and always git clean -x or -X, git stash --all and rm --no-preserve-root"},
 	{RuleDeleteProtected, false, "a shell call's delete or move of a guarded path, or of a folder holding one, judged as an " +
 		"edit of that path (the reason says what guards it)"},
 	{RuleDeleteUnsplit, false, "a shell call's line the delete check cannot split (a quote or bracket left open, nesting " +
 		"past three levels) that holds a delete word, or whose runner words run past the walk's bound"},
 	{RuleDeleteNamed, true, "a shell call whose deletes and moves all name what they take, none of it guarded"},
+	{RuleMoveUnnamed, true, "a shell call's git mv whose operands come from a loop's variable, xargs or a pipeline: git " +
+		"moves only what it tracks and keeps both sides in the next commit, so rung 0 judges what moved after the fact; " +
+		"what it names is still judged, and plain mv and every delete fed the same way stay delete-unnamed"},
 	{RulePersonCommand, false, "bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes an agent marker (CLAUDE_CODE_CHILD_SESSION, " +
 		"AI_AGENT or another of the list the error code person-command names): " +
 		"a person's commands, allowed to an agent only in a project in command mode under a running task's grant of " +

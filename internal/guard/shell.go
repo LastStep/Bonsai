@@ -23,8 +23,10 @@ package guard
 //     folder each command runs in followed
 //     through cd (note 4: a cd to a name moves it; one that cannot be told leaves it unknown; a cd that may fail
 //     leaves both folders), and each delete judged. Rule 3 (delete-unnamed): a recursive or bulk delete with an
-//     operand that is not a plain name (shell_paths.go's delPlain), a delete of several files by a glob, a delete fed
-//     its operands by xargs, a pipeline or a loop's variable, git clean with no path, a git pathspec with magic other
+//     operand that is not a plain name (shell_paths.go's delPlain), a delete of several files by a glob, a delete or a
+//     plain mv fed its operands by xargs, a pipeline or a loop's variable (a git mv fed so passes, move-unnamed: git
+//     moves only what it tracks and rung 0 judges what moved; what it names is still judged; BUG-130), git clean with
+//     no path, a git pathspec with magic other
 //     than :/, :(top) or :(literal) (delGitMagic, which reads those three), and always git clean -x or -X, git stash
 //     --all and rm --no-preserve-root. bash's ~+/x is read in the command's folder, ~-/x in one that cannot be told. Rule 4 (delete-protected): every operand, and both sides of a move,
 //     read in the command's folder and judged by the guard's one function for a delete (may.go's mayDelete); a
@@ -36,7 +38,9 @@ package guard
 //     finding for a tracked one names it (engine.UntrackLocal).
 //
 // What it leaves (note 5; question A): a shell write to a guarded path (a redirect, cp or ln over it, an
-// interpreter such as python -c or node -e) is not judged, nor a delete inside a script run by name, nor, in
+// interpreter such as python -c or node -e) is not judged, nor what a git mv fed by a loop, xargs or a pipeline moves
+// (move-unnamed: only what it names is judged; what lands in a guarded folder is a shell write too), nor a delete
+// inside a script run by name, nor, in
 // another linked project, a named delete below its top and floor folders (5.3.2 rule 8); rung 0 and the Desk catch
 // them after the fact. Nor, being a splitter and not a shell, does it see: deletes made by a program's own calls
 // ([IO.File]::Delete, $item.Delete(), Start-Process with arguments, shutil.rmtree) or by programs outside its
@@ -171,6 +175,8 @@ func shellDecide(tool, command, cwd, base string, j delJudge) Decision {
 	switch {
 	case r.deny != nil:
 		return *r.deny
+	case r.found && r.moveUnnamed:
+		return allow(RuleMoveUnnamed, r.first)
 	case r.found:
 		return allow(RuleDeleteNamed, r.first)
 	case r.bonsai:
@@ -181,18 +187,19 @@ func shellDecide(tool, command, cwd, base string, j delJudge) Decision {
 
 // delRun is one judgment of a command line.
 type delRun struct {
-	tool     string
-	j        delJudge
-	own      string    // the session's project folder: a refusal's target is relative to it, "" for none
-	base     string    // the payload's folder: where an operand is read when its folder cannot be told
-	found    bool      // a delete was judged
-	bonsai   bool      // a bonsai command was judged, and allowed
-	first    string    // the first operand judged, project-relative, for an allow's target
-	firstSet bool      // first is set (it may be "": an operand outside the project)
-	feed     string    // set while splitting text a shell runs under xargs: its deletes' operands come from input
-	places   []string  // with feed: the texts xargs's input replaces in the words (delExec's places)
-	icase    bool      // the line names GIT_ICASE_PATHSPECS: git may read every pathspec case-blind
-	deny     *Decision // the first refusal
+	tool        string
+	j           delJudge
+	own         string    // the session's project folder: a refusal's target is relative to it, "" for none
+	base        string    // the payload's folder: where an operand is read when its folder cannot be told
+	found       bool      // a delete was judged
+	moveUnnamed bool      // a git mv fed by a loop, xargs or a pipeline was let through (BUG-130): rung 0 judges it
+	bonsai      bool      // a bonsai command was judged, and allowed
+	first       string    // the first operand judged, project-relative, for an allow's target
+	firstSet    bool      // first is set (it may be "": an operand outside the project)
+	feed        string    // set while splitting text a shell runs under xargs: its deletes' operands come from input
+	places      []string  // with feed: the texts xargs's input replaces in the words (delExec's places)
+	icase       bool      // the line names GIT_ICASE_PATHSPECS: git may read every pathspec case-blind
+	deny        *Decision // the first refusal
 
 	roots     []judgedRoot // the folders a delete is judged in, read once, when a delete first needs them
 	rootsSet  bool         // roots has been read
@@ -603,7 +610,14 @@ func (r *delRun) judge(a delAct, x delExec) {
 	if x.feed == "" {
 		x.feed = r.feed
 	}
-	if x.feed != "" {
+	// A git mv fed its operands by a loop's variable, xargs or a pipeline (BUG-130) passes as a move: git moves only
+	// what it tracks and keeps both sides in the next commit, which rung 0 judges after the fact. What it names is
+	// still judged below; plain mv and every delete fed the same way stay refused.
+	gitMove := a.move && a.word == "git mv"
+	if gitMove && x.feed != "" {
+		r.moveUnnamed = true
+	}
+	if x.feed != "" && !gitMove {
 		r.refuse(Decision{Rule: RuleDeleteUnnamed, Why: fmt.Sprintf("%s refused: %s does not name what it %s: its "+
 			"operands come from %s, so the check cannot see them (rule %s)", r.tool, r.head(x), verb, x.feed,
 			RuleDeleteUnnamed), Next: "name what to " + delVerb(a.move) + " in the command itself, not through " + x.feed})
@@ -644,6 +658,8 @@ func (r *delRun) judge(a delAct, x delExec) {
 		}
 		why, next := "", ""
 		switch {
+		case (op.pipeVar || x.loop && op.expand) && gitMove:
+			r.moveUnnamed = true
 		case op.pipeVar || x.loop && op.expand:
 			why = fmt.Sprintf("%s takes its operand from a pipeline or a loop's variable, one item after another, so "+
 				"the check cannot see what it %s", a.word, verb)

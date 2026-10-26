@@ -517,6 +517,25 @@ var delTable = []delRow{
 	{tB, "", "mv bonsai.yaml bonsai.yaml.bak", RuleDeleteProtected, ""},
 	{tB, "", "mv x.yaml bonsai.yaml", RuleDeleteProtected, ""},
 	{tB, "", "mv settings.json .claude/", RuleDeleteProtected, ""},
+	// BUG-130: a git mv whose operands come from a loop's variable, xargs or a pipeline passes as a move (git moves
+	// only what it tracks; rung 0 judges what moved); its named operands are still judged; plain mv and every delete
+	// fed the same way stay refused.
+	{tB, "", `for f in *.md; do git mv "$f" docs/; done`, RuleMoveUnnamed, ""},
+	{tB, "", "while read -r f; do git mv \"$f\" old/; done < list.txt", RuleMoveUnnamed, ""},
+	{tB, "", "git ls-files '*.md' | xargs -I{} git mv {} docs/", RuleMoveUnnamed, ""},
+	{tB, "", "ls *.md | xargs git mv -k", RuleMoveUnnamed, ""},
+	{tP, "", "foreach ($f in Get-ChildItem *.md) { git mv $f.Name docs/ }", RuleMoveUnnamed, ""},
+	{tP, "", "Get-ChildItem *.md | ForEach-Object { git mv $_.Name docs/ }", RuleMoveUnnamed, ""},
+	{tB, "", `for f in *.md; do mv "$f" docs/; done`, RuleDeleteUnnamed, ""},
+	{tB, "", `for f in *.md; do rm "$f"; done; for f in *.md; do git mv "$f" docs/; done`, RuleDeleteUnnamed, ""},
+	{tB, "", `for f in *.md; do git rm "$f"; done`, RuleDeleteUnnamed, ""},
+	{tB, "", "ls | xargs git rm", RuleDeleteUnnamed, ""},
+	{tP, "", "foreach ($f in Get-ChildItem *.md) { Move-Item $f docs/ }", RuleDeleteUnnamed, ""},
+	{tB, "", "ls | xargs -I{} git mv {} bonsai.yaml", RuleDeleteProtected, ""},
+	// Into a guarded folder, the names that land there are not known: a shell write (BUG-048's limit), as cp into it
+	// is; rung 0 judges what moved. The verifier's security lens reads this row.
+	{tB, "", `for f in *.md; do git mv "$f" .claude/; done`, RuleMoveUnnamed, ""},
+	{tB, "", `for f in *.md; do git mv bonsai.yaml "$f"; done`, RuleDeleteProtected, ""},
 	{tB, "", "mv -t .claude settings.json", RuleDeleteProtected, ""},
 	{tB, "", "mv .git .git-old", RuleDeleteProtected, ""},
 	{tB, "", "mv * src/", RuleDeleteProtected, ""},
@@ -1003,7 +1022,7 @@ func delAllows(rule string) bool {
 }
 
 // delCheckRules are the rules the delete check answers with (rules.go's table holds them).
-var delCheckRules = []string{RuleDeleteUnnamed, RuleDeleteProtected, RuleDeleteUnsplit, RuleDeleteNamed, RuleShell,
+var delCheckRules = []string{RuleDeleteUnnamed, RuleDeleteProtected, RuleDeleteUnsplit, RuleDeleteNamed, RuleMoveUnnamed, RuleShell,
 	RuleBonsaiCommand, RulePersonCommand, RuleHomeCommand}
 
 // A rule of the delete check with no row in the table fails.
@@ -1098,6 +1117,18 @@ func init() {
 			{"Monitor", "rm -f free.txt && npm run watch"}, {"Bash", "rm -rf vendor/lib/.git"}} {
 			wantRule(t, dir, bashIn(dir, c.tool, c.line), RuleDeleteNamed)
 		}
+	}
+	// BUG-130: the line the first existing project's link was refused, and its PowerShell form, pass; what a fed git mv
+	// names is still judged; a plain mv fed the same way stays refused.
+	ruleTests[RuleMoveUnnamed] = func(t *testing.T) {
+		dir := withTask(t, "todo")
+		for _, c := range []struct{ tool, line string }{{"Bash", `for f in *.md; do git mv "$f" docs/; done`},
+			{"PowerShell", "Get-ChildItem *.md | ForEach-Object { git mv $_.Name docs/ }"},
+			{"Bash", "git ls-files '*.md' | xargs -I{} git mv {} docs/"}} {
+			wantRule(t, dir, bashIn(dir, c.tool, c.line), RuleMoveUnnamed)
+		}
+		wantRule(t, dir, bashIn(dir, "Bash", "ls | xargs -I{} git mv {} bonsai.yaml"), RuleDeleteProtected)
+		wantRule(t, dir, bashIn(dir, "Bash", `for f in *.md; do mv "$f" docs/; done`), RuleDeleteUnnamed)
 	}
 }
 
