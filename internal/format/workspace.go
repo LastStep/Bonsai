@@ -23,7 +23,8 @@ type Workspace struct {
 	Ratchets      schema.Object   `json:"ratchets"` // a count's name to its floor (a number)
 	CIMarkedTests []string        `json:"ci_marked_tests"`
 	Generated     Generated       `json:"generated"`
-	Messages      *Thresholds     `json:"messages"` // set 8: the thresholds of bonsai messages' flags, or null for the defaults
+	Messages      *Thresholds     `json:"messages"`   // set 8: the thresholds of bonsai messages' flags, or null for the defaults
+	NeverRead     []string        `json:"never_read"` // set 12: paths no agent reads, written as Read deny rules
 	Extra         schema.Object   `json:"-"`
 }
 

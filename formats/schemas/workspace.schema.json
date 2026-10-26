@@ -17,7 +17,8 @@
     "ratchets",
     "ci_marked_tests",
     "generated",
-    "messages"
+    "messages",
+    "never_read"
   ],
   "properties": {
     "format": {
@@ -929,6 +930,22 @@
           ],
           "minimum": 0
         }
+      }
+    },
+    "never_read": {
+      "description": "Paths no agent reads (set 12, BUG-121), each written as the deny rule Read(/<path>) in .claude/settings.json, anchored at the project's top folder as never_edit's rules are; [] for none, and a file written before set 12, which has no never_read, reads as []. What the rule covers is Claude Code's, from its permissions docs: a Read deny also denies the Edit and Write tools on the path (not NotebookEdit: put the path in never_edit as well for that); Claude Code applies it best effort to Grep, Glob, @ mentions and the shell commands it recognises as reads (cat, head, tail, sed and others), and not to a command that reads files without naming them (grep -r . from the folder) or to a script or program that opens the file itself. For shell reads, Claude Code's sandbox (sandbox.filesystem.denyRead) is the block at the operating system's level: it is off by default, and native Windows has none. A path taken out is a loosening. Since it becomes a deny rule, a path holds no parenthesis and does not start with ~.",
+      "examples": [
+        [
+          ".env",
+          ".env.*",
+          "secrets/**"
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[^/\\\\:~()][^\\\\:()]*$"
       }
     }
   }

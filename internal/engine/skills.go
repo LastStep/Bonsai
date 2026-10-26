@@ -109,12 +109,21 @@ func WorkspaceSkill() []byte {
 		"what changing it does. Every field and every allowed value is also printed by `bonsai check --schema bonsai.workspace`.")
 	line("")
 	line("**How a change takes effect.** The file is committed and person-only: an agent changes it only while its running " +
-		"task's `bonsai.allows` holds it, which a person grants. A pack's ref, a pack added or taken out, `never_edit` and " +
+		"task's `bonsai.allows` holds it, which a person grants. A pack's ref, a pack added or taken out, `never_edit`, " +
+		"`never_read` and " +
 		"the folders under `documents` take effect at `bonsai update` (it previews every change; `--yes` writes them). The " +
 		"ladder, its floor, the ratchets and `ci_marked_tests` count as committed at the main checkout's HEAD, and one that " +
 		"sets a check looser (a rung or a floor entry taken out or changed, a rung added, a ratchet lowered) waits for a " +
 		"person's `bonsai update` to record it. A role's limits under `packs[].roles` and the `messages` thresholds change any " +
 		"time: raising a default or a max is never a loosening.")
+	line("")
+	line("**What `never_read` stops, from Claude Code's permissions docs.** Each path becomes the deny rule " +
+		"`Read(/<path>)`, anchored at the project's top folder. It also denies the Edit and Write tools on the path (not " +
+		"NotebookEdit: list the path in `never_edit` as well for that). Claude Code applies it best effort to Grep, Glob, " +
+		"`@` mentions and the shell reads it recognises (`cat`, `head`, `tail`, `sed` and others); it does not stop a " +
+		"command that reads without naming the file (`grep -r` from its folder) or a script that opens the file itself. " +
+		"For shell reads, Claude Code's sandbox (`sandbox.filesystem.denyRead` in its settings) blocks every process: it " +
+		"is off by default, and native Windows has none. Bonsai's guard does not judge reads.")
 	line("")
 	line("## Fields")
 	line("")

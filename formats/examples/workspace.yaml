@@ -93,3 +93,4 @@ generated:                            # how long generated files are kept, per k
     keep_days: 30                     # a session's folder goes 30 days after its last line, never before its log
     keep_newest: null                 # no limit on how many are kept
 messages: null                        # null: Bonsai's thresholds for bonsai messages' flags
+never_read: [".env"]                  # paths no agent reads; each a deny rule Read(/<path>), best effort for shell reads

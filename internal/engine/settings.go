@@ -7,7 +7,8 @@ package engine
 //
 //	hook         a hook command under hooks.<event>, in a group with its matcher (spec §7; a pack's hooks)
 //	deny         a rule in permissions.deny (Bonsai's own, ownDeny; each never_edit path in bonsai.yaml as
-//	             Edit(/<path>), neverEditRule; a pack's deny, as the pack gives it)
+//	             Edit(/<path>), neverEditRule; each never_read path as Read(/<path>), neverReadRule; a pack's deny,
+//	             as the pack gives it)
 //	key          autoMemoryEnabled: false (spec §10) and disableAllHooks: false (spec §7)
 //	marketplace  the inline marketplace under extraKnownMarketplaces, bonsai-<workspace name>-<8 hex>, each pack's
 //	             plugin pinned to its locked commit by sha, with no version (spec §5)
@@ -18,9 +19,9 @@ package engine
 // is its own, the lines it would write from the lock's packs at their locked commits and bonsai.yaml, and lines no
 // person writes: autoMemoryEnabled and disableAllHooks, a marketplace named bonsai-..., a plugin enabled from one,
 // and a hook line that runs `bonsai hook`. Only then is the fingerprint compared, so an edit of one of Bonsai's
-// lines reads as an edit, and a line a person added beside them is never Bonsai's. When a path left never_edit in
-// bonsai.yaml since the last update, its old Edit rule is found by trying the file's other Edit rules against the
-// lock's fingerprint, each set of them in turn: only the set whose fingerprint matches exactly is Bonsai's, so a rule
+// lines reads as an edit, and a line a person added beside them is never Bonsai's. When a path left never_edit (or
+// never_read) in bonsai.yaml since the last update, its old Edit (or Read) rule is found by trying the file's other
+// Edit and Read rules against the lock's fingerprint, each set of them in turn: only the set whose fingerprint matches exactly is Bonsai's, so a rule
 // a person wrote is never taken for one of Bonsai's.
 //
 // The file's key order (step 5.1.7). Claude Code writes this file too (a project-scope plugin install, an uninstall),
@@ -349,6 +350,26 @@ func neverEditRule(path string) string { return "Edit(/" + path + ")" }
 // neverEditSlot starts a never_edit rule's slot: the path, whatever the rule's form.
 const neverEditSlot = "never_edit:"
 
+// neverReadRule is the deny rule for a never_read path of bonsai.yaml (BUG-121): Read(/<path>), anchored as
+// neverEditRule's is. Claude Code's permissions docs: a Read deny also denies the Edit and Write tools on the path, and
+// is applied best effort to Grep, Glob, @ mentions and the shell reads Claude Code recognises (cat, head, ...), not to a
+// script that opens the file; its sandbox (sandbox.filesystem.denyRead, off by default, none on native Windows) is the
+// block for shell reads.
+func neverReadRule(path string) string { return "Read(/" + path + ")" }
+
+// neverReadSlot starts a never_read rule's slot: the path.
+const neverReadSlot = "never_read:"
+
+// neverRead is bonsai.yaml's never_read, from the full read: the guard's lean read (workspace.ReadConfig) leaves it
+// out, as it judges nothing by it, so a broken never_read never blocks an edit. The schema's pattern refuses a path
+// that cannot be a rule (a parenthesis, a leading ~ or /).
+func neverRead(cfg *workspace.Config) []string {
+	if cfg == nil || cfg.Full == nil {
+		return nil
+	}
+	return cfg.Full.NeverRead
+}
+
 // homeFolder is the Bonsai home's folder in the user's home when BONSAI_HOME is not set (workspace.Home).
 const homeFolder = ".bonsai"
 
@@ -383,7 +404,7 @@ func hookTexts(ls []Line) []string {
 // Line is one of Bonsai's entries in .claude/settings.json.
 type Line struct {
 	Kind      string // hook, deny, key, marketplace or plugin
-	Origin    string // where it comes from: bonsai (this build's own), bonsai.yaml (never_edit), old (an old Bonsai hook line), or a pack id
+	Origin    string // where it comes from: bonsai (this build's own), bonsai.yaml (never_edit, never_read), old (an old Bonsai hook line), or a pack id
 	Own       bool   // a line of Bonsai's own (ownHooks and ownDeny, or a `bonsai hook` line claim finds): set only here, never from a pack
 	Slot      string // two lines with one slot are one line changed, not one removed and one added
 	Event     string // hook: the Claude Code hook event
@@ -559,7 +580,7 @@ func Pin(commit, folder string) string {
 }
 
 // buildLines gives every line Bonsai writes for a workspace and its packs, in the order it writes them: the two
-// keys, the deny rules (Bonsai's own, then never_edit, then each pack's), the hook lines (Bonsai's own, its roles'
+// keys, the deny rules (Bonsai's own, then never_edit, then never_read, then each pack's), the hook lines (Bonsai's own, its roles'
 // form when a pack declares roles, then each pack's), the marketplace, then each pack's plugin. A line that two sources give is written once, as the first
 // gives it: a pack's rule equal to one of Bonsai's own stays Bonsai's.
 func buildLines(cfg *workspace.Config, packs []packLines) []Line {
@@ -573,6 +594,10 @@ func buildLines(cfg *workspace.Config, packs []packLines) []Line {
 	for _, p := range cfg.NeverEdit {
 		ls = append(ls, Line{Kind: "deny", Origin: "bonsai.yaml", Rule: neverEditRule(p), Slot: neverEditSlot + p,
 			Why: "Agents can never edit " + p + ": it is in never_edit in bonsai.yaml."})
+	}
+	for _, p := range neverRead(cfg) {
+		ls = append(ls, Line{Kind: "deny", Origin: "bonsai.yaml", Rule: neverReadRule(p), Slot: neverReadSlot + p,
+			Why: "Agents can never read " + p + ": it is in never_read in bonsai.yaml."})
 	}
 	for _, p := range packs {
 		for _, d := range p.deny {
@@ -997,8 +1022,8 @@ func shellWords(s string) []string {
 
 // claim finds Bonsai's lines in the file: those the reference lines (what Bonsai would have written from the
 // lock's commits) hold, the lines no person writes, and, at a first link, old Bonsai hook lines. It says whether
-// they are exactly what the lock says Bonsai last wrote (lockHash, "" for none), trying the file's other Edit
-// rules, in each combination, as never_edit rules a person has since taken out of bonsai.yaml.
+// they are exactly what the lock says Bonsai last wrote (lockHash, "" for none), trying the file's other Edit and
+// Read rules, in each combination, as never_edit and never_read rules a person has since taken out of bonsai.yaml.
 func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 	refs := map[string]Line{}
 	for _, r := range ref {
@@ -1057,6 +1082,11 @@ func claim(disk, ref []Line, firstLink bool, lockHash string) ([]Line, bool) {
 			// since), so a rule that only changes form shows as one line changed, not as a path taken out.
 			d.Origin, d.Slot = "bonsai.yaml", neverEditSlot+strings.TrimPrefix(strings.TrimSuffix(strings.TrimPrefix(d.Rule, "Edit("), ")"), "/")
 			d.Why = "This file is no longer in never_edit in bonsai.yaml, so agents may edit it again."
+			spare = append(spare, d)
+		case d.Kind == "deny" && strings.HasPrefix(d.Rule, "Read(/") && !strings.HasPrefix(d.Rule, "Read(//") && strings.HasSuffix(d.Rule, ")"):
+			// Only the form a build writes, Read(/<path>): a Read rule in another form was never Bonsai's.
+			d.Origin, d.Slot = "bonsai.yaml", neverReadSlot+strings.TrimSuffix(strings.TrimPrefix(d.Rule, "Read(/"), ")")
+			d.Why = "This file is no longer in never_read in bonsai.yaml, so agents may read it again."
 			spare = append(spare, d)
 		}
 	}

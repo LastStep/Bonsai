@@ -238,8 +238,8 @@ var Rules = []Rule{
 	{RuleStopConfigLooser, false, "the stop gate: the main checkout's bonsai.yaml, as committed at its HEAD, sets the checks looser " +
 		"than the settings this machine last accepted for the workspace (a rung out of the floor or the ladder, a rung added " +
 		"to the ladder, whose command runs inside the climb, a rung's check changed, a ratchet's floor lowered, a CI mark " +
-		"added, a path out of protected, person_only or never_edit, a document moved), or this machine's record holds none: " +
-		"a person records them with bonsai update"},
+		"added, a path out of protected, person_only, never_edit or never_read, a document moved), or this machine's " +
+		"record holds none: a person records them with bonsai update"},
 	{RuleStopRungNotAsked, false, "the stop gate: the result did not ask for a rung of the workspace's ladder_floor or of the " +
 		"task's bonsai.ladder"},
 	{RuleStopRungNotGreen, false, "the stop gate: a rung of the floor or of the task's bonsai.ladder is not green in the result"},

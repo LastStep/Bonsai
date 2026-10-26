@@ -32,7 +32,8 @@ package workspace
 //     number changed. A floor raised, or a new one, is stricter.
 //   - ci_marked_tests: a name added (a test named there may skip under --ci, and a local climb reads it as marked). One
 //     taken out is stricter.
-//   - protected, person_only, never_edit: a path taken out (the guard and rung 0 judge by them). One added is stricter.
+//   - protected, person_only, never_edit, never_read: a path taken out (the guard and rung 0 judge by the first two;
+//     the last two are Claude Code's deny rules). One added is stricter.
 //     A glob is compared as written: "a/**" put in place of "a/b/**" reads as looser (a person records it).
 //   - documents: a kind's place changed or taken out. The guard's tripwires and rung 0 judge a document by its declared
 //     place, and the stop gate reads the task and the run report there: a task folder moved out from under the
@@ -67,6 +68,7 @@ package workspace
 //	  "protected": ["bonsai.yaml"],
 //	  "person_only": ["bonsai.yaml"],
 //	  "never_edit": [],
+//	  "never_read": [],
 //	  "documents": {"task": "work/tasks", "run": "work/runs", "answers": "work/answers.md", "memory": "work/memory",
 //	                "protocols": "work/protocols"}
 //	}
@@ -96,6 +98,7 @@ type Checks struct {
 	Protected     []string
 	PersonOnly    []string
 	NeverEdit     []string
+	NeverRead     []string      // BUG-121's field: a record written before it has none, read as []
 	Documents     schema.Object // each document kind's place, by kind, as bonsai.yaml's documents holds it
 }
 
@@ -118,7 +121,8 @@ func ChecksOf(w *format.Workspace) *Checks {
 	}
 	c := &Checks{LadderFloor: append([]int64{}, w.LadderFloor...), Ratchets: schema.Object{},
 		CIMarkedTests: append([]string{}, w.CIMarkedTests...), Protected: append([]string{}, w.Protected...),
-		PersonOnly: append([]string{}, w.PersonOnly...), NeverEdit: append([]string{}, w.NeverEdit...)}
+		PersonOnly: append([]string{}, w.PersonOnly...), NeverEdit: append([]string{}, w.NeverEdit...),
+		NeverRead: append([]string{}, w.NeverRead...)}
 	for _, r := range w.Ladder {
 		c.Ladder = append(c.Ladder, CheckedRung{Rung: r.Rung, Kind: r.Kind, Command: r.Command, Required: r.Required, Tests: r.Tests,
 			Ratchet: canon(r.Ratchet), Capture: canon(r.Capture), BaseSetup: r.BaseSetup})
@@ -180,7 +184,8 @@ func (c *Checks) JSON() schema.Object {
 	docs = append(docs, c.Documents...)
 	return schema.Object{{Key: "ladder_floor", Value: floor}, {Key: "ladder", Value: rungs}, {Key: "ratchets", Value: ratchets},
 		{Key: "ci_marked_tests", Value: texts(c.CIMarkedTests)}, {Key: "protected", Value: texts(c.Protected)},
-		{Key: "person_only", Value: texts(c.PersonOnly)}, {Key: "never_edit", Value: texts(c.NeverEdit)}, {Key: "documents", Value: docs}}
+		{Key: "person_only", Value: texts(c.PersonOnly)}, {Key: "never_edit", Value: texts(c.NeverEdit)},
+		{Key: "never_read", Value: texts(c.NeverRead)}, {Key: "documents", Value: docs}}
 }
 
 func textOrNull(s *string) any {
@@ -207,7 +212,7 @@ func readChecks(v any) (c *Checks, why string) {
 	if !ok {
 		return nil, "is " + schema.Show(v) + ", not an object (or null)"
 	}
-	c = &Checks{Ratchets: schema.Object{}, Documents: schema.Object{}}
+	c = &Checks{Ratchets: schema.Object{}, Documents: schema.Object{}, NeverRead: []string{}}
 	seen := map[string]bool{}
 	for _, f := range o {
 		seen[f.Key] = true
@@ -246,7 +251,7 @@ func readChecks(v any) (c *Checks, why string) {
 			} else {
 				c.Documents = append(schema.Object{}, m...)
 			}
-		case "ci_marked_tests", "protected", "person_only", "never_edit":
+		case "ci_marked_tests", "protected", "person_only", "never_edit", "never_read":
 			list, ok := textList(f.Value)
 			if !ok {
 				return nil, "has a " + f.Key + " that is not a list of texts"
@@ -258,11 +263,14 @@ func readChecks(v any) (c *Checks, why string) {
 				c.Protected = list
 			case "person_only":
 				c.PersonOnly = list
+			case "never_read":
+				c.NeverRead = list
 			default:
 				c.NeverEdit = list
 			}
 		}
 	}
+	// never_read is not among them: a record written before BUG-121's fix has none, and reads it as [] (set above).
 	for _, k := range []string{"ladder_floor", "ladder", "ratchets", "ci_marked_tests", "protected", "person_only", "never_edit", "documents"} {
 		if !seen[k] {
 			return nil, "has no " + k
@@ -383,7 +391,8 @@ func Loosenings(was, now *Checks) []string {
 	for _, l := range []struct {
 		name     string
 		was, now []string
-	}{{"protected", was.Protected, now.Protected}, {"person_only", was.PersonOnly, now.PersonOnly}, {"never_edit", was.NeverEdit, now.NeverEdit}} {
+	}{{"protected", was.Protected, now.Protected}, {"person_only", was.PersonOnly, now.PersonOnly}, {"never_edit", was.NeverEdit, now.NeverEdit},
+		{"never_read", was.NeverRead, now.NeverRead}} {
 		has := map[string]bool{}
 		for _, s := range l.now {
 			has[s] = true

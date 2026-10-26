@@ -908,7 +908,10 @@
               "keep_newest": null
             }
           },
-          "messages": null
+          "messages": null,
+          "never_read": [
+            ".env"
+          ]
         }
       },
       "format1": {
@@ -1047,7 +1050,10 @@
               "keep_newest": null
             }
           },
-          "messages": null
+          "messages": null,
+          "never_read": [
+            ".env"
+          ]
         }
       }
     },

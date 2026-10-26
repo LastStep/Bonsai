@@ -170,7 +170,8 @@ they do not stop there, because Claude Code's deny rules do not reach them, and 
   zsh read in their usual setups (`.bashrc`, `.bash_profile`, `.profile`, `.zshrc`, `.zprofile`); a project whose
   people use another shell, or those files, adds their rules in a pack of its own.
 - **Files a project keeps its own secrets in** (a `.env`, a key in the repository): they are the project's, not the
-  machine's; a project walls them with `never_edit` in `bonsai.yaml` or a deny rule in its own pack.
+  machine's; a project walls them with `never_read` (against reading, best effort for shell reads) and `never_edit`
+  in `bonsai.yaml`, or a deny rule in its own pack.
 
 ## The labels, the protected paths and the block
 

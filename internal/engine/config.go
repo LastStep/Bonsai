@@ -35,6 +35,7 @@ type InitValues struct {
 	Path      string   // the pack's folder inside it, "" for its root
 	Ref       string   // the release tag or 40-character commit to take
 	NeverEdit []string // paths no agent ever changes
+	NeverRead []string // paths no agent reads (BUG-121)
 }
 
 // DefaultProtected is the protected list and person_only list init writes: bonsai.yaml, the lock and Claude Code's
@@ -108,6 +109,7 @@ var Comments = map[string]string{
 	"ci_marked_tests":     `tests allowed to skip in CI only, each by its name in the test output; e.g. ["TestNeedsADisplay"]`,
 	"generated":           "how long generated files are kept, per kind; null keeps all (skill base:generated-files)",
 	"messages":            "when bonsai messages flags a thread; null for Bonsai's defaults (bonsai check --schema bonsai.messages)",
+	"never_read":          `paths no agent reads: deny rules Read(/<path>), best effort for shell reads; e.g. [".env"]`,
 
 	// Set 8: messages' two thresholds, written only when a person sets messages (init writes it null).
 	"messages.unanswered_minutes": "minutes a brief may go with no report once its agent is quiet; null for the default",
@@ -167,6 +169,9 @@ func ConfigYAML(id string, v InitValues, pack *PackData) ([]byte, error) {
 	if w.NeverEdit == nil {
 		w.NeverEdit = []string{}
 	}
+	if w.NeverRead = v.NeverRead; w.NeverRead == nil {
+		w.NeverRead = []string{}
+	}
 	ref := format.WorkspacePack{Source: v.Source, Ref: v.Ref}
 	if v.Path != "" {
 		path := v.Path
@@ -222,6 +227,11 @@ func probeYAML(v InitValues) []byte {
 		never = append(never, q(p))
 	}
 	b.WriteString("never_edit: [" + strings.Join(never, ", ") + "]\n")
+	never = nil
+	for _, p := range v.NeverRead {
+		never = append(never, q(p))
+	}
+	b.WriteString("never_read: [" + strings.Join(never, ", ") + "]\n")
 	return []byte(b.String())
 }
 

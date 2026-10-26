@@ -11,7 +11,9 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 
 **When to use this skill.** Before reading or changing a setting: what a field means, the values it takes, and what changing it does. Every field and every allowed value is also printed by `bonsai check --schema bonsai.workspace`.
 
-**How a change takes effect.** The file is committed and person-only: an agent changes it only while its running task's `bonsai.allows` holds it, which a person grants. A pack's ref, a pack added or taken out, `never_edit` and the folders under `documents` take effect at `bonsai update` (it previews every change; `--yes` writes them). The ladder, its floor, the ratchets and `ci_marked_tests` count as committed at the main checkout's HEAD, and one that sets a check looser (a rung or a floor entry taken out or changed, a rung added, a ratchet lowered) waits for a person's `bonsai update` to record it. A role's limits under `packs[].roles` and the `messages` thresholds change any time: raising a default or a max is never a loosening.
+**How a change takes effect.** The file is committed and person-only: an agent changes it only while its running task's `bonsai.allows` holds it, which a person grants. A pack's ref, a pack added or taken out, `never_edit`, `never_read` and the folders under `documents` take effect at `bonsai update` (it previews every change; `--yes` writes them). The ladder, its floor, the ratchets and `ci_marked_tests` count as committed at the main checkout's HEAD, and one that sets a check looser (a rung or a floor entry taken out or changed, a rung added, a ratchet lowered) waits for a person's `bonsai update` to record it. A role's limits under `packs[].roles` and the `messages` thresholds change any time: raising a default or a max is never a loosening.
+
+**What `never_read` stops, from Claude Code's permissions docs.** Each path becomes the deny rule `Read(/<path>)`, anchored at the project's top folder. It also denies the Edit and Write tools on the path (not NotebookEdit: list the path in `never_edit` as well for that). Claude Code applies it best effort to Grep, Glob, `@` mentions and the shell reads it recognises (`cat`, `head`, `tail`, `sed` and others); it does not stop a command that reads without naming the file (`grep -r` from its folder) or a script that opens the file itself. For shell reads, Claude Code's sandbox (`sandbox.filesystem.denyRead` in its settings) blocks every process: it is off by default, and native Windows has none. Bonsai's guard does not judge reads.
 
 ## Fields
 
@@ -63,6 +65,7 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 | `messages` | When bonsai messages flags a thread; null for Bonsai's defaults (bonsai check --schema bonsai.messages) | a mapping (its fields below), or null | `null` |
 | `messages.unanswered_minutes` | Minutes a brief may go with no report once its agent is quiet; null for the default | a whole number from 0, or null | `120` |
 | `messages.circling_briefs` | Briefs each way one thread may hold before it is flagged circling; null for the default | a whole number from 0, or null | `3` |
+| `never_read` | Paths no agent reads: deny rules Read(/<path>), best effort for shell reads; e.g. [".env"] | a list of text matching `^[^/\\:~()][^\\:()]*$` | `[".env",".env.*","secrets/**"]` |
 
 ## The template
 
@@ -141,6 +144,8 @@ generated:
     keep_newest: null                 # keep only this many of the newest; null: no count rule
 # when bonsai messages flags a thread; null for Bonsai's defaults (bonsai check --schema bonsai.messages)
 messages: null
+# paths no agent reads: deny rules Read(/<path>), best effort for shell reads; e.g. [".env"]
+never_read: []
 ```
 
 ## An example ladder

@@ -29,6 +29,7 @@ bonsai update does; run again with nothing changed, it changes no byte.
 		{Name: "--ref", Value: "R", Help: "the pack's release tag, or a 40-character commit"},
 		{Name: "--path", Value: "P", Help: "the pack's folder inside its repository (default: the repository's top)"},
 		{Name: "--never-edit", Value: "P", Many: true, Help: "a path no agent may ever edit, written as a deny rule; give it once per path"},
+		{Name: "--never-read", Value: "P", Many: true, Help: "a path no agent may read, written as a Read deny rule (best effort for shell reads); once per path"},
 		{Name: "--new-id", Help: "give this project a new workspace id and empty .bonsai/local/: for a copy meant as a new project"},
 		{Name: "--yes", Help: "write without asking"},
 		{Name: "--allow-exec", Help: "consent to what the preview lists under \"Runs code\" (needed as well as --yes; see below)"},

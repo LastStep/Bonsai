@@ -342,6 +342,14 @@ the same way, each a new schema file: an addition.
   - **Go**: the output's type, reader and writer (`format.Now`) and the registry's row.
   - **Dropped before release:** Amendment 1's run `offset` field and the sessions table's offset column (the installed
     release refuses a tenth column); neither ever left a released set.
+- **Set 12** (T-6004, BUG-121, the director's choice of 26 Oct: a new `never_read` list), an addition:
+  - **`bonsai.workspace/1`**: `never_read`, last of its fields and last in `required` (a reader reads a file written
+    before set 12 with none of it as `[]`): paths no agent reads, each written as the deny rule `Read(/<path>)` in
+    `.claude/settings.json`, anchored as `never_edit`'s rules are, with `never_edit`'s pattern. Its description says
+    what Claude Code's docs promise for such a rule: the Edit and Write tools denied too, Grep, Glob, `@` mentions and
+    the shell reads Claude Code recognises best effort, a script that opens the file not at all, and Claude Code's
+    sandbox (`sandbox.filesystem.denyRead`, off by default, none on native Windows) for shell reads.
+  - **Examples:** `workspace.yaml` and `workspace.json` carry one `never_read` path.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,
@@ -349,7 +357,8 @@ the same way, each a new schema file: an addition.
   document kind's name (a key's form, contract §2.4, since it is a key in `bonsai.yaml`); a memory id (`M-` and a
   slug); a fixed word (`error` and finding codes); the session id's first 8 characters; a pack's `source` and `ref`,
   which never start with `-` (git would read an option); a `never_edit` path, which as the deny rule `Edit(/<path>)`
-  (anchored at the project's top folder) holds no parenthesis and does not start with `~`.
+  (anchored at the project's top folder) holds no parenthesis and does not start with `~`, and a `never_read` path
+  (set 12) the same, as `Read(/<path>)`.
 
 ## The examples
 

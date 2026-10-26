@@ -33,6 +33,7 @@ var brokenElsewhere = map[string]string{
 	"ci_marked_tests": "ci_marked_tests: 3\n",
 	"generated":       "generated:\n  log:\n    keep_days: -1\n  sessions:\n    keep_newest: \"all\"\n",
 	"messages":        "messages:\n  unanswered_minutes: \"an hour\"\n  circling_briefs: null\n", // set 8
+	"never_read":      "never_read: [\"a(b)\"]\n",                                                // set 12
 }
 
 func TestGuardReadIsLean(t *testing.T) {

@@ -62,7 +62,7 @@ func readEngineFlags(c *call) *engineFlags {
 	f := &engineFlags{yes: c.has("--yes"), diff: c.has("--diff"), explain: c.has("--explain"), newID: c.has("--new-id"), allowExec: c.has("--allow-exec"),
 		keep: c.all("--keep"), adopt: c.all("--adopt")}
 	f.values = engine.InitValues{Name: c.value("--name"), Source: c.value("--source"), Ref: c.value("--ref"), Path: c.value("--path"),
-		NeverEdit: c.all("--never-edit")}
+		NeverEdit: c.all("--never-edit"), NeverRead: c.all("--never-read")}
 	exec := false
 	for _, g := range c.given {
 		switch g.name {

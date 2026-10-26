@@ -1,10 +1,10 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 11,
+  "set": 12,
   "files": [
     {
       "path": "README.md",
-      "sha256": "13fdecf352ca61da769c0f35b34e135d183fb6b9bb2ca0ddd3c8a87d9fd8a23c"
+      "sha256": "6910ad8f869923fca42a415098186caabeef0efc323e7584855e66a253e90ddc"
     },
     {
       "path": "active-task/answers.json",
@@ -432,15 +432,15 @@
     },
     {
       "path": "examples/workspace.json",
-      "sha256": "dd22e3b65cbcb84fb399f031c00640674a6995d43fde6c2e863f891aa14f6829"
+      "sha256": "773a277211f8d4af720e0a70dcd05a33be94a604dffc3de946061fbbd614ca67"
     },
     {
       "path": "examples/workspace.yaml",
-      "sha256": "9b15be495976cd9afc86cebf87021a9ebaa9191d3434bdd6c71f11b93cb6c312"
+      "sha256": "e6b3be629e8d0f5cca8370b35a22141e35cd3981a032c4865289324457b11346"
     },
     {
       "path": "expect.json",
-      "sha256": "b9f3918a91c207df76b99a17f8ba5e3f68abf488823773081184db1403a8080a"
+      "sha256": "1d86e21d89f51254fc55b7f2ec13ec147e24e3cf4ecfbf06e3716864d18e5384"
     },
     {
       "path": "schemas/agents.schema.json",
@@ -556,7 +556,7 @@
     },
     {
       "path": "schemas/workspace.schema.json",
-      "sha256": "9f228ca269482f9bf20bf0c84a008a8874382a892c6000a80a460ed56170ab14"
+      "sha256": "bf97c446106247b691fe899e2f979a442f352da7009b3bcefecff933d785ddff"
     },
     {
       "path": "trick/message-1/message-address/case.md",

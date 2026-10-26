@@ -314,7 +314,7 @@ func Build(req Request) (_ *Plan, err error) {
 			return nil, fileError(err, "", "bad-config", ExitInput)
 		}
 		if req.Init != nil && !sameValues(cfg, req.Init) {
-			return nil, errorf("values-differ", ExitInput, "edit bonsai.yaml for the change, then run bonsai update; or run bonsai init without --name, --source, --ref, --path and --never-edit",
+			return nil, errorf("values-differ", ExitInput, "edit bonsai.yaml for the change, then run bonsai update; or run bonsai init without --name, --source, --ref, --path, --never-edit and --never-read",
 				"bonsai.yaml is already here and says otherwise than init's values")
 		}
 	case req.Command == "update":
@@ -1156,6 +1156,9 @@ func sameValues(cfg *workspace.Config, v *InitValues) bool {
 	if len(v.NeverEdit) > 0 && strings.Join(v.NeverEdit, "\n") != strings.Join(cfg.NeverEdit, "\n") {
 		return false
 	}
+	if len(v.NeverRead) > 0 && strings.Join(v.NeverRead, "\n") != strings.Join(neverRead(cfg), "\n") {
+		return false
+	}
 	return true
 }
 
@@ -1179,7 +1182,7 @@ func missingValues(v *InitValues) []string {
 // checkValues holds init's values to what bonsai.yaml may say, before anything is fetched.
 func checkValues(v *InitValues) error {
 	next := "bonsai init --help shows each value's form"
-	for _, s := range append([]string{v.Name, v.Source, v.Path, v.Ref}, v.NeverEdit...) {
+	for _, s := range append(append([]string{v.Name, v.Source, v.Path, v.Ref}, v.NeverEdit...), v.NeverRead...) {
 		for _, r := range s {
 			if r < 0x20 || r == 0x7f {
 				return errorf("bad-value", ExitInput, next, "init's values may not hold a control character")
@@ -1189,8 +1192,8 @@ func checkValues(v *InitValues) error {
 	if strings.HasPrefix(v.Source, "-") || strings.HasPrefix(v.Ref, "-") {
 		return errorf("bad-value", ExitInput, next, "--source and --ref may not start with -, which git would read as an option")
 	}
-	// The rest (the name's form, the path, each never_edit path) bonsai.yaml's own reader checks, on the bonsai.yaml
-	// init would write, before it is written.
+	// The rest (the name's form, the path, each never_edit and never_read path) bonsai.yaml's own reader checks, on
+	// the bonsai.yaml init would write, before it is written.
 	probe := probeYAML(*v)
 	if _, err := workspace.ReadConfigFull(probe); err != nil {
 		return fileError(err, "", "bad-value", ExitInput).(*Error).withNext(next)

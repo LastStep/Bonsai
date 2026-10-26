@@ -132,5 +132,8 @@
       "keep_newest": null
     }
   },
-  "messages": null
+  "messages": null,
+  "never_read": [
+    ".env"
+  ]
 }

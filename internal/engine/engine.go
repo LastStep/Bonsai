@@ -45,7 +45,7 @@
 //     and hook record's ten, from recorder.Events, and the two time lines' `bonsai hook now || exit 0`) and
 //     buildLines (each pack's hooks entries, as its pack.yaml gives them); applyLines puts them in the file, one group
 //     per event and matcher, beside the project's own hooks; Bonsai's own deny rules (ownDeny, step 5.3.5) and
-//     never_edit's are written too, but a deny rule runs no code, so --yes alone writes them;
+//     never_edit's and never_read's are written too, but a deny rule runs no code, so --yes alone writes them;
 //   - an old Bonsai line taken out at a first link: settings.go, isOldBonsaiHook and claim;
 //   - what runs code: lineChanges marks a hook line added or changed against the lines the lock last consented to
 //     (SettingsChange.RunsCode); consent.go turns those, the pack files a hook runs (pack.yaml's runs) and a plugin's
