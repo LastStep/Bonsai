@@ -1,6 +1,6 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-25
+updated: 2026-10-26
 updated_by: orchestrator (opus)
 labels: {}
 ---
@@ -259,8 +259,10 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | The floors | `T-5740` | done | `97a04e18`: 5067 and 2341 |
 | 5.7's end verifier | `T-5741` | done | FAIL on F1-F3 (records); F3 fixed, F1 and F2 on the director's words; re-check skipped on their word |
 | Scratch folders declared in bonsai.yaml | `T-5793` | todo | after 1.0 (the director); `~/bonsai-checks/T-5793/notes.md` |
+| **The first existing project linked: ZenGarden-AI-API** (the director, 26 Oct, "A, AI-API first") | `T-6001` | done | linked `d6355c7` in that project, old agent system retired, one fix landed locally (not pushed, the director's); `records/trial-zengarden-ai-api.md`; issues BUG-119 to BUG-130 |
+| Fix what that link found (the director: "a fresh session needs to pick them up and fix") | `T-6004` | todo | for a fresh orchestrator; start when no other task reads `running` (T-6002, T-6003 were `verify` on 26 Oct) |
 
-**Now: after 1.0.** Nothing is running and no task reads `running`. What waits, each on the director's word in turn:
+**Now: after 1.0.** Next for a fresh session: `T-6004` (BUG-119 to BUG-130). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
 scratch folders declared in `bonsai.yaml` (`T-5793`, `todo`); the agent work (the pi brief's B1, B4, B5; the
 envelope `bonsai.hook/1`, B6, B7; `design/pi-contract.md`); a cleaner role (the first piece after 1.0, 19 Oct);
 playbooks, hillclimb and pickup (16 Oct); the general rewording of `workflow`; `bonsai agents` filters, release.yml's

@@ -5,8 +5,8 @@ task: T-6001
 role: orchestrator
 model: opus
 started: 2026-10-26 07:52
-finished: null
-outcome: running
+finished: 2026-10-26 10:35
+outcome: merged
 commits: []
 labels: {}
 ---
@@ -124,6 +124,13 @@ labels: {}
   files only.
 - **10:12** `records/trial-zengarden-ai-api.md` written. T-6001 moved to `blocked`: filing the issues in
   `records/bugs.md` waits for the other session's rows to be committed.
+- **10:33** The director: **"file all these bugs, and then a fresh session needs to pick them up and fix"**. Filed
+  as BUG-119 to BUG-130 (after the other session's uncommitted BUG-115 to BUG-118, so no id clashes). Only these 12
+  rows are committed (staged against `HEAD`'s register); the other session's rows stay uncommitted in the working
+  file, theirs to commit.
+- **10:35** `T-6004` written (`todo`) for a fresh orchestrator: plan, the director's options on the design
+  questions, fixes, verifier, landing. STATE: rows for T-6001 and T-6004, and the next step. T-6001 moved to
+  `done`: every done_when met (records only, nothing to land).
 
 ## What is different now
 
@@ -157,10 +164,6 @@ and what did not.
 None of this session's. `ps -eo pid,etime,cmd` at 10:08 showed the other session's climb of T-6002 and its wait
 loop, and three `claude` processes, none started here.
 
-## What is different now
-
-Nothing yet: the plan is being written.
-
 ## Deviations from the plan
 
 - The three auditors' research ran before the task and this report existed (the director's request read as a
@@ -172,29 +175,14 @@ Nothing yet: the plan is being written.
 
 Not climbed: this task changes records only, in Bonsai's repo.
 
-## What did not work
-
-To be filled.
-
-## Evidence for a human
-
-To be filled.
-
-## Files changed
-
-To be filled.
-
-## Processes left running
-
-To be filled.
-
 ## What it cost
 
 Not known.
 
 ## Left for next time
 
-To be filled.
+`T-6004` (BUG-119 to BUG-130), a fresh session. ZEN's link, on the director's word. ZenGarden-AI-API's push, the
+director's (its T-0005 first, advised).
 
 ## Verifier
 

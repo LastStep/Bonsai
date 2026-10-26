@@ -51,8 +51,8 @@ and the plan's two tasks), `bonsai message --show <id>`; "L<n>" is line n of the
 
 ## Bonsai issues found
 
-For `records/bugs.md`. Ids are given when they are filed: another session holds uncommitted rows there, so the ids
-wait (see the last section).
+Filed in `records/bugs.md` as BUG-119 (issue 1) to BUG-128 (issue 10); issue 11 is BUG-129 (the words) and
+BUG-130 (`git mv` in a loop).
 
 | # | What goes wrong | Where | Known? |
 |---|---|---|---|
@@ -90,6 +90,6 @@ wait (see the last section).
 
 1. **The push of ZenGarden-AI-API's `main` is the director's** (17 commits; it deploys). The project's own T-0005
    (the Dockerfile installs gliner2 unpinned in its first layer) is advised first.
-2. **Filing issues 1 to 11 in `records/bugs.md`** waits for the other session's uncommitted rows there (T-6002 and
-   T-6003, both `verify` at 10:08) to be committed, so the ids do not clash. Then `T-6001` moves to `done`.
+2. **Issues 1 to 11 are filed** as BUG-119 to BUG-130 (10:34, on the director's word). Their fixes are `T-6004`,
+   for a fresh session.
 3. **ZEN's link:** a task of its own, on the director's word, with the lessons above.

@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6001
 title: "Bonsai's first existing project: link ZenGarden-AI-API (the pilot), retire its own agent system, and record the trial"
-status: blocked
+status: done
 lane: null
 done_when:
   - "The plan records/plans/P-T-6001.md was reviewed by a fresh Opus agent and approved by the director"
@@ -12,10 +12,10 @@ done_when:
   - "At least one real task of its own went through the workflow pack end to end there (task, run report, builder in a worktree, a green climb, landed)"
   - "records/trial-zengarden-ai-api.md in Bonsai's repo gives each of the plan's criteria a verdict with evidence, and every bug it found is in records/bugs.md"
 depends_on: []
-blocked_by: "Filing the trial's issues in records/bugs.md waits for the other session's uncommitted rows there (T-6002, T-6003) to be committed"
+blocked_by: null
 created: 2026-10-26
 started: 2026-10-26
-finished: null
+finished: 2026-10-26
 labels:
   bonsai.ladder: []
   bonsai.allows: []
