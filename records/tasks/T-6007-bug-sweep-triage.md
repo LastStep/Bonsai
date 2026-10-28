@@ -6,7 +6,7 @@ status: todo
 lane: null
 done_when:
   - "Every bug in records/bugs.md's Open table at the start of this task (76, BUG-006 to BUG-133) is sorted, with evidence read at main, into one of: already fixed (moved to the Fixed table with its commit), not a bug or no longer real (moved out with the reason), a fix for a batch, a decision for the director, or a later piece the director already named"
-  - "A plan records/plans/P-T-6007.md groups the fixes into batches, each with its own task (T-6009 on; T-6008 is the packs at 1.0.1), its files, its risk and whether it needs a fresh Opus verifier; reviewed by a fresh Opus agent and approved by the director"
+  - "A plan records/plans/P-T-6007.md groups the fixes into batches, each with its own task (T-6010 on; T-6008 is the packs at 1.0.1, T-6009 the pack command; the pack command's own build tasks come first), its files, its risk and whether it needs a fresh Opus verifier; reviewed by a fresh Opus agent and approved by the director"
   - "The director's decisions on the bugs that need one are asked one at a time and recorded in the run report in their words"
 depends_on: []
 blocked_by: null

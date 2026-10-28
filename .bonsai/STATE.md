@@ -9,8 +9,19 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 28 Oct 2026 (an evening session, the director present).
 
-## Now (28 Oct): the packs at 1.0.1 released; the bug sweep triaged, its batches waiting
+## Now (28 Oct): the pack command planned (T-6009), for the next session; the packs at 1.0.1 released; the bug sweep triaged
 
+- **The pack command** (`T-6009`, lane full, `plan`; the director: "to smoothen out the update experience for the
+  packs, i want to implement a new feature in bonsai", from the studio's "Asks for Bonsai", item 1). **The plan
+  `records/plans/P-T-6009.md` is final** (seven review rounds by a fresh Opus verifier, 10 blocking findings fixed,
+  PASS `M-2026-10-28-cf3cfeda`) and **waits on the director's approval**, then the build starts **next session** (their
+  word: "once finialised, then we will start work on this from next session"). `bonsai pack outdated / set / add /
+  remove`, a cached newer tag in plain status, BUG-139; the director's six answers, eight picks (stage 2) and the
+  studio's three (the `--json` preview's fields, `bonsai.packs/1`, `--expect` fingerprints), all in the run report
+  `records/runs/R-2026-10-28-T-6009-pack-command.md`. Two stages, each its own task and landing: stage 1 about 10-15 h,
+  stage 2 about 6-9 h; one Opus builder each and a fresh Opus verifier. The approval also covers four protected texts
+  (spec sections 4 and 7, contract 12 and the changes format's words). Still owed: the studio's reply, one verdict per
+  item (the items and the orchestrator's verdicts are in that run report's 21:15 line). BUG-137 to 140 filed from it.
 - **The packs at 1.0.1** (`T-6008`, `done`; the director: "lets release 1.0.1 for the packs which needs to"):
   landed on `main` at `9098f6fa` (base `version: "1.0.1"`; base's ci skill and the pack template download bonsai
   1.0.1 by its SHA-256; README and docs/install.md install lines at v1.0.1), CI green on the branch (9 of 9, both
@@ -317,9 +328,10 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | Fix what that link found: the rest (BUG-121 to 124, 126, 128, 130) | `T-6004` | done | landed `67062c5b`, CI green |
 | Bonsai 1.0.1's CHANGELOG, tag and release | `T-6006` | done | `v1.0.1` at `3c93a464`, published 26 Oct 15:33 UTC; installed both sides |
 | **The bug sweep: triage and plan** (the director, 28 Oct, "Bug sweep") | `T-6007` | todo | every open bug re-read, the register amended (60 open), the board of eight batches; the plan waits on the director's go |
+| **The pack command** (the director, 28 Oct; the studio's item 1) | `T-6009` | plan | `records/plans/P-T-6009.md` final (PASS after seven rounds); waits on the director's approval; build next session |
 | **The packs at 1.0.1** (the director, 28 Oct) and BUG-134 | `T-6008` | done | landed `9098f6fa`; workflow `cccd8e35`; tags `base-v1.0.1`, `v1.0.1`, its release published |
 
-**Now: after 1.0.** Next: the bug sweep's batches on their go (T-6007; see "Now (28 Oct)" at the top). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
+**Now: after 1.0.** Next: the director's approval of P-T-6009, then its stage 1 build (next session); the bug sweep's batches on their go (T-6007; see "Now (28 Oct)" at the top). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
 scratch folders declared in `bonsai.yaml` (`T-5793`, `todo`); the agent work (the pi brief's B1, B4, B5; the
 envelope `bonsai.hook/1`, B6, B7; `design/pi-contract.md`); a cleaner role (the first piece after 1.0, 19 Oct);
 playbooks, hillclimb and pickup (16 Oct); the general rewording of `workflow`; `bonsai agents` filters, release.yml's
@@ -353,6 +365,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 ## Waiting on the director
 
 - **Now:** theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
+- **Now:** approve P-T-6009 (the pack command), so its build starts next session.
 - **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
   059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
