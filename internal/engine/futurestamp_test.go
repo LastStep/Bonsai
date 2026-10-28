@@ -12,6 +12,10 @@ import (
 // task's day after the UTC today; 5 minutes ahead, the past, and today are not; a report in format 0 is judged too.
 func TestFutureStamp(t *testing.T) {
 	e := setup(t)
+	// init stamps the fixture's STATE with `today`: the test's own day, not the calendar's (BUG-134).
+	wasToday := today
+	today = func() string { return "2026-10-26" }
+	t.Cleanup(func() { today = wasToday })
 	root := testpack.Project(t, e.tmp, "stamps")
 	e.link(t, root, e.pack.A)
 	at := time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC)
