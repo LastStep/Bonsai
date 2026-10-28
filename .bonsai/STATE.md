@@ -1,15 +1,40 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-26
+updated: 2026-10-28
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 26 Oct 2026 (a day session, the director present).
+Rewritten, never appended (`base:state`). Last rewritten 28 Oct 2026 (an evening session, the director present).
 
-## Now (26 Oct): Bonsai 1.0.1 is released and installed
+## Now (28 Oct): the packs at 1.0.1, waiting on the director's tags; the bug sweep triaged, its batches waiting
+
+- **The packs at 1.0.1** (`T-6008`, `verify`; the director: "lets release 1.0.1 for the packs which needs to"):
+  landed on `main` at `9098f6fa` (base `version: "1.0.1"`; base's ci skill and the pack template download bonsai
+  1.0.1 by its SHA-256; README and docs/install.md install lines at v1.0.1), CI green on the branch (9 of 9, both
+  windows jobs). With it **BUG-134**: `internal/engine` TestFutureStamp was red on every climb and CI run from 27 Oct
+  (a date in the test), fixed in `bba51960`. The workflow repo's `main` at `cccd8e35` (BUG-127, BUG-128 and the
+  pack at 1.0.1), pushed, CI 4 of 4. **Next: the director's two tags** (`base-v1.0.1` on `9098f6fa`, the workflow
+  repo's `v1.0.1` on `cccd8e35`), then the workflow release read back and T-6008 `done`. Then each project's move
+  is the director's step: two `ref:` lines in its `bonsai.yaml`, `bonsai update` (preview) then `--yes`, `bonsai
+  check`, a commit, `/reload-plugins` (the studio `~/Servers/Trinetra-Game-Studio` and ZenGarden-AI-API pin
+  `base-v1.0.0` and `v1.0.0`; Bonsai's own repo pins older commits, base from 16 Oct: its move waits on their word).
+- **The bug sweep** (`T-6007`, `todo` until its plan; the director: "Bug sweep", 28 Oct): every one of the 76 open
+  bugs read at `main` by an auditor (Sonnet, four briefs) and 30 of them blind by a fresh verifier (Opus); two run
+  natively on Windows. On the director's rule ("if you are confident that something isnt a bug anymore, then remove
+  it"), only high confidence left Open: 8 to Fixed, 10 to "Known, not bugs"; 28 rows reworded; BUG-135 and 136 filed.
+  **60 open.** The board (run report `records/runs/R-2026-10-28-T-6007-bug-sweep.md`): eight fix batches, 34 bugs,
+  about 12-18 h (A flaky tests 131, 132; B the log and hours table 034, 044, 095, 096, 110, 111; C words 009, 019,
+  087, 099, 101, 114, 136; D formats set 13 017, 082; E CI and release 008, 081, 102; F the guard and hook lines
+  **018** (a 0-byte bonsai lets every hook line pass: a fail-open), 011, 108; G the ladder and stop gate 048, 049,
+  092, 094; H link, update, sessions 016, 056, 093, 107, 109, 117, 118). **No batch starts before the director's
+  go**; then T-6007's plan (in `records/plans/`, by its id), a fresh Opus review, their approval.
+- **The director's earlier words today:** "show me a board when you have clubbed the bugs together. dont start any
+  work yet"; the status board as a table in the session (their 19 Oct rule).
+
+## 26 Oct: Bonsai 1.0.1 released and installed
 
 - **Every bug the first existing project's link found (T-6001) is fixed and landed**, CI green on every job:
   - **T-6002, T-6003** (session 1, landed 11:15 at `df549bbd`): a Git LFS checkout climbs clean (BUG-054); BUG-091,
@@ -25,9 +50,9 @@ Rewritten, never appended (`base:state`). Last rewritten 26 Oct 2026 (a day sess
   read back (six checksums OK). Installed by the director: WSL `/usr/local/bin/bonsai` `f40f01f8...96f8`, Windows
   `C:\Program Files\Bonsai\bonsai.exe` `16a60c04...1df2`, both `bonsai 1.0.1 (commit 3c93a4640b84)`. The way back:
   1.0.0 in `~/bonsai-checks/prerelease/previous/` (its INSTALL.md), rc.3 in `older-rc3/`.
-- **The workflow repo** (`~/bonsai-checks/bonsai-workflow`): `11f78db` (BUG-127), `8b3166c`, `5e3b92e` (BUG-128) are
-  local, for the director's push and tag.
-- **Open from today:** BUG-131 (timing tests red under load) and BUG-132 (a ladder test red when WSL's clock steps
+- **The workflow repo** (`~/bonsai-checks/bonsai-workflow`): `11f78db` (BUG-127), `8b3166c`, `5e3b92e` (BUG-128),
+  pushed on 28 Oct with the pack at 1.0.1 (above).
+- **Open from that day:** BUG-131 (timing tests red under load) and BUG-132 (a ladder test red when WSL's clock steps
   back): the director's word of 26 Oct, 11:23, still holds ("for the timing failures, i think we can assume them
   green, especially when the specified tests havent been changed"): a climb red only on such a test, unchanged by the
   branch, counts as green for a landing, CI green as before, the run report quoting it. BUG-133 (loop forms the
@@ -246,11 +271,11 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 ## GitHub
 
 - `LastStep/Bonsai`: `main` the only branch of ours (a piece's branch lives on GitHub only until it lands; a
-  dependabot branch is GitHub's). At `57fa4f97` and the records commit after it, CI green. Tags: `v1.0.0-rc.1` (on `73919ddc`; a published pre-release, immutable) and
-  the old `v0.4.3`. `release.yml` **active**, on version tags only, publishing inside the `release` environment once the
+  dependabot branch is GitHub's). At `9098f6fa` (T-6008, the packs at 1.0.1; CI green on its branch, main's run watched) and the records commit after it. Tags: `v1.0.1` (on `3c93a464`, GitHub's latest), `v1.0.0`, the three rcs, `base-v1.0.0` (on `4662da5e`) and
+  the old `v0.4.3`; `base-v1.0.1` waits on the director (on `9098f6fa`). `release.yml` **active**, on version tags only, publishing inside the `release` environment once the
   director approves; immutable releases on; rulesets `main-protection` and `pack-tags` (base-v*); no secret.
 - `LastStep/bonsai-workflow`: the ruleset `release-tags` (v*) and immutable releases on (batch 1).
-- `LastStep/bonsai-workflow`: **public**, `main` at `612bc333` (no studio walls, 22 Oct), CI green on both sides; this repo pins it there.
+- `LastStep/bonsai-workflow`: **public**, `main` at `cccd8e35` (28 Oct: BUG-127, BUG-128, the pack at 1.0.1), CI 4 of 4; tag `v1.0.0` on `0290f701`, `v1.0.1` waits on the director. This repo pins `1a9f6b4e` (rc.3's), its move the director's.
 - `LastStep/bonsai-test-pack`: public, `main` at H (`19e3ca5`).
 - The old website stays on GitHub Pages until the director turns Pages off.
 
@@ -288,10 +313,13 @@ by side)", plus **5.6's about 187 minutes** (207 if T-5696's run `09b28f0b` was 
 | **The first existing project linked: ZenGarden-AI-API** (the director, 26 Oct, "A, AI-API first") | `T-6001` | done | linked `d6355c7` in that project, old agent system retired, one fix landed locally (not pushed, the director's); `records/trial-zengarden-ai-api.md`; issues BUG-119 to BUG-130 |
 | Git LFS checkouts climb clean (the studio's B-053, BUG-054) | `T-6002` | done | verifier PASS; landed `df549bbd` with T-6003, CI green |
 | Five small open bugs clubbed with it (BUG-091, 112, 113, 114's half, 022) | `T-6003` | done | in T-6002's batch |
-| The first link's small fixes (BUG-119, 120, 125, 129, 127), split from T-6004 | `T-6005` | done | landed `beff8bee`; workflow repo `11f78db` unpushed (the director's) |
-| Fix what that link found: the rest (BUG-121 to 124, 126, 128, 130) | `T-6004` | todo | **for a fresh session, now**, beside session 1 (see "Now (26 Oct)") |
+| The first link's small fixes (BUG-119, 120, 125, 129, 127), split from T-6004 | `T-6005` | done | landed `beff8bee`; workflow repo `11f78db`, pushed 28 Oct |
+| Fix what that link found: the rest (BUG-121 to 124, 126, 128, 130) | `T-6004` | done | landed `67062c5b`, CI green |
+| Bonsai 1.0.1's CHANGELOG, tag and release | `T-6006` | done | `v1.0.1` at `3c93a464`, published 26 Oct 15:33 UTC; installed both sides |
+| **The bug sweep: triage and plan** (the director, 28 Oct, "Bug sweep") | `T-6007` | todo | every open bug re-read, the register amended (60 open), the board of eight batches; the plan waits on the director's go |
+| **The packs at 1.0.1** (the director, 28 Oct) and BUG-134 | `T-6008` | verify | landed `9098f6fa`; workflow `cccd8e35`; waits on the director's two tags |
 
-**Now: after 1.0.** Next for a fresh session: `T-6004` (see "Now (26 Oct)" at the top). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
+**Now: after 1.0.** Next: the director's pack tags (T-6008), then the bug sweep's batches on their go (T-6007; see "Now (28 Oct)" at the top). ZEN's link waits on the director's word, with the lessons in `records/trial-zengarden-ai-api.md`. What else waits, each on the director's word in turn:
 scratch folders declared in `bonsai.yaml` (`T-5793`, `todo`); the agent work (the pi brief's B1, B4, B5; the
 envelope `bonsai.hook/1`, B6, B7; `design/pi-contract.md`); a cleaner role (the first piece after 1.0, 19 Oct);
 playbooks, hillclimb and pickup (16 Oct); the general rewording of `workflow`; `bonsai agents` filters, release.yml's
@@ -324,7 +352,10 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Waiting on the director
 
-- **Now:** what comes after 1.0, and in what order (the list under "Now: after 1.0" above).
+- **Now:** the two pack tags, `base-v1.0.1` on `9098f6fa` (Bonsai) and `v1.0.1` on `cccd8e35` (the workflow repo);
+  then, theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
+- **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
+  059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
 - **Whenever they like, now 1.0 is installed:** film again whatever changed on screen (`sh docs/demos/clips/film.sh
   ~/bonsai-clips <clip>`, then `sh docs/demos/edit.sh`; T-5710 item 12, clip 10 among them, BUG-098).
