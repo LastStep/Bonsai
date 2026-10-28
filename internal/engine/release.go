@@ -307,7 +307,7 @@ func (rr ReleaseRead) State(home, version string) *format.StatusRelease {
 // newer, logged in (no login exits 4, the wrong origin 1). It comes before unpacking because the installer is inside
 // the archive and runs as root or administrator, so nothing from the archive runs before its origin is checked.
 // Anything else from either, the person stops. The installer sits at the archive's top beside the binary (5.7 puts it
-// there). docs/install.md shows these lines for 1.0.0, held to this table by internal/selfcheck's test.
+// there). docs/install.md shows these lines for 1.0.1, held to this table by internal/selfcheck's test.
 var releaseLines = struct{ linux, windows []string }{
 	linux: []string{
 		`cd "$(mktemp -d)"`,

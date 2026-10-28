@@ -1,6 +1,6 @@
 # Installing Bonsai
 
-<!-- docs/install.md: how a person installs Bonsai 1.0.0 on each side, what each line proves, what to do when one
+<!-- docs/install.md: how a person installs Bonsai 1.0.1 on each side, what each line proves, what to do when one
 fails, the way out, and how to check an installed copy. The two install blocks below are held byte for byte to the one
 table Bonsai writes its install lines from (internal/engine/release.go, releaseLines) by the test
 internal/selfcheck/install_test.go: change a line there and here in the same commit. For a newer release, Bonsai
@@ -28,16 +28,16 @@ In a terminal, one line at a time:
 
 ```bash
 cd "$(mktemp -d)"
-curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/bonsai_1.0.0_linux_amd64.tar.gz
-curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/checksums.txt
+curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/bonsai_1.0.1_linux_amd64.tar.gz
+curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/checksums.txt
 sha256sum -c --ignore-missing checksums.txt
-gh attestation verify bonsai_1.0.0_linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0 --deny-self-hosted-runners
-tar -xzf bonsai_1.0.0_linux_amd64.tar.gz
+gh attestation verify bonsai_1.0.1_linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1 --deny-self-hosted-runners
+tar -xzf bonsai_1.0.1_linux_amd64.tar.gz
 sh install.sh
 ```
 
 The fourth line must print `OK`; the fifth, `Verification succeeded`. The last ends with Bonsai's fingerprint, the
-`bonsai` programs the PATH finds (`/usr/local/bin/bonsai` alone) and `bonsai 1.0.0 (commit ...)`. On an arm64
+`bonsai` programs the PATH finds (`/usr/local/bin/bonsai` alone) and `bonsai 1.0.1 (commit ...)`. On an arm64
 machine, write `arm64` for `amd64` in the archive's name, on every line that names it.
 
 ## Install on Windows
@@ -46,18 +46,18 @@ In a normal PowerShell (not as administrator), one line at a time:
 
 ```powershell
 cd (New-Item -ItemType Directory (Join-Path $env:TEMP ("bonsai-" + [guid]::NewGuid())))
-curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/bonsai_1.0.0_windows_amd64.zip
-curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.0/checksums.txt
-(Get-FileHash bonsai_1.0.0_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.0_windows_amd64.zip).Line -split ' ')[0]
-gh attestation verify bonsai_1.0.0_windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0 --deny-self-hosted-runners
-Expand-Archive bonsai_1.0.0_windows_amd64.zip -DestinationPath . -Force
+curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/bonsai_1.0.1_windows_amd64.zip
+curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.1/checksums.txt
+(Get-FileHash bonsai_1.0.1_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.1_windows_amd64.zip).Line -split ' ')[0]
+gh attestation verify bonsai_1.0.1_windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1 --deny-self-hosted-runners
+Expand-Archive bonsai_1.0.1_windows_amd64.zip -DestinationPath . -Force
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 The fourth line must print `True`; the fifth, `Verification succeeded` (PowerShell may show a stray character before
 it). The last line brings one Windows question, "Do you want to allow this app to make changes to your device?":
 choose Yes. It ends with the fingerprint, the `bonsai` programs Windows finds (`C:\Program Files\Bonsai\bonsai.exe`
-first) and `bonsai 1.0.0 (commit ...)`. On an arm64 machine, write `arm64` for `amd64` in the archive's name.
+first) and `bonsai 1.0.1 (commit ...)`. On an arm64 machine, write `arm64` for `amd64` in the archive's name.
 
 ## What each line proves
 
@@ -68,7 +68,7 @@ first) and `bonsai 1.0.0 (commit ...)`. On an arm64 machine, write `arm64` for `
 4. The archive is the one the release lists: its SHA-256 matches the line for it in `checksums.txt`. Alone, this
    proves the two files agree, not who made them.
 5. The archive was built by Bonsai's release workflow (`.github/workflows/release.yml`) in its repository,
-   `LastStep/Bonsai`, for this version's tag (`refs/tags/v1.0.0`), on GitHub's own machines (with
+   `LastStep/Bonsai`, for this version's tag (`refs/tags/v1.0.1`), on GitHub's own machines (with
    `--deny-self-hosted-runners`, a record made on anyone's own machine fails). It runs before unpacking because the
    installer is inside the archive and runs with administrator rights or your password: nothing from the archive runs
    before its origin is checked.

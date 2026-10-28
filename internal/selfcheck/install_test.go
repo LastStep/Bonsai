@@ -2,7 +2,7 @@ package selfcheck
 
 // docs/install.md held to the install lines' one table (plan-5 note 5.7.3, 3): the page's first bash block under
 // installHeads' Linux heading and its first powershell block under the Windows one, read as committed (LF), are the
-// lines engine.ReleaseLines writes for 1.0.0 on amd64, byte for byte, and the installed-copy checks carry the table's
+// lines engine.ReleaseLines writes for 1.0.1 on amd64, byte for byte, and the installed-copy checks carry the table's
 // origin words. A line changed on either side, here or in the table, fails here naming the page's line.
 
 import (
@@ -16,7 +16,7 @@ import (
 // installDoc is the page, relative to the module root; installVersion the version its blocks show.
 const (
 	installDoc     = "docs/install.md"
-	installVersion = "1.0.0"
+	installVersion = "1.0.1"
 )
 
 // installHeads are the two headings whose first fenced block is a side's install lines, with that block's language.
@@ -114,10 +114,10 @@ func TestInstallDocCatchesDrift(t *testing.T) {
 		return strings.Replace(page, old, new, 1)
 	}
 	cases := map[string]struct{ page, want string }{
-		"the linux tag changed": {swap("linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0",
-			"linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1"), "the linux block's line 5"},
-		"the windows check loosened": {swap("windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0 --deny-self-hosted-runners",
-			"windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.0"), "the windows block's line 5"},
+		"the linux tag changed": {swap("linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1",
+			"linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.2"), "the linux block's line 5"},
+		"the windows check loosened": {swap("windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1 --deny-self-hosted-runners",
+			"windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.1"), "the windows block's line 5"},
 		"the fingerprint line dropped": {swap("sha256sum -c --ignore-missing checksums.txt\n", ""), "the linux block's line 4"},
 		"a line added":                 {swap("sh install.sh\n```", "sh install.sh\necho done\n```"), "a line the table does not have: echo done"},
 		"a block's language":           {swap("```powershell\ncd (New-Item", "```ps1\ncd (New-Item"), "is not a ```powershell block"},
