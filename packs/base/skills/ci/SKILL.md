@@ -51,9 +51,9 @@ permissions:                                 # what the job's token may do
 env:                                         # the pins the job reads
   # BONSAI_VERSION, BONSAI_FILE and BONSAI_SHA256: the Bonsai release the project uses, its Linux archive's name and
   # that file's SHA-256 line in the release's checksums.txt (64 lower-case hex characters). Move all three together.
-  BONSAI_VERSION: "1.0.0"
-  BONSAI_FILE: "bonsai_1.0.0_linux_amd64.tar.gz"
-  BONSAI_SHA256: "5277cad9e36d4b1c520ea3b9be7a698965fa4757a0d4aa9a803b71c2469285e1"
+  BONSAI_VERSION: "1.0.1"
+  BONSAI_FILE: "bonsai_1.0.1_linux_amd64.tar.gz"
+  BONSAI_SHA256: "692a8d0649e2a4c5edf7087e1160a3a304a6393c2356a3594c1234ab5272a700"
 
 jobs:                                        # one job
   check:                                     # bonsai check, on Linux

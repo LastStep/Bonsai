@@ -21,7 +21,7 @@ env:                                         # the pins every job reads
   # after the archive's SHA-256 matches the one written beside it (the check job's matrix, below). To move it: set the
   # new version here, then set each matrix entry's bonsai_file and bonsai_sha256 to that release's archive names and
   # their lines in the release's checksums.txt (the release page lists it); move all three together.
-  BONSAI_VERSION: "1.0.0"
+  BONSAI_VERSION: "1.0.1"
   CLAUDE_CODE_VERSION: "2.1.300"             # the Claude Code whose claude plugin validate checks the pack
 
 jobs:                                        # check, validate, then release
@@ -30,12 +30,12 @@ jobs:                                        # check, validate, then release
       matrix:                                # the systems it runs on, each with its bonsai archive
         include:                             # one entry per system
           - os: ubuntu-latest                # Linux
-            bonsai_file: bonsai_1.0.0_linux_amd64.tar.gz   # the release archive's file name, from checksums.txt
-            bonsai_sha256: "5277cad9e36d4b1c520ea3b9be7a698965fa4757a0d4aa9a803b71c2469285e1"   # its SHA-256 line there
+            bonsai_file: bonsai_1.0.1_linux_amd64.tar.gz   # the release archive's file name, from checksums.txt
+            bonsai_sha256: "692a8d0649e2a4c5edf7087e1160a3a304a6393c2356a3594c1234ab5272a700"   # its SHA-256 line there
             bonsai_exe: ""                   # the program's suffix: none on Linux
           - os: windows-latest               # Windows (its Git Bash)
-            bonsai_file: bonsai_1.0.0_windows_amd64.zip    # the release archive's file name, from checksums.txt
-            bonsai_sha256: "465f1a4e8b2004c7556bcf30f5c19b52fcb1daf550577c626806e029fe20413a"   # its SHA-256 line there
+            bonsai_file: bonsai_1.0.1_windows_amd64.zip    # the release archive's file name, from checksums.txt
+            bonsai_sha256: "72b4a936203ef0909a44567aeee353ae6e376171961fcc6577e9478ac98c1fac"   # its SHA-256 line there
             bonsai_exe: ".exe"               # the program's suffix on Windows
     runs-on: ${{ matrix.os }}                # this run's system
     defaults:                                # for every step of the job
