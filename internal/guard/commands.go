@@ -13,6 +13,11 @@ package guard
 //     grant; in command mode only a person's tap puts a person-only path there, tripwire.go).
 //   - bonsai init, update and unlink are judged as one edit of bonsai.yaml and .bonsai/lock.json at the top of the
 //     checkout they run in (may), so an agent's update needs a grant of both, as any edit of them does.
+//   - bonsai pack is judged per subcommand (T-6009, the director's answers of 28 Oct): pack outdated, and any pack line
+//     with no --yes (a preview, as init's and update's), pass for every role; pack set and pack add with --yes are
+//     judged as update is, an edit of bonsai.yaml and the lock, so a grant opens them; pack remove with --yes is a
+//     person's command that no grant opens (ownPerson: it always takes a pack's protections away). The command holds
+//     the same line itself, and refuses any plan that takes protections away in an agent's session (cmd/bonsai).
 //   - Every other word is allowed (bonsai-command), and so is a call that writes nothing whatever its word (T-5505's
 //     findings, 16 Oct: bonsai message --help and a preview of bonsai update were refused as writes): one holding
 //     --help or -h among its words, which prints the word's help and runs nothing (runWord stops at it, and no flag
@@ -51,15 +56,53 @@ const personNext = "a person runs this command in a terminal of their own, not o
 
 // ownHome are Bonsai's commands that write this machine's settings or label files, each with the subcommands that do
 // (home-command); ownWrites are those judged as an edit of bonsai.yaml and .bonsai/lock.json: init and update, which
-// take the consent flag --allow-exec, and unlink, which takes the guard out. These lists' one home: ownCommand reads
-// a bonsai call by them, and ownOpen a call whose last words xargs gives.
+// take the consent flag --allow-exec, and unlink, which takes the guard out; ownPackWrites are pack's subcommands
+// judged the same way once given --yes; ownPerson are the subcommands that are a person's command with --yes, which
+// no grant opens (person-command). These lists' one home: ownCommand reads a bonsai call by them, ownOpen a call whose
+// last words xargs gives, and delHoldsBonsai a line the check cannot split.
 var (
 	ownHome = []struct {
 		word string
 		subs []string
 	}{{"settings", []string{"set"}}, {"labels", []string{"attach", "detach"}}}
-	ownWrites = []string{"init", "update", "unlink"}
+	ownWrites     = []string{"init", "update", "unlink"}
+	ownPackWrites = []string{"set", "add", "remove"}
+	ownPerson     = []struct {
+		word string
+		subs []string
+	}{{"pack", []string{"remove"}}}
 )
+
+// packSub gives a bonsai pack call's subcommand, lower case, "" for none: the first word after pack that is not an
+// option.
+func packSub(args []string) string {
+	_, k := ownWord(args)
+	if k < 0 {
+		return ""
+	}
+	sub, _ := ownWord(args[k+1:])
+	return sub
+}
+
+// personSub reports a subcommand ownPerson lists for word.
+func personSub(word, sub string) bool {
+	for _, p := range ownPerson {
+		if p.word == word && listHas(p.subs, sub) {
+			return true
+		}
+	}
+	return false
+}
+
+// yesArg reports --yes in any form among a call's words (as preview reads it).
+func yesArg(args []string) bool {
+	for _, a := range args {
+		if strings.HasPrefix(strings.ToLower(strings.TrimLeft(a, "-")), "yes") && strings.HasPrefix(a, "-") {
+			return true
+		}
+	}
+	return false
+}
 
 // ownWord gives a bonsai call's command word, lower case (the first of its words after the program that is not an
 // option), and its index in args; "" and -1 for none.
@@ -93,6 +136,10 @@ func ownOpen(argv []string) string {
 		return "with no command word of its own"
 	case listHas(ownWrites, word):
 		return "with the command " + oneLine(word) + ", which its input may give --allow-exec"
+	case word == "pack":
+		if sub := packSub(argv[1:]); sub == "" || listHas(ownPackWrites, sub) {
+			return "with the command pack and no subcommand, or one that writes, which its input may give --yes"
+		}
 	case ownSubs(word) != nil:
 		if sub, _ := ownWord(argv[2+k:]); sub == "" {
 			return "with the command " + oneLine(word) + " and no subcommand of its own"
@@ -139,11 +186,22 @@ func (j *judge) ownCommand(dir string, argv []string, literal bool) Decision {
 			return d
 		}
 	}
+	sub := ""
+	if word == "pack" {
+		sub = packSub(args)
+		shown = strings.TrimSpace("bonsai pack " + oneLine(sub) + strings.TrimPrefix(shown, "bonsai pack"))
+	}
+	packWrites := word == "pack" && listHas(ownPackWrites, sub) && (yesArg(args) || !literal)
 	switch subs := ownSubs(word); {
 	case subs != nil && later(subs...):
 		return deny(RuleHomeCommand, fmt.Sprintf("%s refused: it writes this machine's settings or label files in Bonsai's "+
 			"home, which never change from an agent's session", shown), personNext)
-	case !listHas(ownWrites, word) && !allowExec(args):
+	case personSub(word, sub) && (yesArg(args) || !literal):
+		d := deny(RulePersonCommand, fmt.Sprintf("%s --yes refused: it takes a pack and its protections out of the project, "+
+			"a person's command that no task's grant opens; its preview (no --yes) is anyone's", shown), personNext)
+		d.Target = target(j.session, []string{filepath.Join(checkoutTop(dir), workspace.ConfigFile)})
+		return d
+	case !listHas(ownWrites, word) && !packWrites && !allowExec(args):
 		return allow(RuleBonsaiCommand, "")
 	}
 	top := checkoutTop(dir)
@@ -160,11 +218,15 @@ func (j *judge) ownCommand(dir string, argv []string, literal bool) Decision {
 			return d
 		}
 	}
-	if listHas(ownWrites, word) {
+	if listHas(ownWrites, word) || packWrites {
+		tool := "bonsai " + word
+		if packWrites {
+			tool += " " + sub
+		}
 		for _, rel := range []string{workspace.ConfigFile, workspace.LockFile} {
-			d, _ := j.may(change{tool: "bonsai " + word, path: filepath.Join(top, filepath.FromSlash(rel)), dir: top, base: top})
+			d, _ := j.may(change{tool: tool, path: filepath.Join(top, filepath.FromSlash(rel)), dir: top, base: top})
 			if !d.Allow {
-				d.Why = "bonsai " + word + " writes bonsai.yaml and .bonsai/lock.json, so it is judged as an edit of them: " + d.Why
+				d.Why = tool + " writes bonsai.yaml and .bonsai/lock.json, so it is judged as an edit of them: " + d.Why
 				return d
 			}
 		}
@@ -190,15 +252,13 @@ func helpArg(args []string) bool {
 // preview and writes neither bonsai.yaml nor the lock (a line that changes the variable is a person's step, judged
 // apart: shell_env.go).
 func (j *judge) preview(word string, args []string, literal bool) bool {
-	if word != "init" && word != "update" || !literal || allowExec(args) || j.getenv == nil || j.getenv(ChildSessionEnv) == "" {
+	if word == "pack" && literal && packSub(args) == "outdated" && !allowExec(args) {
+		return true // pack outdated writes only the home's cache of the packs' tags, never a project file
+	}
+	if word != "init" && word != "update" && word != "pack" || !literal || allowExec(args) || j.getenv == nil || j.getenv(ChildSessionEnv) == "" {
 		return false
 	}
-	for _, a := range args {
-		if strings.HasPrefix(strings.ToLower(strings.TrimLeft(a, "-")), "yes") && strings.HasPrefix(a, "-") {
-			return false
-		}
-	}
-	return true
+	return !yesArg(args)
 }
 
 // roleCommand judges a bonsai call for the roles' rules (rolecmds.go): bonsai message's --from and --kind brief; bonsai
@@ -209,7 +269,8 @@ func (j *judge) roleCommand(rs *shellRole, word string, argv []string) Decision 
 	switch {
 	case word == "message":
 		return rs.messageCall(argv)
-	case rs.changesNothing() && (listHas(ownWrites, word) || word == "check" && hasArg(args, "--write")):
+	case rs.changesNothing() && (listHas(ownWrites, word) || word == "check" && hasArg(args, "--write") ||
+		word == "pack" && listHas(ownPackWrites, packSub(args))):
 		return deny(RuleRoleWritesNothing, fmt.Sprintf("bonsai %s refused: it writes the project's files, and %s changes nothing "+
 			"(its role's writes: false)", oneLine(word), rs.w.shown()), "put what you would change in your report")
 	case word == "ladder" && rs.w.counted:

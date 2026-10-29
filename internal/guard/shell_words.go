@@ -2012,8 +2012,9 @@ func delCmdRen(r *delRun, x delExec, words []shWord) []delAct {
 }
 
 // delHoldsBonsai gives the kind of refused bonsai call a text the check cannot split holds, "" for none: "home" for
-// bonsai settings set and bonsai labels attach or detach (always refused), "person" for bonsai with --allow-exec or
-// unlink (a person's step). Words are cut and matched as delHoldsWord cuts them.
+// bonsai settings set and bonsai labels attach or detach (always refused), "person-only" for bonsai pack remove (a
+// person's command no grant opens: commands.go's ownPerson), "person" for bonsai with --allow-exec or unlink (a
+// person's step). Words are cut and matched as delHoldsWord cuts them.
 func delHoldsBonsai(s string) string {
 	low := strings.ToLower(s)
 	toks := strings.FieldsFunc(low, func(c rune) bool {
@@ -2031,6 +2032,8 @@ func delHoldsBonsai(s string) string {
 		switch {
 		case t == "settings" && k+1 < len(toks) && toks[k+1] == "set", t == "labels":
 			return "home"
+		case k+1 < len(toks) && personSub(t, toks[k+1]):
+			return "person-only"
 		case t == "unlink" || strings.HasPrefix(strings.TrimLeft(t, "-"), "allow-exec") && strings.HasPrefix(t, "-"):
 			kind = "person"
 		}
@@ -2044,6 +2047,11 @@ func (r *delRun) unsplitBonsai(kind string) {
 		r.refuse(deny(RuleHomeCommand, r.tool+" refused: the command line holds bonsai settings set or bonsai labels, "+
 			"and the check cannot split it; those write this machine's settings or label files in Bonsai's home, which "+
 			"never change from an agent's session", personNext))
+		return
+	}
+	if kind == "person-only" {
+		r.refuse(deny(RulePersonCommand, r.tool+" refused: the command line holds bonsai pack remove, and the check cannot "+
+			"split it; taking a pack out is a person's command that no task's grant opens", personNext))
 		return
 	}
 	r.envStep("holds a bonsai call with --allow-exec or unlink that the check cannot split")

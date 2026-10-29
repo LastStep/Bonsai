@@ -157,10 +157,10 @@ var Rules = []Rule{
 	{RulePersonCommand, false, "bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes an agent marker (CLAUDE_CODE_CHILD_SESSION, " +
 		"AI_AGENT or another of the list the error code person-command names): " +
 		"a person's commands, allowed to an agent only in a project in command mode under a running task's grant of " +
-		"bonsai.yaml and .bonsai/lock.json"},
+		"bonsai.yaml and .bonsai/lock.json; and bonsai pack remove --yes, which no grant opens"},
 	{RuleHomeCommand, false, "bonsai settings set, bonsai labels attach or detach: never in an agent session"},
-	{RuleBonsaiCommand, true, "a bonsai command an agent may run: init and update judged as an edit of bonsai.yaml and the lock, " +
-		"every other word free"},
+	{RuleBonsaiCommand, true, "a bonsai command an agent may run: init, update, and pack set and pack add with --yes judged as " +
+		"an edit of bonsai.yaml and the lock, every other word free (a pack line with no --yes, and pack outdated, among them)"},
 	{RuleShell, true, "a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, " +
 		"no bonsai command, every agent marker left as it is"},
 	{RuleOtherTool, true, "a tool other than the file tools and the shells"},
