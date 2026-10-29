@@ -598,7 +598,7 @@ func sameShape(t *testing.T, copyOf, home schema.Object, where string) {
 func TestCopiesAreTheirHomes(t *testing.T) {
 	errorSchema := loadSchema(t, "error")
 	next := schemaAt(t, errorSchema, "error", "properties", "next")
-	for _, name := range []string{"status", "check", "changes", "asks", "logs", "climb", "messages", "agents", "settings", "attach", "line", "now"} {
+	for _, name := range []string{"status", "check", "changes", "asks", "logs", "climb", "messages", "agents", "settings", "attach", "line", "now", "packs"} {
 		sameShape(t, schemaAt(t, loadSchema(t, name), name, "properties", "error"), errorSchema, name+"'s error")
 	}
 	// The workspace object of the set 6 to 8 outputs is changes', their home (the schema checker has no $ref).

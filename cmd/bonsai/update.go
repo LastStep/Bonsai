@@ -49,6 +49,7 @@ A preview removes nothing.
 		{Name: "--explain", Help: "list every settings line in the preview with where it comes from and why (else they are counted)"},
 		{Name: "--keep", Value: "P", Many: true, Help: "settle a conflict on P by keeping your edit (the file becomes kind kept; a later pack change to it\nis a conflict again)"},
 		{Name: "--adopt", Value: "P", Many: true, Help: "settle a conflict on P by taking the pack's copy; yours is saved in the Bonsai home's cache"},
+		{Name: "--expect", Value: "FP", Help: "write only when the plan's fingerprint is FP, the one a --json preview printed (else plan-changed,\nnothing written); it opens no gate"},
 		{Name: "--json", Help: "print the changes document (bonsai.changes/1) instead of text; never asks"},
 	},
 	Notes: `Runs code: a hook line added or changed (Bonsai's own or a pack's), a pack file a pack's hook line runs (new or
@@ -65,7 +66,7 @@ Bonsai's own guard or stop line. A person runs it in a terminal of their own.
 		{Code: 0, Means: "updated (or nothing to change)"},
 		{Code: 2, Means: "bad input: a flag or value wrong, a pack Bonsai cannot link, or a bonsai.yaml or .claude/settings.json\nBonsai does not read (nothing written)"},
 		{Code: 3, Means: "runtime: a fetch failed, git or the Bonsai home missing, a file that cannot be read or written (nothing\nwritten); or the write stopped part-way (--json: result failed): run the same command again"},
-		{Code: 4, Means: "wrong state (not linked, no lock, a lock Bonsai does not read, a pack's tag moved to another commit,\na test build outside its scratch folder), no --yes, code without --allow-exec, or a person's command in an\nagent's session (nothing written)"},
+		{Code: 4, Means: "wrong state (not linked, no lock, a lock Bonsai does not read, a pack's tag moved to another commit,\na test build outside its scratch folder), no --yes, code without --allow-exec, a person's command in an\nagent's session, or a plan whose fingerprint is not --expect's (nothing written)"},
 		{Code: 5, Means: "conflicts (nothing written)"},
 	},
 	Examples: []string{"bonsai update --yes"},

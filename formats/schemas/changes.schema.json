@@ -20,7 +20,15 @@
     "conflicts",
     "plugins",
     "error",
-    "left"
+    "left",
+    "config",
+    "loosening",
+    "memory",
+    "cache",
+    "pack_changes",
+    "commit_lines",
+    "fingerprint",
+    "word"
   ],
   "properties": {
     "format": {
@@ -704,6 +712,330 @@
       "type": "array",
       "items": {
         "type": "string"
+      }
+    },
+    "config": {
+      "description": "The bonsai.yaml edit bonsai pack makes (set 13; T-6009): the file, the edited line's number in the file as it stands, the line before and after (no line ending; before null for an added entry, after null for a removed one, the line then the entry's first) and the comment the line keeps (null for none). Only the ref's text changes on a set's line: the comment is kept byte for byte. null when the command does not edit bonsai.yaml (init, update, unlink).",
+      "examples": [
+        {
+          "path": "bonsai.yaml",
+          "line": 14,
+          "before": "    ref: \"base-v1.0.0\"   # the director's yes",
+          "after": "    ref: \"base-v1.0.1\"   # the director's yes",
+          "comment": "# the director's yes"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "path",
+        "line",
+        "before",
+        "after",
+        "comment"
+      ],
+      "properties": {
+        "path": {
+          "description": "The file edited, project-relative: bonsai.yaml.",
+          "examples": [
+            "bonsai.yaml"
+          ],
+          "type": "string"
+        },
+        "line": {
+          "description": "The edited line's number, from 1, in bonsai.yaml as it stands before the edit.",
+          "examples": [
+            14
+          ],
+          "type": "integer",
+          "minimum": 1
+        },
+        "before": {
+          "description": "The line as it stands, with no line ending; null for an added entry.",
+          "examples": [
+            "    ref: \"base-v1.0.0\"",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "after": {
+          "description": "The line as the edit writes it; null for a removed entry.",
+          "examples": [
+            "    ref: \"base-v1.0.1\"",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "comment": {
+          "description": "The line's own comment, from its # on, kept as it was; null when it has none.",
+          "examples": [
+            "# the director's yes",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "loosening": {
+      "description": "Each protection the plan takes away (set 13; T-6009), in the lock's pack order: a pack taken out (kind pack, its id), then each deny rule (kind deny) and protected path (kind protected) the locked packs held that no planned pack holds, with the locked pack that held it. A plan that loosens is a person's to write: in an agent's session its --yes is refused (person-command), whatever the task grants; its preview is anyone's. [] for none, and for init, which loosens nothing at a first link.",
+      "examples": [
+        [
+          {
+            "kind": "deny",
+            "value": "Read(./.env)",
+            "pack": "base"
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "value",
+          "pack"
+        ],
+        "properties": {
+          "kind": {
+            "description": "A closed list: pack (a pack taken out), deny (a deny rule) or protected (a protected path).",
+            "examples": [
+              "deny",
+              "pack"
+            ],
+            "enum": [
+              "pack",
+              "deny",
+              "protected"
+            ]
+          },
+          "value": {
+            "description": "The pack's id, the deny rule or the protected glob, as the lock holds it.",
+            "examples": [
+              "Read(./.env)",
+              "base"
+            ],
+            "type": "string"
+          },
+          "pack": {
+            "description": "The locked pack that held it.",
+            "examples": [
+              "base"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "memory": {
+      "description": "The personal memory layer's lines after a write (BUG-017; set 13), one per line as the text output's Memory rows print them, with whether the line warns; [] for a preview, a refusal and unlink.",
+      "examples": [
+        [
+          {
+            "line": "the Windows copy of the personal notes is refreshed",
+            "warn": false
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "line",
+          "warn"
+        ],
+        "properties": {
+          "line": {
+            "description": "The line, in ASCII.",
+            "examples": [
+              "the Windows copy of the personal notes is refreshed"
+            ],
+            "type": "string"
+          },
+          "warn": {
+            "description": "true when the text output shows it as a warning.",
+            "examples": [
+              false
+            ],
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "cache": {
+      "description": "update's pack cache clean after a write (BUG-017; set 13): its one line as the text output's Cache row prints it, with whether it warns; null when update printed none, and for every other command.",
+      "examples": [
+        {
+          "line": "removed 2 old pack clones from the cache",
+          "warn": false
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "line",
+        "warn"
+      ],
+      "properties": {
+        "line": {
+          "description": "The line, in ASCII.",
+          "examples": [
+            "removed 2 old pack clones from the cache"
+          ],
+          "type": "string"
+        },
+        "warn": {
+          "description": "true when the text output shows it as a warning.",
+          "examples": [
+            false
+          ],
+          "type": "boolean"
+        }
+      }
+    },
+    "pack_changes": {
+      "description": "Each moved pack's own changes between its locked commit and the new one (set 13; filled by T-6009's second stage, [] until then): the pack, its commit titles limited to its folder (at most 30), how many more there are, and why the list could not be read (null when it was).",
+      "examples": [
+        [
+          {
+            "pack": "base",
+            "titles": [
+              "skills: the ci skill downloads bonsai 1.0.1"
+            ],
+            "more": 0,
+            "why": null
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "pack",
+          "titles",
+          "more",
+          "why"
+        ],
+        "properties": {
+          "pack": {
+            "description": "The pack's id.",
+            "examples": [
+              "base"
+            ],
+            "type": "string"
+          },
+          "titles": {
+            "description": "The commit titles, newest first.",
+            "examples": [
+              [
+                "skills: the ci skill downloads bonsai 1.0.1"
+              ]
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "more": {
+            "description": "How many titles there are beyond those listed.",
+            "examples": [
+              0
+            ],
+            "type": "integer",
+            "minimum": 0
+          },
+          "why": {
+            "description": "Why the titles could not be read; null when they were.",
+            "examples": [
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "commit_lines": {
+      "description": "After a write, the commands that commit the files written, one per line, never joined by && (set 13; filled by T-6009's second stage, [] until then).",
+      "examples": [
+        [
+          "git add bonsai.yaml .bonsai/lock.json",
+          "git commit -m \"bonsai: base to base-v1.0.1\""
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "fingerprint": {
+      "description": "The plan's fingerprint (set 13; T-6009): the SHA-256, in lower-case hex, of the plan's own fields only, written canonically (keys in this schema's order, lists in the plan's order, line endings read as LF): workspace; each planned file's path, result and the SHA-256 of its bytes on disk and of the bytes the plan writes (the two hashed from the plan though this output does not print them); each settings line's file, change, kind, line and was; each pack's id, the ref bonsai.yaml names and its commits before and after; config; loosening; pack_changes; command and word, so a pack preview's fingerprint is refused by update and the reverse. Left out, as fields that differ between a preview and its --yes run: result, error, allow_exec, plugins, memory, cache, commit_lines, any read time, and fingerprint itself. --yes --expect <fingerprint> writes nothing and refuses plan-changed when the plan built now has another. null when the command stopped before it had a plan.",
+      "examples": [
+        "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5e6f708192a3b4c5d6e7f80",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "word": {
+      "description": "The word that printed it, and its subcommand (set 13; T-6009): {update, null}, {init, null} and {unlink, null} for those words; {pack, set}, {pack, add} or {pack, remove} for bonsai pack, which applies its change as an update with an edited bonsai.yaml and so prints command update.",
+      "examples": [
+        {
+          "name": "pack",
+          "sub": "set"
+        },
+        {
+          "name": "update",
+          "sub": null
+        }
+      ],
+      "type": "object",
+      "required": [
+        "name",
+        "sub"
+      ],
+      "properties": {
+        "name": {
+          "description": "The command word: init, update, unlink or pack.",
+          "examples": [
+            "pack"
+          ],
+          "type": "string"
+        },
+        "sub": {
+          "description": "The subcommand: set, add or remove for pack; null for the other words.",
+          "examples": [
+            "set",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     }
   }

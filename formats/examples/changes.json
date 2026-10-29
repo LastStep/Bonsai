@@ -101,5 +101,22 @@
       "who": "person"
     }
   },
-  "left": []
+  "left": [],
+  "config": {
+    "path": "bonsai.yaml",
+    "line": 14,
+    "before": "    ref: \"workflow-v1.2.0\"   # the person's yes, 1 Nov",
+    "after": "    ref: \"workflow-v1.3.0\"   # the person's yes, 1 Nov",
+    "comment": "# the person's yes, 1 Nov"
+  },
+  "loosening": [],
+  "memory": [],
+  "cache": null,
+  "pack_changes": [],
+  "commit_lines": [],
+  "fingerprint": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5e6f708192a3b4c5d6e7f80",
+  "word": {
+    "name": "pack",
+    "sub": "set"
+  }
 }

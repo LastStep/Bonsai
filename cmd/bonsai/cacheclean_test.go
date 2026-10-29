@@ -95,12 +95,13 @@ func TestUpdateCleansTheCache(t *testing.T) {
 		}
 	}
 
-	// --json cleans too; the changes output has no field for it, and stays as it was (its result applied).
+	// --json cleans too, and from set 13 (BUG-017) the changes output carries its line in cache (its result applied).
+	// Before set 13 this held that the line was absent from --json, which was BUG-017 itself.
 	second := agedClone(t, home, "fedcba9876543210.git", old)
 	c.write("bonsai.yaml", strings.Replace(c.read("bonsai.yaml"), "  - id: extra\n    source: \""+filepath.ToSlash(src)+
 		"\"\n    path: null\n    ref: \""+shas[0]+"\"\n", "", 1))
 	code, out, errOut = c.run("", "update", "--yes", "--allow-exec", "--json")
-	if code != 0 || strings.Contains(out, "pack clone") || !strings.Contains(out, `"result": "applied"`) {
+	if code != 0 || !strings.Contains(out, "\"cache\": {\n    \"line\": \"") || !strings.Contains(out, "pack clone") || !strings.Contains(out, `"result": "applied"`) {
 		t.Errorf("update --json: %d\n%s%s", code, out, errOut)
 	}
 	if _, err := os.Stat(second); err == nil {

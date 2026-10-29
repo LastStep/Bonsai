@@ -165,6 +165,7 @@ var All = []*Format{
 	{Name: "attach", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Attach", Next: nextOutput, Lists: errorCode},
 	{Name: "line", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Line", Next: nextOutput, Lists: errorCode},
 	{Name: "now", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Now", Next: nextOutput, Lists: errorCode},
+	{Name: "packs", Major: 1, Shape: JSONDoc, Writes: true, GoType: "format.Packs", Next: nextOutput, Lists: errorCode},
 }
 
 // Lookup finds a format by its short name ("task"), its name ("bonsai.task") or its name and major

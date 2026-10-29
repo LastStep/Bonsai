@@ -196,10 +196,9 @@ func gather(dir, version string, o Options) (map[string]any, *engine.Error) {
 		c, installed, reads = fullChecks(checked, cfg, lock, o)
 		checks = c
 		if len(reads) > 0 {
-			if _, err := engine.RecordPackTags(home, reads); err != nil && o.NotKept != nil {
-				o.NotKept("the packs' release read was not kept in " + engine.PackCachePath(home) + " (" + ascii(err.Error()) +
-					"): plain bonsai status will not show it")
-			}
+			// A cache that cannot be written costs nothing here: this run's checks hold the reads, and plain status
+			// shows null until a later --full or bonsai pack outdated writes it (pack outdated says so when it cannot).
+			_, _ = engine.RecordPackTags(home, reads)
 		}
 	}
 	packs = withNewer(packs, cfg, lock, home)

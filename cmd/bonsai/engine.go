@@ -53,6 +53,7 @@ var pluginCLI engine.PluginCLI
 // engineFlags are init's or update's flags, read from the word's table.
 type engineFlags struct {
 	yes, diff, explain, newID, allowExec bool
+	expect                               string // --expect: the fingerprint the plan must have (T-6009)
 	keep, adopt                          []string
 	values                               engine.InitValues
 	unpaired                             string   // why the packs' flags do not pair up, "" when they do
@@ -61,7 +62,7 @@ type engineFlags struct {
 
 func readEngineFlags(c *call) *engineFlags {
 	f := &engineFlags{yes: c.has("--yes"), diff: c.has("--diff"), explain: c.has("--explain"), newID: c.has("--new-id"), allowExec: c.has("--allow-exec"),
-		keep: c.all("--keep"), adopt: c.all("--adopt")}
+		keep: c.all("--keep"), adopt: c.all("--adopt"), expect: c.value("--expect")}
 	f.values = engine.InitValues{Name: c.value("--name"), NeverEdit: c.all("--never-edit"), NeverRead: c.all("--never-read")}
 	// The packs (BUG-122): the n-th --ref, and the n-th --path when --path is given, go with the n-th --source.
 	sources, refs, paths := c.all("--source"), c.all("--ref"), c.all("--path")
@@ -87,7 +88,7 @@ func readEngineFlags(c *call) *engineFlags {
 	exec := false
 	for _, g := range c.given {
 		switch g.name {
-		case "--yes", "--diff", "--explain", "--json":
+		case "--yes", "--diff", "--explain", "--json", "--expect":
 		case "--new-id":
 			f.typed = append(f.typed, g.name)
 		case "--allow-exec":
@@ -110,17 +111,36 @@ func changesRefused(c *call, e *engine.Error) encoder {
 // applyPlan writes a plan (a variable, so a test can stop it part-way).
 var applyPlan = engine.Apply
 
+// packRun is what bonsai pack hands the update run (pack.go): bonsai.yaml's edited bytes, the edit, the
+// subcommand, and the arguments as typed, for the command lines it names.
+type packRun struct {
+	edit *engine.ConfigEdit
+	sub  string
+	args []string
+}
+
 // runEngine runs init or update: build the plan, print it, ask or refuse, write.
 func runEngine(c *call) int {
-	word := c.word.Name
 	if len(c.rest) > 0 {
-		return c.refuse(c.flagError("%s takes no %+q", word, c.rest[0]))
+		return c.refuse(c.flagError("%s takes no %+q", c.word.Name, c.rest[0]))
 	}
+	return runEngineAs(c, nil)
+}
+
+// runEngineAs is runEngine, or with pack set bonsai pack's run: an update with bonsai.yaml's edited bytes
+// (engine.Request.Config), its titles and command lines the pack word's.
+func runEngineAs(c *call, pack *packRun) int {
+	word := c.word.Name // init, update or unlink's word; for bonsai pack, the request is update's
 	f := readEngineFlags(c)
-	if f.unpaired != "" {
+	if f.unpaired != "" && pack == nil {
 		return c.refuse(c.flagError("%s", f.unpaired))
 	}
 	cmdline := "bonsai " + word
+	if pack != nil {
+		for _, a := range pack.args {
+			cmdline += " " + engine.ShellArg(a)
+		}
+	}
 	for _, t := range f.typed {
 		cmdline += " " + engine.ShellArg(t)
 	}
@@ -144,9 +164,15 @@ func runEngine(c *call) int {
 	if word == "init" {
 		req.Init = &f.values
 	}
+	if pack != nil {
+		req.Command, req.Config, req.Edit = "update", pack.edit.Raw, pack.edit
+	}
 	plan, err := engine.Build(req)
 	if err != nil {
 		return c.fail(engine.Unexpected(err))
+	}
+	if pack != nil {
+		plan.WordName, plan.WordSub = "pack", pack.sub
 	}
 	// out prints the plan's outcome: with --json the changes output (its error object filled from refusal), else
 	// the Doc on stdout, ending in the refusal's block when there is one.
@@ -201,6 +227,26 @@ func runEngine(c *call) int {
 			return out("refused", e.Exit, e, &textui.Doc{})
 		}
 	}
+	// A plan that takes protections away (engine.Plan.Loosening: a pack taken out, or a deny rule or protected path no
+	// planned pack holds) is a person's to write, whatever word applies it (update after a hand edit of bonsai.yaml as
+	// well as pack): in an agent's session its --yes is refused by personOnly, which no grant opens (T-6009, the
+	// director's answer of 28 Oct). Its preview is anyone's, and lists each protection that goes.
+	if loose := plan.Loosening(); len(loose) > 0 && f.yes {
+		if e := personOnly(cmdline+" --yes", "it takes protections away: "+looseningList(loose), cmdline+" --yes"); e != nil {
+			return out("refused", e.Exit, e, preview())
+		}
+	}
+	// --expect <fingerprint>: the plan built now must be the one the person read (engine.Plan.Fingerprint), else
+	// nothing is written. It opens no gate: every check above and below holds as without it.
+	if f.expect != "" {
+		if fp := plan.Fingerprint(); fp != f.expect {
+			e := &engine.Error{Code: "plan-changed", Exit: engine.ExitState,
+				What: "the plan built now has the fingerprint " + fp + ", not the " + engine.ASCII(f.expect) + " --expect names: " +
+					"something it would change differs from the preview read (a file, a pack, bonsai.yaml): nothing was written",
+				Next: "read the preview again (" + cmdline + " --json), then run it with --expect and the fingerprint it prints"}
+			return out("refused", e.Exit, e, preview())
+		}
+	}
 	// The command that installs a plugin carrying code on this machine, a person's step: once the files are written
 	// (or have nothing to change) the same word with --allow-exec does it, without the values or the flags that
 	// settled conflicts.
@@ -217,10 +263,10 @@ func runEngine(c *call) int {
 		plan.LeftAloneTo(d)
 		recorded(d, plan)
 		if f.yes {
-			personalTo(d, home)
+			personalTo(d, home, plan)
 		}
 		plan.PluginsTo(d)
-		if word == "update" && f.yes {
+		if req.Command == "update" && f.yes {
 			cacheCleanTo(d, home, plan)
 		}
 		closing(d)
@@ -321,9 +367,9 @@ func runEngine(c *call) int {
 	plan.AppliedTo(d)
 	plan.LeftAloneTo(d)
 	recorded(d, plan)
-	personalTo(d, home)
+	personalTo(d, home, plan)
 	plan.PluginsTo(d)
-	if word == "update" {
+	if req.Command == "update" {
 		cacheCleanTo(d, home, plan)
 	}
 	closing(d)
@@ -332,8 +378,8 @@ func runEngine(c *call) int {
 
 // cacheCleanTo cleans the pack cache after update --yes, written or with nothing to change, never a preview
 // (engine.CleanCache: the home's cache_keep_days, never a clone the lock or bonsai.yaml names, never an --adopt copy)
-// and adds its one line to update's text. It never changes the exit code or the result; with --json nothing is added
-// (bonsai.changes/1 has no field for it).
+// and adds its one line to update's text and to the plan's Cache, which --json prints (set 13, BUG-017). It never
+// changes the exit code or the result.
 func cacheCleanTo(d *textui.Doc, home string, plan *engine.Plan) {
 	var keep []string
 	for _, p := range plan.Config.Packs {
@@ -351,20 +397,22 @@ func cacheCleanTo(d *textui.Doc, home string, plan *engine.Plan) {
 			tone = textui.Warn
 		}
 		d.Para("Cache", line, tone)
+		plan.Cache = &format.ChangesLine{Line: engine.ASCII(line), Warn: tone == textui.Warn}
 	}
 }
 
 // personalTo runs init's and update's step on the personal memory layer once they wrote, or had nothing to change
 // with --yes, never in a preview (engine.PersonalAfterWrite: the Windows copy refreshed from personal_from, then the
-// empty index when the home has none), and adds its lines to the text. It never changes the exit code or the result;
-// with --json nothing is added (bonsai.changes/1 has no field for it).
-func personalTo(d *textui.Doc, home string) {
+// empty index when the home has none), and adds its lines to the text and to the plan's Memory, which --json prints
+// (set 13, BUG-017). It never changes the exit code or the result.
+func personalTo(d *textui.Doc, home string, plan *engine.Plan) {
 	for _, l := range engine.PersonalAfterWrite(home, time.Now) {
 		tone := textui.Dim
 		if l.Warn {
 			tone = textui.Warn
 		}
 		d.Para("Memory", l.Text, tone)
+		plan.Memory = append(plan.Memory, format.ChangesLine{Line: engine.ASCII(l.Text), Warn: l.Warn})
 	}
 }
 
@@ -437,4 +485,20 @@ func yesAnswer() bool {
 	line, _ := bufio.NewReader(stdin).ReadString('\n')
 	a := strings.ToLower(strings.TrimSpace(line))
 	return a == "y" || a == "yes"
+}
+
+// looseningList names each protection a plan takes away, for a refusal's sentence.
+func looseningList(loose []engine.Loosening) string {
+	parts := make([]string, len(loose))
+	for i, l := range loose {
+		switch l.Kind {
+		case engine.LoosePack:
+			parts[i] = "the pack " + l.Value + " taken out"
+		case engine.LooseDeny:
+			parts[i] = "the deny rule " + engine.ASCII(l.Value) + " (" + l.Pack + ")"
+		default:
+			parts[i] = "the protected path " + engine.ASCII(l.Value) + " (" + l.Pack + ")"
+		}
+	}
+	return strings.Join(parts, "; ")
 }

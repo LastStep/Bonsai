@@ -4,7 +4,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "a650c2cc8e444e1111458452300747eae00f7c46ea71073c8344c19bf1781b14"
+      "sha256": "85e91be849ad839f3ddf435197c310683317280229dd9f44cc25d5022532cafb"
     },
     {
       "path": "active-task/answers.json",
@@ -296,7 +296,7 @@
     },
     {
       "path": "examples/changes.json",
-      "sha256": "e9e7bfdbad987a968c8f5fe6defa5eee05b112537dd86da1b15beb3674eba53a"
+      "sha256": "6f5bdba068a5a7b992f5b54a10e18434fbb72bfd3786346bf62eb85911e09741"
     },
     {
       "path": "examples/check.json",
@@ -383,6 +383,10 @@
       "sha256": "bd21f9e5832e07b827a10c8fa0fbcb824e365ecdca11d863ad310c5d232ee21e"
     },
     {
+      "path": "examples/packs.json",
+      "sha256": "b470b4fcf36f30243349a9321cf23e10ba54a825bcf23e948456dc9539d14697"
+    },
+    {
       "path": "examples/run.json",
       "sha256": "fa12a1d460447403a91b18d0b5f98c9c554dffd77c48f780a062050253b268b3"
     },
@@ -460,7 +464,7 @@
     },
     {
       "path": "schemas/changes.schema.json",
-      "sha256": "0849f8b68641d4691a8d76c075beec908ad114477b2c7a7e69666f4001a2242a"
+      "sha256": "0f767ce5192643ab0a1331a448ae4af805c707e770136094a6a2d92b8d840e21"
     },
     {
       "path": "schemas/check.schema.json",
@@ -527,6 +531,10 @@
       "sha256": "fc6c57d1b20dc36be85bd48d7f0c866ccbb9fc9f058ad2b569e342ecbb4ee0ff"
     },
     {
+      "path": "schemas/packs.schema.json",
+      "sha256": "d1ec38f523f9bdec2877e15bf9c17253f79ae5aebaa643b046ec1fdcb4812243"
+    },
+    {
       "path": "schemas/run.schema.json",
       "sha256": "4eb508f973ca34c796185532ab6eea004cced74c671934232ffa50443754a594"
     },
@@ -544,7 +552,7 @@
     },
     {
       "path": "schemas/status.schema.json",
-      "sha256": "deec28ec0a0b2def1e89e12aaee6d29cda5072bf33d367c06f2107810c802fdf"
+      "sha256": "76d6d0408d1e11bdd2c10a675bdd230d1dd1a67be29b98e2b2e3ee74c9010f2b"
     },
     {
       "path": "schemas/task.schema.json",

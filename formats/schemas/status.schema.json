@@ -1447,7 +1447,7 @@
           ]
         },
         "state": {
-          "description": "A closed list: current (no newer release), newer (newest is newer than version), unknown (no read yet, or the last read failed: why says which), not-a-release (this Bonsai is not a release build, so nothing is compared).",
+          "description": "A closed list: current (no newer release), newer (newest is newer than version), unknown (no read yet, the last read failed, or the record names an older release than this Bonsai, read before it was installed (BUG-139, set 13): why says which), not-a-release (this Bonsai is not a release build, so nothing is compared).",
           "examples": [
             "newer",
             "current"

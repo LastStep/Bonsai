@@ -49,6 +49,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/reader"
 	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
@@ -89,6 +90,12 @@ type Request struct {
 	// AllowExec is --allow-exec: the person consents to what the plan's "Runs code" lists (consent.go). Without it
 	// Apply refuses a plan that lists anything there.
 	AllowExec bool
+	// Config is bonsai.yaml's new bytes, edited by bonsai pack (configedit.go), in place of the file on disk: the plan
+	// is update's with these bytes, and bonsai.yaml enters it as an Updated file with its old bytes, which Apply writes
+	// first and the lock last, all or nothing. Only the pack word sets it, and only with Command "update"; Edit is the
+	// edit that made it, for the preview. nil reads bonsai.yaml from disk, as every other word does.
+	Config []byte
+	Edit   *ConfigEdit
 }
 
 // PackMove is one pack in a plan: its commit before (none at a first link) and after.
@@ -117,14 +124,22 @@ func (f *FileResult) Writes() bool { return f.write != nil || f.remove }
 
 // Plan is what init or update would do.
 type Plan struct {
-	Command    string
-	Root       string // the checkout's top folder (system separators)
-	Main       string // the main checkout's
-	Home       string
-	Config     *workspace.Config
-	FirstLink  bool // no lock yet
-	NewConfig  bool // init writes a new bonsai.yaml
-	OldID      string
+	Command   string
+	Root      string // the checkout's top folder (system separators)
+	Main      string // the main checkout's
+	Home      string
+	Config    *workspace.Config
+	FirstLink bool // no lock yet
+	NewConfig bool // init writes a new bonsai.yaml
+	OldID     string
+	Edit      *ConfigEdit // Request.Config's edit: bonsai.yaml as bonsai pack changed it; nil for none
+	// WordName and WordSub are the word that printed the plan, for bonsai.changes/1's word: bonsai pack sets them
+	// (pack, set); empty for init, update and unlink, whose word is their command.
+	WordName, WordSub string
+	// Memory and Cache are update's Memory and Cache lines after a write (BUG-017), set by the command once it ran
+	// those steps, for bonsai.changes/1; empty for a preview and a refusal.
+	Memory     []format.ChangesLine
+	Cache      *format.ChangesLine
 	Packs      []PackMove
 	Files      []*FileResult
 	Settings   []SettingsChange // the settings lines the plan adds, changes or removes (when it writes the file)
@@ -155,6 +170,7 @@ type Plan struct {
 
 	lock      *workspace.Lock
 	lockBytes []byte
+	oldLock   *workspace.Lock // the lock as read, nil at a first link
 }
 
 // PluginConsent is what the install step needs after the plan (InstallPlugins): each pack's plugin code parts at the
@@ -306,6 +322,15 @@ func Build(req Request) (_ *Plan, err error) {
 	if err != nil {
 		return nil, err
 	}
+	diskConfig := rawConfig
+	if req.Config != nil {
+		// bonsai pack's edited bytes, judged as update judges the file on disk.
+		if req.Command != "update" || req.Init != nil || req.NewID || !hasConfig {
+			return nil, errorf("unexpected", ExitRuntime, "run bonsai update", "edited bonsai.yaml bytes are taken only by update on a linked project")
+		}
+		rawConfig = req.Config
+		p.Edit = req.Edit
+	}
 	var cfg *workspace.Config
 	var newPacks []*PackData
 	switch {
@@ -392,6 +417,7 @@ func Build(req Request) (_ *Plan, err error) {
 			return nil, fileError(err, "", "bad-lock", ExitState)
 		}
 	}
+	p.oldLock = lock
 	// bonsai.yaml with no lock: the lock records which hook lines a person consented to, so update cannot tell a
 	// changed hook line from one already agreed. Only init links again (spec §4, §6: it previews every settings line
 	// first), judging every hook line, file a hook runs and plugin code part against what is on disk, as at a first
@@ -584,6 +610,9 @@ func Build(req Request) (_ *Plan, err error) {
 	} else if p.OldID != "" {
 		p.Files = append(p.Files, &FileResult{Path: workspace.ConfigFile, Result: Updated,
 			Why: "a new id in place of " + p.OldID + " (each run draws its own)", write: rawConfig, old: origConfig})
+	} else if req.Config != nil && !bytes.Equal(req.Config, diskConfig) {
+		p.Files = append(p.Files, &FileResult{Path: workspace.ConfigFile, Result: Updated,
+			Why: "the packs, as bonsai pack changes them", write: rawConfig, old: diskConfig})
 	}
 
 	// Pack files: every path a pack gives now, or the lock holds.

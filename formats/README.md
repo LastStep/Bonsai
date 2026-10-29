@@ -4,8 +4,8 @@ This folder holds Bonsai's formats as files any program can test against: a JSON
 of the formats contract (`design/contract.md` §2), the eight that set 4 added (Bonsai spec §5, §6, §10, §16 row 29),
 the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), the
 one that set 7 added (`climb`, plan-5 5.4.0), the three that set 8 added (`message`, `messages` and `agents`, plan-5
-5.5.9) the three that set 10 added (`settings`, `attach` and `line`, plan-5 5.6.0) and the one that set 11 added (`now`,
-plan P-T-5795, contract §23), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
+5.5.9) the three that set 10 added (`settings`, `attach` and `line`, plan-5 5.6.0), the one that set 11 added (`now`,
+plan P-T-5795, contract §23) and the one that set 13 added (`packs`, plan P-T-6009), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
 from set 8, message files; from set 11, run reports), each with the one right outcome a reader must reach (accepted with this value, or refused
 for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
@@ -26,7 +26,7 @@ formats/
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
-                                asks, logs; climb; message, messages, agents; settings, attach, line; now
+                                asks, logs; climb; message, messages, agents; settings, attach, line; now; packs
   examples/<name>.json      one valid document per format, as a reader returns it
   examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory, message (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
@@ -61,7 +61,8 @@ the `--json` of `bonsai settings show` and `set`: this machine's settings, for t
 (`bonsai.attach/1`, the `--json` of `bonsai labels attach` and `detach`: label definitions attached on this machine)
 and `line` (`bonsai.line/1`, the `--json` of `bonsai status --line`: the statusline's workspace half as fields); and,
 from set 11, `now` (`bonsai.now/1`, the `--json` of `bonsai now`: the time now in every form a document or a record
-takes, contract §23). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+takes, contract §23); and, from set 13, `packs` (`bonsai.packs/1`, the `--json` of `bonsai pack outdated` and `bonsai
+pack show`: each locked pack, what it brings and whether a newer release exists). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
 where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
 the same way, each a new schema file: an addition.
 
@@ -351,6 +352,26 @@ the same way, each a new schema file: an addition.
     sandbox (`sandbox.filesystem.denyRead`, off by default, none on native Windows) for shell reads.
   - **Examples:** `workspace.yaml` and `workspace.json` carry one `never_read` path; each active-task fixture's
     `bonsai.yaml` ends with `never_read: []`.
+- **Set 13** (plan P-T-6009, the pack command, approved by the director 29 Oct), every change an addition:
+  - **`bonsai.packs/1`**: `format`; `command` (`outdated` or `show`, closed); `packs` (each locked pack: `id`,
+    `source`, `path`, `ref`, `commit`, `version`, `needs` (`claude_code`, or null), `skills` (from the home's clone at
+    the locked commit, null when it is not there), `roles`, `deny`, `protected`, `kinds`, `newer` (as status's) and
+    `why` (why outdated's live read failed)); `error`.
+  - **`status --json`'s `packs[]`** gain `ref` (bonsai.yaml's, or null) and `newer` at their end: `{tag, read,
+    state}` from the home's `cache/packs.json`, its `state` `newer`, `current` or `stale` (closed), or null when the
+    cache holds no good read of the pack's source. Plain status reads only the cache; `pack outdated` and `status
+    --full` read every source and write it.
+  - **`bonsai.changes/1`** gains, at its end: `config` (bonsai pack's `bonsai.yaml` edit: `path`, `line`, `before`,
+    `after`, `comment`, or null), `loosening` (each protection the plan takes away: `kind` `pack`, `deny` or
+    `protected`, closed; `value`; `pack`), `memory` and `cache` (update's Memory and Cache lines, `line` and `warn`:
+    BUG-017), `pack_changes` and `commit_lines` (defined now, filled by the plan's second stage), `fingerprint` (the
+    plan's SHA-256, which `--yes --expect` holds the apply to) and `word` (`name`, `sub`: `{pack, set}` for a pack
+    change, which prints `command` `update`, the command's closed list unchanged).
+  - **Descriptions only:** `bonsai_release.state`'s `unknown` covers a record naming an older release than the
+    installed Bonsai (BUG-139).
+  - **Not given a schema**, Bonsai's own file read by Bonsai alone and documented in the Go file that writes it: the
+    home's `cache/packs.json` (internal/engine/packcache.go).
+  - **Go**: `format.Packs`, `format.StatusNewer`, the changes' new types, and the error word `plan-changed`.
 - **Bounds in set 4**, chosen so a later set never needs to lower one: `keep_days` and `keep_newest` take 0 and up
   (0 cleans as soon as the protections allow; they always win); a rung's `timeout_s` takes 1 and up.
 - **Patterns in set 4**, each where a source or Bonsai's own reader fixes the form: a pack id (a lower-case letter,

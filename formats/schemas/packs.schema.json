@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.packs/1",
+  "description": "The --json of bonsai pack outdated and bonsai pack show (set 13; T-6009): each locked pack with where it comes from, its ref and commit, its version and needs, what it brings (skills, roles, deny rules, protected paths, document kinds) and whether a newer release exists. Printed, never stored. pack outdated reads every pack's source with git ls-remote (the network), writes the home's cache/packs.json and prints every locked pack; pack show prints one pack, offline. Every field but skills comes from the lock (.bonsai/lock.json) and bonsai.yaml; skills from the home's clone of the pack at its locked commit. On a refusal packs is [] and error is filled. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "command",
+    "packs",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.packs/1"
+      ],
+      "const": "bonsai.packs/1"
+    },
+    "command": {
+      "description": "The subcommand that printed it, a closed list: outdated or show.",
+      "examples": [
+        "outdated",
+        "show"
+      ],
+      "enum": [
+        "outdated",
+        "show"
+      ]
+    },
+    "packs": {
+      "description": "The locked packs, in the lock's order (pack show: the one named); [] on a refusal and when none is locked.",
+      "examples": [
+        [
+          {
+            "id": "base",
+            "source": "https://github.com/LastStep/Bonsai.git",
+            "path": "packs/base",
+            "ref": "base-v1.0.0",
+            "commit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
+            "version": "1.0.0",
+            "needs": null,
+            "skills": [
+              "run",
+              "task"
+            ],
+            "roles": [],
+            "deny": [
+              "Read(./.env)"
+            ],
+            "protected": [],
+            "kinds": [],
+            "newer": {
+              "tag": "base-v1.0.1",
+              "read": "2026-10-29T08:15:00Z",
+              "state": "newer"
+            },
+            "why": null
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "path",
+          "ref",
+          "commit",
+          "version",
+          "needs",
+          "skills",
+          "roles",
+          "deny",
+          "protected",
+          "kinds",
+          "newer",
+          "why"
+        ],
+        "properties": {
+          "id": {
+            "description": "The pack's id.",
+            "examples": [
+              "base"
+            ],
+            "type": "string"
+          },
+          "source": {
+            "description": "The git repository the pack comes from, as the lock names it.",
+            "examples": [
+              "https://github.com/LastStep/Bonsai.git"
+            ],
+            "type": "string"
+          },
+          "path": {
+            "description": "The pack's folder in its repository, as bonsai.yaml names it; null for the repository's top.",
+            "examples": [
+              "packs/base",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ref": {
+            "description": "The ref bonsai.yaml names for the pack; null when bonsai.yaml no longer names a pack the lock holds.",
+            "examples": [
+              "base-v1.0.0",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "commit": {
+            "description": "The locked 40-character commit.",
+            "examples": [
+              "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4"
+            ],
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "version": {
+            "description": "The pack's version at that commit, from its pack.yaml.",
+            "examples": [
+              "1.0.0"
+            ],
+            "type": "string"
+          },
+          "needs": {
+            "description": "What the pack's pack.yaml needs, as the lock holds it: the Claude Code version it needs (null for none); null when it needs nothing.",
+            "examples": [
+              {
+                "claude_code": "2.1.300"
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "claude_code"
+            ],
+            "properties": {
+              "claude_code": {
+                "description": "The lowest Claude Code version the pack needs; null for none.",
+                "examples": [
+                  "2.1.300",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "skills": {
+            "description": "The skills the pack brings, by name, read from the home's clone of the pack at the locked commit (the lock does not hold them); null when that clone is not in the home's cache.",
+            "examples": [
+              [
+                "run",
+                "task"
+              ],
+              null
+            ],
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "roles": {
+            "description": "The roles the pack declares, by name, from the lock; [] for none.",
+            "examples": [
+              [
+                "builder",
+                "verifier"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "deny": {
+            "description": "The deny rules the pack writes into .claude/settings.json, from the lock; [] for none.",
+            "examples": [
+              [
+                "Read(./.env)"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "protected": {
+            "description": "The paths the pack declares protected, as globs, from the lock; [] for none.",
+            "examples": [
+              [
+                "docs/plan.md"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "kinds": {
+            "description": "The document kinds the pack declares, by name, from the lock; [] for none.",
+            "examples": [
+              [
+                "plan",
+                "feature"
+              ],
+              []
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "newer": {
+            "description": "The pack's newer release from the home's cache/packs.json, as status --json's packs[].newer holds it: the newest release tag the cache holds for the pack (or the locked ref when none is newer), when its source was last read successfully, and the state, worked out against the locked version. bonsai pack outdated reads every source live first and writes the cache; bonsai pack show reads only the cache. null when the cache holds no good read of the pack's source.",
+            "examples": [
+              {
+                "tag": "base-v1.0.1",
+                "read": "2026-10-29T08:15:00Z",
+                "state": "newer"
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "tag",
+              "read",
+              "state"
+            ],
+            "properties": {
+              "tag": {
+                "description": "The newest release tag the cache holds for the pack by its prefix rules when state is newer; otherwise the locked ref, as bonsai.yaml names it.",
+                "examples": [
+                  "base-v1.0.1"
+                ],
+                "type": "string"
+              },
+              "read": {
+                "description": "When the pack's source was last read successfully, RFC 3339 in UTC.",
+                "examples": [
+                  "2026-10-29T08:15:00Z"
+                ],
+                "type": "string"
+              },
+              "state": {
+                "description": "A closed list: newer (a release tag newer than the locked version), current (none newer, the read fresh), stale (none newer known, and the read older than 7 days or its newest release tag below the locked version).",
+                "examples": [
+                  "newer",
+                  "current"
+                ],
+                "enum": [
+                  "newer",
+                  "current",
+                  "stale"
+                ]
+              }
+            }
+          },
+          "why": {
+            "description": "Why bonsai pack outdated could not read the pack's source live this run (the cache's last good read is then newer's); null when it read, and for bonsai pack show, which reads no source.",
+            "examples": [
+              "git ls-remote failed: could not resolve host",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "needs-yes",
+          "message": "no --yes, and no terminal to ask at: nothing was written",
+          "next": {
+            "do": "run: bonsai update --yes",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

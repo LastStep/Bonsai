@@ -57,6 +57,8 @@ func (p *Plan) PreviewTo(d *textui.Doc, diff, explain bool) {
 		d.Section("Packs", rows...)
 	}
 	p.takenOutTo(d)
+	p.editTo(d)
+	p.looseningTo(d)
 	var files []textui.Row
 	for _, f := range p.Files {
 		kind := ""
@@ -456,8 +458,39 @@ func (p *Plan) WorkspaceRef() *format.WorkspaceRef {
 // A settings line's runs_code is true only for a line among runs_code's items: Bonsai's own hook lines at a first
 // link are own_hooks, which --yes writes.
 func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
-	c := &format.Changes{Command: p.Command, Result: result, Workspace: p.WorkspaceRef(), AllowExec: p.AllowExec,
-		LeftHooks: p.LeftHooks, Unverified: p.Unverified}
+	c := p.changesCore()
+	c.Result = result
+	fp := p.Fingerprint()
+	c.Fingerprint = &fp
+	c.Memory = append([]format.ChangesLine{}, p.Memory...)
+	c.Cache = p.Cache
+	for _, r := range p.Plugins {
+		var next *format.Next
+		if r.Next != "" {
+			next = &format.Next{Do: r.Next, Who: whoOr(r.Who)}
+		}
+		c.Plugins = append(c.Plugins, format.ChangesPlugin{Pack: r.Pack, Plugin: r.Plugin, Commit: r.Commit, Result: r.Result,
+			Message: r.Message, Next: next})
+	}
+	if refusal != nil {
+		c.Error = refusal.Object()
+	}
+	return c
+}
+
+// changesCore is the changes output's plan fields, the ones the fingerprint covers among them: everything but the
+// result, the fingerprint, the memory and cache lines, the plugin step and the error.
+func (p *Plan) changesCore() *format.Changes {
+	c := &format.Changes{Command: p.Command, Workspace: p.WorkspaceRef(), AllowExec: p.AllowExec,
+		LeftHooks: p.LeftHooks, Unverified: p.Unverified, Word: p.word(), Loosening: []format.ChangesLoosening{},
+		PackChanges: []format.ChangesPackChange{}, CommitLines: []string{}}
+	if e := p.Edit; e != nil {
+		c.Config = &format.ChangesConfig{Path: workspace.ConfigFile, Line: int64(e.Line), Before: orNull(ascii(e.Before)),
+			After: orNull(ascii(e.After)), Comment: orNull(ascii(e.Comment))}
+	}
+	for _, l := range p.Loosening() {
+		c.Loosening = append(c.Loosening, format.ChangesLoosening{Kind: l.Kind, Value: ascii(l.Value), Pack: l.Pack})
+	}
 	for _, m := range p.Packs {
 		c.Packs = append(c.Packs, format.ChangesPack{ID: m.ID, Source: m.Source, Version: m.Version, From: orNull(m.From), To: orNull(m.To)})
 	}
@@ -484,19 +517,8 @@ func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
 	for _, f := range p.Conflicts {
 		c.Conflicts = append(c.Conflicts, f.Path)
 	}
-	for _, r := range p.Plugins {
-		var next *format.Next
-		if r.Next != "" {
-			next = &format.Next{Do: r.Next, Who: whoOr(r.Who)}
-		}
-		c.Plugins = append(c.Plugins, format.ChangesPlugin{Pack: r.Pack, Plugin: r.Plugin, Commit: r.Commit, Result: r.Result,
-			Message: r.Message, Next: next})
-	}
 	for _, l := range p.Left {
 		c.Left = append(c.Left, ascii(l))
-	}
-	if refusal != nil {
-		c.Error = refusal.Object()
 	}
 	return c
 }
@@ -510,7 +532,14 @@ func (p *Plan) ownHook(s SettingsChange) bool {
 // RefusedChanges is the changes output of init or update stopped before a plan: result refused, every field after
 // it null or [] but the workspace (once bonsai.yaml was read), allow_exec and the error (bonsai.changes/1).
 func RefusedChanges(command string, allowExec bool, e *Error) *format.Changes {
-	return &format.Changes{Command: command, Result: "refused", Workspace: e.Workspace, AllowExec: allowExec, Error: e.Object()}
+	return RefusedChangesWord(command, format.ChangesWord{Name: command}, allowExec, e)
+}
+
+// RefusedChangesWord is RefusedChanges with the word that printed it: bonsai pack's, whose command is update.
+func RefusedChangesWord(command string, word format.ChangesWord, allowExec bool, e *Error) *format.Changes {
+	return &format.Changes{Command: command, Result: "refused", Workspace: e.Workspace, AllowExec: allowExec, Error: e.Object(),
+		Loosening: []format.ChangesLoosening{}, Memory: []format.ChangesLine{}, PackChanges: []format.ChangesPackChange{},
+		CommitLines: []string{}, Word: word}
 }
 
 func orNull(s string) *string {
@@ -603,4 +632,44 @@ func (r *CheckResult) Text() string {
 	var d textui.Doc
 	r.TextTo(&d)
 	return d.String()
+}
+
+// editTo shows bonsai pack's bonsai.yaml edit: the line before and after, its own comment kept.
+func (p *Plan) editTo(d *textui.Doc) {
+	e := p.Edit
+	if e == nil {
+		return
+	}
+	var rows []textui.Row
+	where := fmt.Sprintf("%s line %d", workspace.ConfigFile, e.Line)
+	if e.Before != "" {
+		rows = append(rows, textui.R(textui.T("-", textui.Warn), textui.T(where, textui.Path), textui.C(ascii(strings.TrimSpace(e.Before)))))
+	}
+	if e.After != "" {
+		rows = append(rows, textui.R(textui.T("+", textui.New), textui.T(where, textui.Path), textui.C(ascii(strings.TrimSpace(e.After)))))
+	}
+	if e.Before == "" {
+		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("a new packs entry, in init's form with its comments", textui.Dim)))
+	} else if e.After == "" {
+		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("the whole packs entry is taken out", textui.Dim)))
+	} else if e.Comment != "" {
+		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("only the ref changes: the line's comment stays as it is", textui.Dim)))
+	}
+	d.Section("bonsai.yaml", rows...)
+}
+
+// looseningTo lists each protection the plan takes away (Loosening): a person's to write, its --yes refused in an
+// agent's session.
+func (p *Plan) looseningTo(d *textui.Doc) {
+	loose := p.Loosening()
+	if len(loose) == 0 {
+		return
+	}
+	var rows []textui.Row
+	for _, l := range loose {
+		what := map[string]string{LoosePack: "the pack taken out", LooseDeny: "a deny rule", LooseProtected: "a protected path"}[l.Kind]
+		rows = append(rows, textui.R(textui.T(l.Kind, textui.Warn), textui.T(ascii(l.Value), textui.Path), textui.C(what+", from "+l.Pack)))
+	}
+	rows = append(rows, textui.R(textui.C(""), textui.T("this takes protections away: only a person writes it (an agent's --yes is refused)", textui.Warn)))
+	d.Section("Loosens", rows...)
 }
