@@ -199,7 +199,7 @@ out after that (vision 2.6).
 | `bonsai log append --label … [--json]` | One outside event (contract §8.4) | The log |
 | `bonsai settings show [--machine] [--json]` / `set k=v [--machine] [--json]` | This machine's settings for the workspace: `status_writes`, `status_command` (contract §3, §10.1); with `--machine`, the home's own: `cache_keep_days` (§6). How long project files are kept is `bonsai.yaml`'s, not a machine setting | The home |
 | `bonsai labels attach <file> [--json]` / `detach <namespace> [--json]` | Machine-attached label definitions (contract §5.3) | The home |
-| `bonsai pack outdated [--json]` / `set <id>@<ref>` / `add --source URL --ref R [--path P]` / `remove <id>`, each change with update's flags and `--expect FP` | `outdated`: each locked pack's version against its source's newest release tag (the network; the answer kept in the home's `cache/packs.json`, which plain `status` reads offline). `set`, `add`, `remove`: edit `bonsai.yaml`'s packs (only the ref's text, or one whole entry; every comment kept) and run `update` on it, in one preview and one all-or-nothing `--yes` | `outdated`: the home's cache. The others: project files, as `update` |
+| `bonsai pack outdated [--changes] [--json]` / `show <id> [--json]` / `set <id>@<ref> [--downgrade]` or `set --all` / `add --source URL --ref R [--path P]` / `remove <id>`, each change with update's flags and `--expect FP` | `outdated`: each locked pack's version against its source's newest release tag (the network; the answer kept in the home's `cache/packs.json`, which plain `status` reads offline); `--changes` adds each behind pack's commit titles (text only). `show`: one locked pack's details, offline. `set`, `add`, `remove`: edit `bonsai.yaml`'s packs (only the ref's text, or one whole entry; every comment kept) and run `update` on it, in one preview and one all-or-nothing `--yes`; `set --all` moves every pack behind to its newest release, and a move to an older release tag needs `--downgrade` | `outdated`: the home's cache (with `--changes`, its clones). `show`: nothing. The others: project files, as `update` |
 
 > **Changed 9 Oct (step 5.1.1):** `init` takes the flags `update` takes, and both take `--allow-exec`: a pack's hook
 > lines, the pack files they run and a plugin's own code parts are written or installed only with it as well as `--yes`
@@ -227,7 +227,10 @@ fourteen words, one free under the cap).
 > judged as an edit of `bonsai.yaml` and the lock (an agent's needs a task granting both), as `update` is; a plan that
 > takes protections away (`pack remove`, or a version that drops a deny rule or a protected path) is a person's, its
 > `--yes` refused in an agent's session whatever the task grants, and so is `update`'s after a hand edit that does
-> the same. `--expect <fingerprint>` on `update` and `pack` ties the write to the `--json` preview read.
+> the same. `--expect <fingerprint>` on `update` and `pack` ties the write to the `--json` preview read. Two more
+> refusals hold before anything is written: `pack-downgrade`, a `set` to an older release tag without `--downgrade`,
+> and `pack-needs`, a `set` or `add` to a version that needs a newer Claude Code than the machine runs or is in a pack
+> format this Bonsai does not read (§7).
 
 **Refused in an agent session** (a tripwire, decision D): `settings set` and `labels attach` and `detach` refuse when
 `CLAUDE_CODE_CHILD_SESSION` is set. Claude Code sets that variable only in processes it starts; `CLAUDECODE` is also
