@@ -282,10 +282,11 @@ func OldMarketHint(p *Plan, cli PluginCLI) *PluginResult {
 // commitArg writes a path for the commit lines (T-6011's verifier, B1: a pack chooses its files' paths): bare when
 // every byte is a letter, a digit or one of . _ / -; else in single quotes, which neither sh nor PowerShell 5.1 reads
 // into. ok false for a path holding a byte outside printable ASCII or a quote character of either shell (' " `), or
-// a character git reads as pathspec magic (* ? [ ], or a leading :), which could stage more than the one file: such
-// a path is not printed at all. The line puts -- before the paths, so one starting with - is never an option.
+// a character git reads as pathspec magic (* ? [ ], or a leading :), which could stage more than the one file, or a
+// leading - (PowerShell 5.1 splits a bare word that starts with - at a dot: -x.env reaches git as -x and .env): such
+// a path is not printed at all. The line also puts -- before the paths.
 func commitArg(path string) (string, bool) {
-	if strings.HasPrefix(path, ":") {
+	if strings.HasPrefix(path, ":") || strings.HasPrefix(path, "-") {
 		return "", false
 	}
 	for i := 0; i < len(path); i++ {
@@ -324,7 +325,7 @@ func (p *Plan) commitLines() (lines []string, held string) {
 			arg, ok := commitArg(f.Path)
 			if !ok {
 				held = "the path " + ShellArg(f.Path) + " holds a byte outside printable ASCII, a quote character, or a character git " +
-					"reads as a pattern (* ? [ ] or a leading :), which no printed commit line holds"
+					"reads as a pattern (* ? [ ] or a leading :), or starts with -, which no printed commit line holds"
 				continue
 			}
 			paths = append(paths, arg)

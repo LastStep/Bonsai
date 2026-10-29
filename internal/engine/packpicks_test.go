@@ -208,9 +208,9 @@ func TestCommitLinesHostilePaths(t *testing.T) {
 		return &Plan{Command: "update", LockWrite: true, Config: &workspace.Config{}, Files: []*FileResult{{Path: path, Result: Created, write: []byte("x")}}}
 	}
 	// Printed: each path one argument after --, its bytes unchanged (a plain path among them, so holding every path back
-	// fails this; one starting with - is never an option, after --).
-	for _, path := range []string{"docs/plain.md", "docs/a;rm -rf x.md", "docs/$(id).md", "docs/a b.md", "docs/a&b|c.md", "-n.md",
-		"--pathspec-from-file=docs/list.txt", "docs/#x.md", "docs/a!b.md"} {
+	// fails this).
+	for _, path := range []string{"docs/plain.md", "docs/a;rm -rf x.md", "docs/$(id).md", "docs/a b.md", "docs/a&b|c.md",
+		"docs/-n.md", "docs/#x.md", "docs/a!b.md"} {
 		p := plan(path)
 		lines := p.CommitLines()
 		if lines == nil {
@@ -224,9 +224,11 @@ func TestCommitLinesHostilePaths(t *testing.T) {
 			t.Errorf("%q: git add line %q reads as %q (ok %v)", path, lines[0], words, ok)
 		}
 	}
-	// Held: no line, and the reason (a byte outside printable ASCII, a quote character, git's pattern magic).
+	// Held: no line, and the reason (a byte outside printable ASCII, a quote character, git's pattern magic, a leading
+	// -, which PowerShell 5.1 splits at a . when bare: -x.env reaches git as -x and .env, brief 6).
 	for _, path := range []string{"docs/x’;Write-Output INJECTED;#.md", "docs/`id`.md", "docs/a\nb.md", "docs/it's.md", `docs/"q".md`,
-		"docs/[ab].md", "docs/*.md", "docs/a?.md", "docs/a]b.md", ":(glob)docs", ":docs/a.md"} {
+		"docs/[ab].md", "docs/*.md", "docs/a?.md", "docs/a]b.md", ":(glob)docs", ":docs/a.md", "-x.env", "-n.md",
+		"--pathspec-from-file=docs/list.txt"} {
 		p := plan(path)
 		if lines := p.CommitLines(); lines != nil || p.CommitLinesHeld() == "" {
 			t.Errorf("%q: printed %q, want held", path, lines)
