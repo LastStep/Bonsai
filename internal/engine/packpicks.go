@@ -279,24 +279,62 @@ func OldMarketHint(p *Plan, cli PluginCLI) *PluginResult {
 		Next: "once no other checkout of this project uses it, run: claude plugin marketplace remove " + p.OldMarket, Who: "person"}
 }
 
+// commitArg writes a path for the commit lines (T-6011's verifier, B1: a pack chooses its files' paths): bare when
+// every byte is a letter, a digit or one of . _ / -; else in single quotes, which neither sh nor PowerShell 5.1 reads
+// into. ok false for a path holding a byte outside printable ASCII or a quote character of either shell (' " `):
+// such a path is not printed at all.
+func commitArg(path string) (string, bool) {
+	for i := 0; i < len(path); i++ {
+		if c := path[i]; c < 0x20 || c > 0x7e || c == '\'' || c == '"' || c == '`' {
+			return "", false
+		}
+	}
+	if bareArg(path, "._/-") {
+		return path, true
+	}
+	return "'" + path + "'", true
+}
+
 // CommitLines are the commands that commit what the plan wrote (pick 7): git add with every file written, in the
 // plan's order and the lock last, forward slashes (and bonsai.yaml first when update wrote the lock from a hand edit
-// of it), then git commit with a message naming each pack moved; one per line, never joined by && (PowerShell 5.1
-// has none). nil when nothing was written.
+// of it), then git commit with a message naming each pack moved, in single quotes; one per line, never joined by &&
+// (PowerShell 5.1 has none). nil when nothing was written, and nil when a path written cannot be printed safely
+// (CommitLinesHeld says why: the files are then committed by hand, the list in --json's files).
 func (p *Plan) CommitLines() []string {
+	lines, _ := p.commitLines()
+	return lines
+}
+
+// CommitLinesHeld is why CommitLines left the lines out though the plan wrote files: a path no shell line may hold;
+// "" when they were made, or nothing was written.
+func (p *Plan) CommitLinesHeld() string {
+	_, held := p.commitLines()
+	return held
+}
+
+func (p *Plan) commitLines() (lines []string, held string) {
 	var paths []string
 	config := false
 	for _, f := range p.Files {
 		if f.Writes() && f.Result != Unchanged {
-			paths = append(paths, ShellArg(f.Path))
+			arg, ok := commitArg(f.Path)
+			if !ok {
+				held = "the path " + ShellArg(f.Path) + " holds a byte outside printable ASCII or a quote character, which no printed " +
+					"command line holds"
+				continue
+			}
+			paths = append(paths, arg)
 			config = config || f.Path == workspace.ConfigFile
 		}
+	}
+	if held != "" {
+		return nil, held
 	}
 	if p.LockWrite || p.LockRemove {
 		paths = append(paths, workspace.LockFile)
 	}
 	if len(paths) == 0 {
-		return nil
+		return nil, ""
 	}
 	// The lock written follows bonsai.yaml as it stands, a hand edit's among them (update after one): the two are
 	// committed together, bonsai.yaml first.
@@ -309,23 +347,25 @@ func (p *Plan) CommitLines() []string {
 			refs[r.ID] = r.Ref
 		}
 	}
+	// The message from safe words only, in single quotes (no ! history expansion, no $, in either shell): a pack id
+	// or a ref holding anything but letters, digits and . _ / - is left out of it.
+	safe := func(s string) bool { return bareArg(s, "._/-") }
 	var moves []string
 	for _, m := range p.Packs {
 		switch {
+		case !safe(m.ID):
+			moves = append(moves, "a pack moved")
 		case m.To == "":
 			moves = append(moves, m.ID+" taken out")
-		case m.From != m.To:
+		case m.From != m.To && safe(refs[m.ID]):
 			moves = append(moves, m.ID+" to "+refs[m.ID])
+		case m.From != m.To:
+			moves = append(moves, m.ID+" moved")
 		}
 	}
 	msg := "bonsai: " + p.Command
 	if len(moves) > 0 {
 		msg = "bonsai: " + strings.Join(moves, ", ")
 	}
-	msg = ascii(msg)
-	quoted := `"` + msg + `"`
-	if strings.ContainsAny(msg, "\"$`\\") {
-		quoted = "'" + strings.ReplaceAll(msg, "'", "''") + "'" // nothing in it either shell would read
-	}
-	return []string{"git add " + strings.Join(paths, " "), "git commit -m " + quoted}
+	return []string{"git add " + strings.Join(paths, " "), "git commit -m '" + msg + "'"}, ""
 }

@@ -94,7 +94,7 @@ func TestCommitLines(t *testing.T) {
 		Packs: []PackMove{{ID: "base", From: "a", To: "b"}, {ID: "wf", From: "c", To: "d"}, {ID: "same", From: "e", To: "e"}, {ID: "out", From: "f"}}}
 	got := p.CommitLines()
 	want := []string{"git add bonsai.yaml 'docs/a b.md' gone/old.md .bonsai/lock.json",
-		`git commit -m "bonsai: base to base-v1.0.1, wf to v1.0.2, out taken out"`}
+		`git commit -m 'bonsai: base to base-v1.0.1, wf to v1.0.2, out taken out'`}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("CommitLines:\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
@@ -104,7 +104,7 @@ func TestCommitLines(t *testing.T) {
 		}
 	}
 	p.Packs = nil
-	if got := p.CommitLines(); got[1] != `git commit -m "bonsai: update"` {
+	if got := p.CommitLines(); got[1] != `git commit -m 'bonsai: update'` {
 		t.Errorf("no pack moved: %q", got)
 	}
 	if got := (&Plan{Command: "update", Files: []*FileResult{{Path: "kept.md", Result: Unchanged}}}).CommitLines(); got != nil {
@@ -114,5 +114,110 @@ func TestCommitLines(t *testing.T) {
 	p.CommitLinesOut = []string{"git add x", "git commit -m \"y\""}
 	if ch := p.Changes("applied", nil); len(ch.CommitLines) != 2 {
 		t.Errorf("commit_lines: %v", ch.CommitLines)
+	}
+}
+
+// strictWords splits a printed command line the way neither sh nor PowerShell 5.1 can read otherwise: words apart by
+// one space, each bare ([A-Za-z0-9._/-] only) or in ASCII single quotes holding printable ASCII with no quote
+// character of either shell. ok false for a line holding anything else (a byte outside printable ASCII, an unquoted
+// ; $ ` & | ( ) or #, a smart quote, a newline): such a line could be more than its words.
+func strictWords(line string) (words []string, ok bool) {
+	bare := func(c byte) bool {
+		return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || strings.IndexByte("._/-", c) >= 0
+	}
+	for i := 0; i < len(line); {
+		switch {
+		case line[i] == '\'':
+			// In single quotes; '' inside is one quote to PowerShell and two quoted strings run together to sh:
+			// one word either way.
+			var w strings.Builder
+			j := i + 1
+			for {
+				if j >= len(line) {
+					return nil, false
+				}
+				if line[j] == '\'' {
+					if j+1 < len(line) && line[j+1] == '\'' {
+						w.WriteByte('\'')
+						j += 2
+						continue
+					}
+					break
+				}
+				if line[j] < 0x20 || line[j] > 0x7e || line[j] == '"' || line[j] == '`' {
+					return nil, false
+				}
+				w.WriteByte(line[j])
+				j++
+			}
+			words = append(words, w.String())
+			i = j + 1
+		default:
+			j := i
+			for j < len(line) && bare(line[j]) {
+				j++
+			}
+			if j == i {
+				return nil, false
+			}
+			words = append(words, line[i:j])
+			i = j
+		}
+		if i < len(line) {
+			if line[i] != ' ' || i+1 == len(line) || line[i+1] == ' ' {
+				return nil, false
+			}
+			i++
+		}
+	}
+	return words, true
+}
+
+// ShellArg, which every printed command line's arguments go through (next steps naming a path, the command lines
+// a refusal repeats): a hostile word is always one word in printable ASCII; a plain one stays bare.
+func TestShellArgHostile(t *testing.T) {
+	for _, s := range []string{"docs/x’;Write-Output INJECTED;#.md", "a;b", "$(id)", "`id`", "a b", "a\nb", "it's", `"q"`, "a&b|c",
+		"x,y", "@x", "‘x‘"} {
+		got := ShellArg(s)
+		words, ok := strictWords(got)
+		if !ok || len(words) != 1 {
+			t.Errorf("ShellArg(%q) = %q: not one plain word", s, got)
+		}
+	}
+	for _, s := range []string{"docs/a.md", "base@base-v1.0.1", "--keep", "k=v", "ws-abc"} {
+		if got := ShellArg(s); got != s {
+			t.Errorf("ShellArg(%q) = %q, want it bare", s, got)
+		}
+	}
+}
+
+// B1 (the verifier of 29 Oct): a hostile pack file path never gives a printed git add line that is more than one
+// argument for it, in sh or PowerShell 5.1, and the line stays printable ASCII; a path it cannot print safely leaves
+// the commit lines out (the command then says to commit by hand). The commit message is single-quoted, its ref passed
+// through the same rule (no ! or $ a shell would read).
+func TestCommitLinesHostilePaths(t *testing.T) {
+	for _, path := range []string{"docs/x’;Write-Output INJECTED;#.md", "docs/a;rm -rf x.md", "docs/$(id).md", "docs/`id`.md",
+		"docs/a b.md", "docs/a\nb.md", "docs/it's.md", `docs/"q".md`, "docs/plain.md", "docs/a&b|c.md"} {
+		p := &Plan{Command: "update", LockWrite: true, Config: &workspace.Config{},
+			Files: []*FileResult{{Path: path, Result: Created, write: []byte("x")}}}
+		lines := p.CommitLines()
+		if lines == nil {
+			continue // left out: the command says to commit by hand
+		}
+		words, ok := strictWords(lines[0])
+		// update wrote the lock: bonsai.yaml first, then the file, then the lock.
+		if !ok || len(words) != 5 || words[0] != "git" || words[1] != "add" || words[2] != workspace.ConfigFile || words[3] != path ||
+			words[4] != workspace.LockFile {
+			t.Errorf("%q: git add line %q reads as %q (ok %v)", path, lines[0], words, ok)
+		}
+	}
+	p := &Plan{Command: "update", LockWrite: true, Config: &workspace.Config{Packs: []workspace.PackRef{{ID: "base", Ref: "v1!$(id)"}, {ID: "wf", Ref: "v1.0.2"}}},
+		Files: []*FileResult{{Path: "base/a.md", Result: Updated, write: []byte("x")}},
+		Packs: []PackMove{{ID: "base", From: "a", To: "b"}, {ID: "wf", From: "c", To: "d"}}}
+	lines := p.CommitLines()
+	words, ok := strictWords(lines[1])
+	if !ok || len(words) != 4 || words[0] != "git" || words[1] != "commit" || words[2] != "-m" || !strings.HasPrefix(lines[1], "git commit -m '") ||
+		strings.ContainsAny(words[3], "!$`\"'") || !strings.Contains(words[3], "wf to v1.0.2") {
+		t.Errorf("the commit message: %q reads as %q (ok %v)", lines[1], words, ok)
 	}
 }

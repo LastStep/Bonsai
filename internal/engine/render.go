@@ -12,6 +12,7 @@ package engine
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
@@ -343,12 +344,47 @@ func (p *Plan) ConflictNext(cmdline string) string {
 	return "to keep your edits, run: " + k + "\n  or, to take the pack's copies (yours are saved in the Bonsai home's cache, never in the repo), run: " + a
 }
 
-// ShellArg quotes an argument for PowerShell and sh alike when it holds a space or a quote character.
+// ShellArg writes an argument of a printed command line so that sh and PowerShell 5.1 each read it as one word and
+// nothing more (T-6011's verifier, B1): bare when every byte is a letter, a digit or one of . _ / - @ + = : (and it
+// does not start with @, PowerShell's splatting); else in single quotes, a single quote doubled (one quote to
+// PowerShell, two quoted strings run together to sh: one word to both). Every byte outside printable ASCII, and the
+// double quote and backtick (PowerShell 5.1 mangles a double quote passed to a program; a backtick is its escape),
+// is written as a Go escape (’, \n, \x22): such a word prints as text that names it, never the byte, so a
+// smart quote PowerShell reads as a single quote, or a newline, never reaches the shell. Its callers are every next
+// step that repeats a command line or names a path (render.go's settle steps, check's and checkdocs' git checkout
+// lines, cmd/bonsai's repeated command lines); none is looser than before. The commit lines hold their paths to a
+// stricter rule still (commitArg, packpicks.go).
 func ShellArg(s string) string {
-	if s != "" && !strings.ContainsAny(s, " \t'\"$`;&|<>()") {
+	if bareArg(s, "._/-@+=:") && s[0] != '@' {
 		return s
 	}
-	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r == '"' || r == '`':
+			fmt.Fprintf(&b, `\x%02x`, r)
+		case r >= 0x20 && r < 0x7f:
+			b.WriteRune(r)
+		default:
+			q := strconv.QuoteRuneToASCII(r)
+			b.WriteString(q[1 : len(q)-1])
+		}
+	}
+	return "'" + strings.ReplaceAll(b.String(), "'", "''") + "'"
+}
+
+// bareArg reports a word that is not empty and holds only letters, digits and the bytes of more.
+func bareArg(s, more string) bool {
+	if s == "" {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || strings.IndexByte(more, c) >= 0) {
+			return false
+		}
+	}
+	return true
 }
 
 // AppliedTo adds what was written: each file that changed, and where each adopted copy went. Nothing when nothing
