@@ -11,6 +11,9 @@ package recorder
 //   - the active task (contract §13) with its title, status, lane, branch and grants (bonsai.allows), or "none" with
 //     the function's reason;
 //   - that task's last ladder result (green or not, its commit, when; step 5.4 writes them), or "none yet";
+//   - the lines its caller makes (Options.More): cmd/bonsai's hook path gives one naming the packs the home's
+//     cache/packs.json says are behind (T-6011, the director's pick 2: "Packs behind: workflow v1.0.1 -> v1.0.2
+//     (bonsai pack outdated)"), nothing when none is or there is no cache, never reading a source;
 //   - the label definitions attached on this machine (contract §5.3).
 //
 // At most MaxContextLines lines; past that, one line naming bonsai status --json. It prints what it can and exits 0:
@@ -71,7 +74,11 @@ func start(o Options) string {
 			_, _ = writeLog(local.Main, l)
 		}
 	}
-	return openingContext(cfg, local, act)
+	var more []string
+	if o.More != nil {
+		more = o.More(proj, cfg)
+	}
+	return openingContext(cfg, local, act, more)
 }
 
 // self gives the running binary's path as a record keeps it (from ~/ under the user's home, forward slashes) and its
@@ -91,8 +98,9 @@ func self(o Options) (string, string) {
 // record.FromHome, the rule's one home.
 func underHome(path, home string) string { return record.FromHome(path, home) }
 
-// openingContext is the context hook start prints (this file's comment); act is the run's active task.
-func openingContext(cfg *workspace.Config, local workspace.Local, act *active) string {
+// openingContext is the context hook start prints (this file's comment); act is the run's active task, more the lines
+// made outside the recorder (Options.More: the packs behind), after the task's.
+func openingContext(cfg *workspace.Config, local workspace.Local, act *active, more []string) string {
 	var out []string
 	add := func(format string, a ...any) { out = append(out, fmt.Sprintf(format, a...)) }
 	add("Bonsai: this project is the workspace %s (%s). Its log is in .bonsai/local/ (never committed).", cfg.Name, cfg.ID)
@@ -108,6 +116,11 @@ func openingContext(cfg *workspace.Config, local workspace.Local, act *active) s
 			orNone(str(t.Lane)), orNone(taskBranch(t)))
 		add("Its grants (bonsai.allows): %s.", taskAllows(t))
 		add("Its last ladder result: %s.", lastLadder(local, a.ID))
+	}
+	for _, l := range more {
+		if l != "" {
+			out = append(out, l)
+		}
 	}
 	out = append(out, attachedLabels(local)...)
 	if len(out) > MaxContextLines {

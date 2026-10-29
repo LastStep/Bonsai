@@ -15,6 +15,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/guard"
 	"github.com/LastStep/Bonsai/internal/recorder"
 	"github.com/LastStep/Bonsai/internal/stopgate"
+	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
 func init() { register(hookWord) }
@@ -165,8 +166,10 @@ It reads Claude Code's SessionStart payload on stdin and the project from CLAUDE
 It first writes the session's session_start record (bonsai.log/1) in the main checkout's .bonsai/local/log/, with the
 active task it finds, the model and the source, and the bonsai binary's path (from ~/ under the home) and SHA-256,
 hashed on every start. Then it prints the opening context on stdout, which Claude Code adds to the session: the
-workspace, the active task (status, lane, branch, grants), its last ladder result, and the label definitions attached
-on this machine; at most 60 lines. In a project with no bonsai.yaml it prints and records nothing.
+workspace, the active task (status, lane, branch, grants), its last ladder result, one line naming the packs behind
+when the Bonsai home's cache/packs.json says a newer release exists (Packs behind: ...; never reading a source), and
+the label definitions attached on this machine; at most 60 lines. In a project with no bonsai.yaml it prints and
+records nothing.
 `,
 	FlagNext: "use the hook line bonsai init writes (bonsai hook start --help quotes it)",
 	Exits: []Exit{
@@ -174,8 +177,22 @@ on this machine; at most 60 lines. In a project with no bonsai.yaml it prints an
 	},
 	Examples: []string{"CLAUDE_PROJECT_DIR=. bonsai hook start < payload.json"},
 	Run: func(c *call) int {
-		return recorder.Start(recorder.Options{Stdin: os.Stdin, StdinTerminal: isTerminal(os.Stdin)}, c.stdout)
+		return recorder.Start(recorder.Options{Stdin: os.Stdin, StdinTerminal: isTerminal(os.Stdin), More: startMore}, c.stdout)
 	},
+}
+
+// startMore is hook start's line made outside the recorder (recorder.Options.More; the recorder cannot import the
+// engine, which imports it): the packs the home's cache says are behind (engine.PacksBehindLine, the director's pick
+// 2), offline; none when no pack is behind, there is no cache, or the home cannot be found.
+func startMore(proj string, cfg *workspace.Config) []string {
+	home, err := workspace.Home()
+	if err != nil {
+		return nil
+	}
+	if l := engine.PacksBehindLine(home, proj, cfg); l != "" {
+		return []string{l}
+	}
+	return nil
 }
 
 var recordWord = &Word{

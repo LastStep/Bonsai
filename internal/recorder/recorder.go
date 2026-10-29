@@ -68,6 +68,10 @@ type Options struct {
 	Budget        time.Duration       // the hook's own time limit; 0 means Budget
 	Executable    func() (string, error)
 	UserHome      func() (string, error)
+	// More gives hook start's opening context lines made outside the recorder, which cannot import the engine (the
+	// engine imports it): cmd/bonsai's hook path gives the packs-behind line (engine.PacksBehindLine, offline, from
+	// the home's cache). proj is the project's top folder, cfg its bonsai.yaml. nil adds nothing.
+	More func(proj string, cfg *workspace.Config) []string
 }
 
 func (o *Options) defaults() {
