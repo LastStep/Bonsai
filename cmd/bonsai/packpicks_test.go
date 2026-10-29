@@ -18,6 +18,7 @@ import (
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/recorder"
 	"github.com/LastStep/Bonsai/internal/testpack"
+	"github.com/LastStep/Bonsai/internal/textui"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -221,7 +222,7 @@ func TestPackCommitLinesAndOldMarketplace(t *testing.T) {
 	ch := changesOf(t, out)
 	if code != 0 || len(ch.CommitLines) != 2 || !strings.HasPrefix(ch.CommitLines[0], "git add bonsai.yaml ") ||
 		!strings.Contains(ch.CommitLines[0], " tag-pack/readme.md ") || !strings.HasSuffix(ch.CommitLines[0], " .bonsai/lock.json") ||
-		ch.CommitLines[1] != `git commit -m "bonsai: tag-pack to v0.2.0"` {
+		ch.CommitLines[1] != `git commit -m 'bonsai: tag-pack to v0.2.0'` {
 		t.Errorf("commit_lines: %d %q\n%s", code, ch.CommitLines, errOut)
 	}
 	for _, l := range ch.CommitLines {
@@ -248,14 +249,119 @@ func TestPackCommitLinesAndOldMarketplace(t *testing.T) {
 	c.commit("moved")
 	c.write("bonsai.yaml", strings.Replace(c.read("bonsai.yaml"), "v0.2.0", "v0.3.0", 1))
 	code, out, errOut = c.run("", "update", "--yes")
-	if s := flat(out); code != 0 || !strings.Contains(s, "Commit to commit what was written, run each line: git add bonsai.yaml") ||
-		!strings.Contains(s, `git commit -m "bonsai: tag-pack to v0.3.0"`) || !strings.Contains(s, "claude plugin marketplace remove") {
+	if s := flat(out); code != 0 || !strings.Contains(out, "\ngit add bonsai.yaml tag-pack/readme.md ") ||
+		!strings.Contains(out, "\ngit commit -m 'bonsai: tag-pack to v0.3.0'\n") || !strings.Contains(s, "claude plugin marketplace remove") {
 		t.Errorf("update --yes's text: %d\n%s%s", code, out, errOut)
 	}
 	// A preview has none.
 	c.commit("moved again")
 	if _, out, _ := c.run("", "pack", "set", "tag-pack@v0.2.0", "--downgrade", "--json"); len(changesOf(t, out).CommitLines) != 0 {
 		t.Errorf("a preview's commit_lines: %s", out)
+	}
+}
+
+// B2 (the verifier of 29 Oct): the text's commit lines are commit_lines byte for byte, each one whole physical line,
+// never wrapped (the text is drawn 100 columns wide in a pipe, narrower than this git add line); the same move applied
+// with --json, moved back, then applied in text writes the same files.
+func TestPackCommitLinesPrintedWhole(t *testing.T) {
+	c := lightCLI(t)
+	src, _ := tagPack(t, c.tmp, "tag-pack-with-a-long-name", false)
+	c.linkPacks(src, "v0.1.0")
+	code, out, _ := c.run("", "pack", "set", "tag-pack-with-a-long-name@v0.2.0", "--yes", "--json")
+	want := changesOf(t, out).CommitLines
+	if code != 0 || len(want) != 2 || len(want[0]) < 100 {
+		t.Fatalf("the --json apply: %d %q", code, want)
+	}
+	c.commit("moved")
+	if code, out, errOut := c.run("", "pack", "set", "tag-pack-with-a-long-name@v0.1.0", "--downgrade", "--yes"); code != 0 {
+		t.Fatalf("back: %d\n%s%s", code, out, errOut)
+	}
+	c.commit("back")
+	code, out, errOut := c.run("", "pack", "set", "tag-pack-with-a-long-name@v0.2.0", "--yes")
+	lines := strings.Split(out, "\n")
+	for _, w := range want {
+		found := false
+		for _, l := range lines {
+			found = found || l == w
+		}
+		if !found {
+			t.Errorf("the text has no line that is exactly %q: %d\n%s%s", w, code, out, errOut)
+		}
+	}
+}
+
+// B1 end to end (the verifier's case): a pack version writing a file whose path holds U+2019, ; and #: after --yes no
+// commit line is printed or kept, the text says to commit by hand, and the output stays ASCII (c.run holds both
+// streams to it).
+func TestPackCommitLinesHostilePath(t *testing.T) {
+	c := lightCLI(t)
+	evil := "tag-pack/x’;Write-Output INJECTED;#.md"
+	y := strings.Replace(tagPackYAML("tag-pack", "0.4.0", "deny: []\n", ""), "path: tag-pack/readme.md", "path: \""+evil+"\"", 1)
+	src, shas := tagPack(t, c.tmp, "tag-pack", false, y)
+	testpack.Tag(t, src, "v0.4.0", shas[3])
+	c.linkPacks(src, "v0.1.0")
+	code, out, _ := c.run("", "pack", "set", "tag-pack@v0.4.0", "--yes", "--json")
+	ch := changesOf(t, out)
+	if code != 0 || len(ch.CommitLines) != 0 || !c.exists(evil) {
+		t.Fatalf("the --json apply: %d %q (written %v)", code, ch.CommitLines, c.exists(evil))
+	}
+	c.commit("moved")
+	if code, _, _ := c.run("", "pack", "set", "tag-pack@v0.1.0", "--downgrade", "--yes"); code != 0 {
+		t.Fatal("back")
+	}
+	c.commit("back")
+	code, out, errOut := c.run("", "pack", "set", "tag-pack@v0.4.0", "--yes")
+	if code != 0 || !strings.Contains(flat(out), "commit the files written by hand") {
+		t.Errorf("the text: %d\n%s%s", code, out, errOut)
+	}
+	if strings.Contains(out, "git add") {
+		t.Errorf("a git add line printed:\n%s", out)
+	}
+}
+
+// The commit lines' text at a terminal narrower than the lines (60 and 100 columns): each still one whole physical
+// line, byte for byte; a held line gives the note and no command.
+func TestCommitLinesTextAtAnyWidth(t *testing.T) {
+	lines := []string{"git add bonsai.yaml " + strings.Repeat("a-long-folder/", 8) + "file.md CLAUDE.md .claude/settings.json .bonsai/lock.json",
+		"git commit -m 'bonsai: " + strings.Repeat("pack to v1.0.0, ", 5) + "last to v2.0.0'"}
+	for _, w := range []int{60, 100} {
+		d := &textui.Doc{}
+		commitLinesText(d, lines, "")
+		got := strings.Split(d.Render(textui.Look{Width: w}), "\n")
+		for _, l := range lines {
+			found := false
+			for _, g := range got {
+				found = found || g == l
+			}
+			if !found {
+				t.Errorf("width %d: no line is exactly %q:\n%s", w, l, strings.Join(got, "\n"))
+			}
+		}
+	}
+	d := &textui.Doc{}
+	commitLinesText(d, nil, "the path 'x' holds a byte outside printable ASCII")
+	if s := d.Render(textui.Look{Width: 60}); !strings.Contains(s, "by hand") || strings.Contains(s, "git add") {
+		t.Errorf("held:\n%s", s)
+	}
+}
+
+// The compatibility check for pack add (the verifier's note): a new pack whose version needs a newer Claude Code than
+// this machine's is refused pack-needs, nothing written; its version with no need is added.
+func TestPackAddNeedsRefused(t *testing.T) {
+	c := lightCLI(t)
+	src, _ := tagPack(t, c.tmp, "tag-pack", false)
+	need, shas := tagPack(t, c.tmp, "need-pack", false, tagPackYAML("need-pack", "0.4.0", "deny: []\n", "needs:\n  claude_code: \"99.0.0\"\n"))
+	testpack.Tag(t, need, "v0.4.0", shas[3])
+	c.linkPacks(src, "v0.1.0")
+	fakeClaude(t, "2.1.300 (Claude Code)", nil)
+	before := tree(t, c.root)
+	code, out, _ := c.run("", "pack", "add", "--source", need, "--ref", "v0.4.0", "--yes", "--json")
+	if ch := changesOf(t, out); code != 4 || ch.Error == nil || ch.Error.Code != "pack-needs" || !strings.Contains(ch.Error.Message, "needs Claude Code 99.0.0") ||
+		tree(t, c.root) != before {
+		t.Errorf("pack add of a version with a newer need: %d %+v", code, ch.Error)
+	}
+	if code, out, errOut := c.run("", "pack", "add", "--source", need, "--ref", "v0.1.0", "--yes"); code != 0 {
+		t.Errorf("pack add of a version with no need: %d\n%s%s", code, out, errOut)
 	}
 }
 

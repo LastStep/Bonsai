@@ -453,16 +453,25 @@ func pluginStep(plan *engine.Plan, again string, written bool) []engine.PluginRe
 
 // commitLinesTo adds, after update's or bonsai pack's --yes wrote, the two commands that commit the files written,
 // one per line and never joined by && (PowerShell 5.1 has none), and keeps them for --json's commit_lines (pick 7).
+// Each is printed as one whole physical line, never wrapped at any width (T-6011's verifier, B2), and byte for byte
+// as commit_lines holds it. When a path written cannot be printed safely (engine.Plan.CommitLinesHeld), no line is
+// printed or kept, and the note says to commit the files by hand, and why.
 func commitLinesTo(d *textui.Doc, plan *engine.Plan) {
 	plan.CommitLinesOut = plan.CommitLines()
-	if len(plan.CommitLinesOut) == 0 {
+	commitLinesText(d, plan.CommitLinesOut, plan.CommitLinesHeld())
+}
+
+// commitLinesText is commitLinesTo's text: the lines, each a whole physical line; or, held, the note.
+func commitLinesText(d *textui.Doc, lines []string, held string) {
+	if held != "" {
+		d.Para("Commit", "commit the files written by hand (the list is under Written; --json: files): "+engine.ASCII(held), textui.Warn)
 		return
 	}
-	rows := []textui.Row{textui.R(textui.C("to commit what was written, run each line:"))}
-	for _, l := range plan.CommitLinesOut {
-		rows = append(rows, textui.R(textui.T(l, textui.Path)))
+	if len(lines) == 0 {
+		return
 	}
-	d.Section("Commit", rows...)
+	d.Para("Commit", "to commit what was written, run each line below as it is, one at a time:", textui.Plain)
+	d.Raw(strings.Join(lines, "\n") + "\n")
 }
 
 // recorded writes this machine's record of the checkout (engine.RecordCheckout) once init or update ended without a
