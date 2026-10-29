@@ -96,6 +96,13 @@ type Request struct {
 	// edit that made it, for the preview. nil reads bonsai.yaml from disk, as every other word does.
 	Config []byte
 	Edit   *ConfigEdit
+	// MoreEdits are the other ref lines Config changes, after Edit's (bonsai pack set --all: one SetRef per pack moved),
+	// for the preview; nil for one edit.
+	MoreEdits []*ConfigEdit
+	// Needs, set by bonsai pack alone, holds each pack the plan moves or adds to the format this Bonsai reads and to
+	// this machine's Claude Code (packpicks.go): refused pack-needs before anything is written. nil checks nothing, as
+	// for update, which keeps warning (check, status).
+	Needs *Needs
 }
 
 // PackMove is one pack in a plan: its commit before (none at a first link) and after.
@@ -140,7 +147,15 @@ type Plan struct {
 	// those steps, for bonsai.changes/1; empty for a preview and a refusal.
 	Memory     []format.ChangesLine
 	Cache      *format.ChangesLine
-	Packs      []PackMove
+	// MoreEdits are Request.MoreEdits (pack set --all's other ref lines). PackChanges are the moved packs' commit
+	// titles (FillPackChanges, which bonsai pack set calls), for the preview and bonsai.changes/1's pack_changes; nil
+	// for none read. CommitLinesOut are the commands that commit what a --yes wrote (CommitLines), set by the command
+	// once it wrote, for commit_lines. NeedsUnread names each pack need that could not be compared (Request.Needs).
+	MoreEdits      []*ConfigEdit
+	PackChanges    []format.ChangesPackChange
+	CommitLinesOut []string
+	NeedsUnread    []string
+	Packs          []PackMove
 	Files      []*FileResult
 	Settings   []SettingsChange // the settings lines the plan adds, changes or removes (when it writes the file)
 	Conflicts  []*FileResult
@@ -329,7 +344,7 @@ func Build(req Request) (_ *Plan, err error) {
 			return nil, errorf("unexpected", ExitRuntime, "run bonsai update", "edited bonsai.yaml bytes are taken only by update on a linked project")
 		}
 		rawConfig = req.Config
-		p.Edit = req.Edit
+		p.Edit, p.MoreEdits = req.Edit, req.MoreEdits
 	}
 	var cfg *workspace.Config
 	var newPacks []*PackData
@@ -465,8 +480,20 @@ func Build(req Request) (_ *Plan, err error) {
 					"the pack %s's tag %s resolved to %s when the lock was written and now resolves to %s: a tag that moves is "+
 						"refused (spec section 5), so nothing was written", r.ID, r.Ref, short(lp.Commit), short(commit)).whose("person")
 			}
+			// bonsai pack's compatibility check (Request.Needs), on each pack it moves or adds, before anything is read
+			// into the plan: a format this Bonsai does not read, or a newer Claude Code than this machine runs.
+			lp, locked := lockedPack[r.ID]
+			moved := req.Needs != nil && (!locked || lp.Commit != commit)
+			if moved {
+				if err := req.Needs.format(c, r, commit); err != nil {
+					return nil, err
+				}
+			}
 			c.recordResolved(r.Source, r.Ref, commit)
 			pd, err := c.packAt(r, commit)
+			if err == nil && moved {
+				err = req.Needs.need(pd, p)
+			}
 			if err != nil {
 				return nil, err
 			}

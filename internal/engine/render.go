@@ -58,6 +58,8 @@ func (p *Plan) PreviewTo(d *textui.Doc, diff, explain bool) {
 	}
 	p.takenOutTo(d)
 	p.editTo(d)
+	p.packChangesTo(d)
+	p.needsTo(d)
 	p.looseningTo(d)
 	var files []textui.Row
 	for _, f := range p.Files {
@@ -464,6 +466,7 @@ func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
 	c.Fingerprint = &fp
 	c.Memory = append([]format.ChangesLine{}, p.Memory...)
 	c.Cache = p.Cache
+	c.CommitLines = append([]string{}, p.CommitLinesOut...)
 	for _, r := range p.Plugins {
 		var next *format.Next
 		if r.Next != "" {
@@ -483,7 +486,7 @@ func (p *Plan) Changes(result string, refusal *Error) *format.Changes {
 func (p *Plan) changesCore() *format.Changes {
 	c := &format.Changes{Command: p.Command, Workspace: p.WorkspaceRef(), AllowExec: p.AllowExec,
 		LeftHooks: p.LeftHooks, Unverified: p.Unverified, Word: p.word(), Loosening: []format.ChangesLoosening{},
-		PackChanges: []format.ChangesPackChange{}, CommitLines: []string{}}
+		PackChanges: append([]format.ChangesPackChange{}, p.PackChanges...), CommitLines: []string{}}
 	if e := p.Edit; e != nil {
 		c.Config = &format.ChangesConfig{Path: workspace.ConfigFile, Line: int64(e.Line), Before: orNull(ascii(e.Before)),
 			After: orNull(ascii(e.After)), Comment: orNull(ascii(e.Comment))}
@@ -634,28 +637,66 @@ func (r *CheckResult) Text() string {
 	return d.String()
 }
 
-// editTo shows bonsai pack's bonsai.yaml edit: the line before and after, its own comment kept.
+// editTo shows bonsai pack's bonsai.yaml edit: the line before and after, its own comment kept; with pack set
+// --all, each ref line it changes.
 func (p *Plan) editTo(d *textui.Doc) {
-	e := p.Edit
-	if e == nil {
+	if p.Edit == nil {
 		return
 	}
 	var rows []textui.Row
-	where := fmt.Sprintf("%s line %d", workspace.ConfigFile, e.Line)
-	if e.Before != "" {
-		rows = append(rows, textui.R(textui.T("-", textui.Warn), textui.T(where, textui.Path), textui.C(ascii(strings.TrimSpace(e.Before)))))
+	comment := false
+	for _, e := range append([]*ConfigEdit{p.Edit}, p.MoreEdits...) {
+		where := fmt.Sprintf("%s line %d", workspace.ConfigFile, e.Line)
+		if e.Before != "" {
+			rows = append(rows, textui.R(textui.T("-", textui.Warn), textui.T(where, textui.Path), textui.C(ascii(strings.TrimSpace(e.Before)))))
+		}
+		if e.After != "" {
+			rows = append(rows, textui.R(textui.T("+", textui.New), textui.T(where, textui.Path), textui.C(ascii(strings.TrimSpace(e.After)))))
+		}
+		switch {
+		case e.Before == "":
+			rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("a new packs entry, in init's form with its comments", textui.Dim)))
+		case e.After == "":
+			rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("the whole packs entry is taken out", textui.Dim)))
+		}
+		comment = comment || e.Before != "" && e.After != "" && e.Comment != ""
 	}
-	if e.After != "" {
-		rows = append(rows, textui.R(textui.T("+", textui.New), textui.T(where, textui.Path), textui.C(ascii(strings.TrimSpace(e.After)))))
-	}
-	if e.Before == "" {
-		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("a new packs entry, in init's form with its comments", textui.Dim)))
-	} else if e.After == "" {
-		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("the whole packs entry is taken out", textui.Dim)))
-	} else if e.Comment != "" {
+	if comment {
 		rows = append(rows, textui.R(textui.C(""), textui.C(""), textui.T("only the ref changes: the line's comment stays as it is", textui.Dim)))
 	}
 	d.Section("bonsai.yaml", rows...)
+}
+
+// packChangesTo lists each moved pack's commit titles (FillPackChanges), newest first, or why they could not be read;
+// nothing when none was read.
+func (p *Plan) packChangesTo(d *textui.Doc) {
+	if len(p.PackChanges) == 0 {
+		return
+	}
+	var rows []textui.Row
+	for _, pc := range p.PackChanges {
+		switch {
+		case pc.Why != nil:
+			rows = append(rows, textui.R(textui.T(pc.Pack, textui.Key), textui.T("its changes could not be read: "+ascii(*pc.Why), textui.Warn)))
+		case len(pc.Titles) == 0:
+			rows = append(rows, textui.R(textui.T(pc.Pack, textui.Key), textui.T("no commit of its folder between the two (a move back lists none)", textui.Dim)))
+		}
+		for _, title := range pc.Titles {
+			rows = append(rows, textui.R(textui.T(pc.Pack, textui.Key), textui.C(ascii(title))))
+		}
+		if pc.More > 0 {
+			rows = append(rows, textui.R(textui.T(pc.Pack, textui.Key), textui.T(fmt.Sprintf("and %d more", pc.More), textui.Dim)))
+		}
+	}
+	d.Section("Changes", rows...)
+}
+
+// needsTo says each pack need the compatibility check could not compare (Request.Needs: Claude Code's version not
+// read), which refuses nothing.
+func (p *Plan) needsTo(d *textui.Doc) {
+	for _, n := range p.NeedsUnread {
+		d.Para("Needs", ascii(n)+" (nothing refuses for it)", textui.Warn)
+	}
 }
 
 // looseningTo lists each protection the plan takes away (Loosening): a person's to write, its --yes refused in an

@@ -1,12 +1,14 @@
 package engine
 
-// Claude Code's version against the floor (spec §7, "No Claude Code version pin"): warn only, never refuse. The floor
+// Claude Code's version against the floor (spec §7, "No Claude Code version pin"): warn, and refuse only a pack move
+// (the director's word of 28 Oct: bonsai pack set and add refuse a version whose need is newer, packpicks.go's Needs,
+// before anything is written). The floor
 // is the higher of two: Bonsai's own, ClaudeCodeFloor, the oldest Claude Code its tests ran on (the gate measured
 // 2.1.294 on both sides: records/gate-skeleton.md §2.10), which each release sets again; and any locked pack's
 // needs.claude_code (bonsai/pack.yaml), read from the lock's declares so CI needs no pack. bonsai check warns when
 // claude --version is older (claude-code-old), and when it cannot be read: not on the PATH, failing, or an answer with
-// no version in it (claude-code-unknown, spec §7: "whether its output form stays stable is unchecked"). No command,
-// hook or rung reads the version to decide anything; status --json lists the floor as a needs entry (kind tool, name
+// no version in it (claude-code-unknown, spec §7: "whether its output form stays stable is unchecked"). No other
+// command, no hook and no rung reads the version to decide anything; status --json lists the floor as a needs entry (kind tool, name
 // claude-code), never a problem, and status --full shows the version read (status's checks).
 //
 // claude --version is read defensively: run with no input, a timeout, and its output's first version-shaped word
