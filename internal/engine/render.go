@@ -347,13 +347,15 @@ func (p *Plan) ConflictNext(cmdline string) string {
 // ShellArg writes an argument of a printed command line so that sh and PowerShell 5.1 each read it as one word and
 // nothing more (T-6011's verifier, B1): bare when every byte is a letter, a digit or one of . _ / - @ + = : (and it
 // does not start with @, PowerShell's splatting); else in single quotes, a single quote doubled (one quote to
-// PowerShell, two quoted strings run together to sh: one word to both). Every byte outside printable ASCII, and the
-// double quote and backtick (PowerShell 5.1 mangles a double quote passed to a program; a backtick is its escape),
-// is written as a Go escape (’, \n, \x22): such a word prints as text that names it, never the byte, so a
-// smart quote PowerShell reads as a single quote, or a newline, never reaches the shell. Its callers are every next
-// step that repeats a command line or names a path (render.go's settle steps, check's and checkdocs' git checkout
-// lines, cmd/bonsai's repeated command lines); none is looser than before. The commit lines hold their paths to a
-// stricter rule still (commitArg, packpicks.go).
+// PowerShell, two quoted strings run together to sh: one word to both). Inside single quotes every printable ASCII
+// byte is itself, the backtick and the double quote among them (B3: both shells read them literally there, so the
+// line names the same bytes; PowerShell 5.1 then hands a double quote to the program unescaped, which can change the
+// argument the program reads but runs nothing, as at e3413b03). Every byte outside printable ASCII is written as a Go
+// escape (U+2019 as backslash u2019, a newline as backslash n): such a word prints as text that names it, never the byte, so a smart quote PowerShell reads as
+// a single quote, or a newline, never reaches the shell. Its callers are every next step that repeats a command line
+// or names a path (render.go's settle steps, check's and checkdocs' git checkout lines, cmd/bonsai's repeated command
+// lines); none is looser than at e3413b03. The commit lines hold their paths to a stricter rule still (commitArg,
+// packpicks.go).
 func ShellArg(s string) string {
 	if bareArg(s, "._/-@+=:") && s[0] != '@' {
 		return s
@@ -361,8 +363,6 @@ func ShellArg(s string) string {
 	var b strings.Builder
 	for _, r := range s {
 		switch {
-		case r == '"' || r == '`':
-			fmt.Fprintf(&b, `\x%02x`, r)
 		case r >= 0x20 && r < 0x7f:
 			b.WriteRune(r)
 		default:
