@@ -93,7 +93,7 @@ func TestCommitLines(t *testing.T) {
 			{Path: "kept.md", Result: Unchanged}, {Path: "gone/old.md", Result: Removed, remove: true}},
 		Packs: []PackMove{{ID: "base", From: "a", To: "b"}, {ID: "wf", From: "c", To: "d"}, {ID: "same", From: "e", To: "e"}, {ID: "out", From: "f"}}}
 	got := p.CommitLines()
-	want := []string{"git add bonsai.yaml 'docs/a b.md' gone/old.md .bonsai/lock.json",
+	want := []string{"git add -- bonsai.yaml 'docs/a b.md' gone/old.md .bonsai/lock.json",
 		`git commit -m 'bonsai: base to base-v1.0.1, wf to v1.0.2, out taken out'`}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("CommitLines:\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
@@ -118,9 +118,10 @@ func TestCommitLines(t *testing.T) {
 }
 
 // strictWords splits a printed command line the way neither sh nor PowerShell 5.1 can read otherwise: words apart by
-// one space, each bare ([A-Za-z0-9._/-] only) or in ASCII single quotes holding printable ASCII with no quote
-// character of either shell. ok false for a line holding anything else (a byte outside printable ASCII, an unquoted
-// ; $ ` & | ( ) or #, a smart quote, a newline): such a line could be more than its words.
+// one space, each bare ([A-Za-z0-9._/-] only) or in ASCII single quotes holding printable ASCII (a backtick and a
+// double quote are literal there in both shells; a doubled single quote is one quote to PowerShell, one word to sh). ok false for a line
+// holding anything else (a byte outside printable ASCII, an unquoted ; $ ` & | ( ) or #, a smart quote, a newline):
+// such a line could be more than its words.
 func strictWords(line string) (words []string, ok bool) {
 	bare := func(c byte) bool {
 		return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || strings.IndexByte("._/-", c) >= 0
@@ -144,7 +145,7 @@ func strictWords(line string) (words []string, ok bool) {
 					}
 					break
 				}
-				if line[j] < 0x20 || line[j] > 0x7e || line[j] == '"' || line[j] == '`' {
+				if line[j] < 0x20 || line[j] > 0x7e {
 					return nil, false
 				}
 				w.WriteByte(line[j])
@@ -174,13 +175,20 @@ func strictWords(line string) (words []string, ok bool) {
 }
 
 // ShellArg, which every printed command line's arguments go through (next steps naming a path, the command lines
-// a refusal repeats): a hostile word is always one word in printable ASCII; a plain one stays bare.
+// a refusal repeats): a hostile word is always one word in printable ASCII; a printable ASCII one keeps its bytes
+// (B3: a backtick and a double quote among them, so a next step names the file that is there); a plain one stays
+// bare.
 func TestShellArgHostile(t *testing.T) {
-	for _, s := range []string{"docs/x’;Write-Output INJECTED;#.md", "a;b", "$(id)", "`id`", "a b", "a\nb", "it's", `"q"`, "a&b|c",
-		"x,y", "@x", "‘x‘"} {
+	for _, s := range []string{"a;b", "$(id)", "`id`", "docs/a`b.md", "a b", "it's", `"q"`, `docs/a"b.md`, "a&b|c", "x,y", "@x", "a*b",
+		"-n.md", "#x", "!x"} {
 		got := ShellArg(s)
-		words, ok := strictWords(got)
-		if !ok || len(words) != 1 {
+		if words, ok := strictWords(got); !ok || len(words) != 1 || words[0] != s {
+			t.Errorf("ShellArg(%q) = %q: not one word with the same bytes (%q, %v)", s, got, words, ok)
+		}
+	}
+	for _, s := range []string{"docs/x’;Write-Output INJECTED;#.md", "a\nb", "‘x‘", "a b"} {
+		got := ShellArg(s)
+		if words, ok := strictWords(got); !ok || len(words) != 1 {
 			t.Errorf("ShellArg(%q) = %q: not one plain word", s, got)
 		}
 	}
@@ -196,19 +204,32 @@ func TestShellArgHostile(t *testing.T) {
 // the commit lines out (the command then says to commit by hand). The commit message is single-quoted, its ref passed
 // through the same rule (no ! or $ a shell would read).
 func TestCommitLinesHostilePaths(t *testing.T) {
-	for _, path := range []string{"docs/x’;Write-Output INJECTED;#.md", "docs/a;rm -rf x.md", "docs/$(id).md", "docs/`id`.md",
-		"docs/a b.md", "docs/a\nb.md", "docs/it's.md", `docs/"q".md`, "docs/plain.md", "docs/a&b|c.md"} {
-		p := &Plan{Command: "update", LockWrite: true, Config: &workspace.Config{},
-			Files: []*FileResult{{Path: path, Result: Created, write: []byte("x")}}}
+	plan := func(path string) *Plan {
+		return &Plan{Command: "update", LockWrite: true, Config: &workspace.Config{}, Files: []*FileResult{{Path: path, Result: Created, write: []byte("x")}}}
+	}
+	// Printed: each path one argument after --, its bytes unchanged (a plain path among them, so holding every path back
+	// fails this; one starting with - is never an option, after --).
+	for _, path := range []string{"docs/plain.md", "docs/a;rm -rf x.md", "docs/$(id).md", "docs/a b.md", "docs/a&b|c.md", "-n.md",
+		"--pathspec-from-file=docs/list.txt", "docs/#x.md", "docs/a!b.md"} {
+		p := plan(path)
 		lines := p.CommitLines()
 		if lines == nil {
-			continue // left out: the command says to commit by hand
+			t.Errorf("%q: no commit lines (%s)", path, p.CommitLinesHeld())
+			continue
 		}
 		words, ok := strictWords(lines[0])
 		// update wrote the lock: bonsai.yaml first, then the file, then the lock.
-		if !ok || len(words) != 5 || words[0] != "git" || words[1] != "add" || words[2] != workspace.ConfigFile || words[3] != path ||
-			words[4] != workspace.LockFile {
+		if !ok || len(words) != 6 || words[0] != "git" || words[1] != "add" || words[2] != "--" || words[3] != workspace.ConfigFile ||
+			words[4] != path || words[5] != workspace.LockFile {
 			t.Errorf("%q: git add line %q reads as %q (ok %v)", path, lines[0], words, ok)
+		}
+	}
+	// Held: no line, and the reason (a byte outside printable ASCII, a quote character, git's pattern magic).
+	for _, path := range []string{"docs/x’;Write-Output INJECTED;#.md", "docs/`id`.md", "docs/a\nb.md", "docs/it's.md", `docs/"q".md`,
+		"docs/[ab].md", "docs/*.md", "docs/a?.md", "docs/a]b.md", ":(glob)docs", ":docs/a.md"} {
+		p := plan(path)
+		if lines := p.CommitLines(); lines != nil || p.CommitLinesHeld() == "" {
+			t.Errorf("%q: printed %q, want held", path, lines)
 		}
 	}
 	p := &Plan{Command: "update", LockWrite: true, Config: &workspace.Config{Packs: []workspace.PackRef{{ID: "base", Ref: "v1!$(id)"}, {ID: "wf", Ref: "v1.0.2"}}},

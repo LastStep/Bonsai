@@ -281,11 +281,15 @@ func OldMarketHint(p *Plan, cli PluginCLI) *PluginResult {
 
 // commitArg writes a path for the commit lines (T-6011's verifier, B1: a pack chooses its files' paths): bare when
 // every byte is a letter, a digit or one of . _ / -; else in single quotes, which neither sh nor PowerShell 5.1 reads
-// into. ok false for a path holding a byte outside printable ASCII or a quote character of either shell (' " `):
-// such a path is not printed at all.
+// into. ok false for a path holding a byte outside printable ASCII or a quote character of either shell (' " `), or
+// a character git reads as pathspec magic (* ? [ ], or a leading :), which could stage more than the one file: such
+// a path is not printed at all. The line puts -- before the paths, so one starting with - is never an option.
 func commitArg(path string) (string, bool) {
+	if strings.HasPrefix(path, ":") {
+		return "", false
+	}
 	for i := 0; i < len(path); i++ {
-		if c := path[i]; c < 0x20 || c > 0x7e || c == '\'' || c == '"' || c == '`' {
+		if c := path[i]; c < 0x20 || c > 0x7e || strings.IndexByte("'\"`*?[]", c) >= 0 {
 			return "", false
 		}
 	}
@@ -295,7 +299,7 @@ func commitArg(path string) (string, bool) {
 	return "'" + path + "'", true
 }
 
-// CommitLines are the commands that commit what the plan wrote (pick 7): git add with every file written, in the
+// CommitLines are the commands that commit what the plan wrote (pick 7): git add -- with every file written, in the
 // plan's order and the lock last, forward slashes (and bonsai.yaml first when update wrote the lock from a hand edit
 // of it), then git commit with a message naming each pack moved, in single quotes; one per line, never joined by &&
 // (PowerShell 5.1 has none). nil when nothing was written, and nil when a path written cannot be printed safely
@@ -319,8 +323,8 @@ func (p *Plan) commitLines() (lines []string, held string) {
 		if f.Writes() && f.Result != Unchanged {
 			arg, ok := commitArg(f.Path)
 			if !ok {
-				held = "the path " + ShellArg(f.Path) + " holds a byte outside printable ASCII or a quote character, which no printed " +
-					"command line holds"
+				held = "the path " + ShellArg(f.Path) + " holds a byte outside printable ASCII, a quote character, or a character git " +
+					"reads as a pattern (* ? [ ] or a leading :), which no printed commit line holds"
 				continue
 			}
 			paths = append(paths, arg)
@@ -367,5 +371,5 @@ func (p *Plan) commitLines() (lines []string, held string) {
 	if len(moves) > 0 {
 		msg = "bonsai: " + strings.Join(moves, ", ")
 	}
-	return []string{"git add " + strings.Join(paths, " "), "git commit -m '" + msg + "'"}, ""
+	return []string{"git add -- " + strings.Join(paths, " "), "git commit -m '" + msg + "'"}, ""
 }

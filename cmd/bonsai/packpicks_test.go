@@ -220,7 +220,7 @@ func TestPackCommitLinesAndOldMarketplace(t *testing.T) {
 	oldMarket := engine.MarketplaceName("demo", []string{shas[0]})
 	code, out, errOut := c.run("", "pack", "set", "tag-pack@v0.2.0", "--yes", "--json")
 	ch := changesOf(t, out)
-	if code != 0 || len(ch.CommitLines) != 2 || !strings.HasPrefix(ch.CommitLines[0], "git add bonsai.yaml ") ||
+	if code != 0 || len(ch.CommitLines) != 2 || !strings.HasPrefix(ch.CommitLines[0], "git add -- bonsai.yaml ") ||
 		!strings.Contains(ch.CommitLines[0], " tag-pack/readme.md ") || !strings.HasSuffix(ch.CommitLines[0], " .bonsai/lock.json") ||
 		ch.CommitLines[1] != `git commit -m 'bonsai: tag-pack to v0.2.0'` {
 		t.Errorf("commit_lines: %d %q\n%s", code, ch.CommitLines, errOut)
@@ -249,7 +249,7 @@ func TestPackCommitLinesAndOldMarketplace(t *testing.T) {
 	c.commit("moved")
 	c.write("bonsai.yaml", strings.Replace(c.read("bonsai.yaml"), "v0.2.0", "v0.3.0", 1))
 	code, out, errOut = c.run("", "update", "--yes")
-	if s := flat(out); code != 0 || !strings.Contains(out, "\ngit add bonsai.yaml tag-pack/readme.md ") ||
+	if s := flat(out); code != 0 || !strings.Contains(out, "\ngit add -- bonsai.yaml tag-pack/readme.md ") ||
 		!strings.Contains(out, "\ngit commit -m 'bonsai: tag-pack to v0.3.0'\n") || !strings.Contains(s, "claude plugin marketplace remove") {
 		t.Errorf("update --yes's text: %d\n%s%s", code, out, errOut)
 	}
@@ -322,7 +322,7 @@ func TestPackCommitLinesHostilePath(t *testing.T) {
 // The commit lines' text at a terminal narrower than the lines (60 and 100 columns): each still one whole physical
 // line, byte for byte; a held line gives the note and no command.
 func TestCommitLinesTextAtAnyWidth(t *testing.T) {
-	lines := []string{"git add bonsai.yaml " + strings.Repeat("a-long-folder/", 8) + "file.md CLAUDE.md .claude/settings.json .bonsai/lock.json",
+	lines := []string{"git add -- bonsai.yaml " + strings.Repeat("a-long-folder/", 8) + "file.md CLAUDE.md .claude/settings.json .bonsai/lock.json",
 		"git commit -m 'bonsai: " + strings.Repeat("pack to v1.0.0, ", 5) + "last to v2.0.0'"}
 	for _, w := range []int{60, 100} {
 		d := &textui.Doc{}
