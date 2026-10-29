@@ -5,7 +5,9 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
-| T-6009 | A pack command: add, remove and move a project's packs from the command line, and see which are behind | plan | full | 2026-10-28 | |
+| T-6011 | T-6009's stage 2, the director's eight picks: what changed, the session nudge, set --all, the downgrade guard, the compatibility check, the old registration's hint, commit lines, pack show | todo | | | |
+| T-6010 | T-6009's stage 1, the pack command's core: bonsai pack outdated, set, add and remove, the status cache, BUG-139, the preview's --json and its fingerprint | done | | 2026-10-29 | 2026-10-29 |
+| T-6009 | A pack command: add, remove and move a project's packs from the command line, and see which are behind | approved | full | 2026-10-28 | |
 | T-6008 | The packs at 1.0.1: base and workflow carry 1.0.1's skill fixes and check with bonsai 1.0.1, ready for the director's tags | done | | 2026-10-28 | 2026-10-28 |
 | T-6007 | The bug sweep: triage the open bugs in records/bugs.md and plan their fixes in batches | todo | | 2026-10-28 | |
 | T-6006 | Bonsai 1.0.1's notes: CHANGELOG's [1.0.1] section from T-6002 to T-6005, landed with CI green, for the director's tag | done | light | 2026-10-26 | 2026-10-26 |

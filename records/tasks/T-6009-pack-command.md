@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6009
 title: "A pack command: add, remove and move a project's packs from the command line, and see which are behind"
-status: plan
+status: approved
 lane: full
 done_when:
   - "A plan records/plans/P-T-6009.md, from an auditor's read of the code and a researcher's read of how other tools show and apply updates, answers the director's design questions (asked one at a time), is reviewed by a fresh Opus agent and approved by the director"

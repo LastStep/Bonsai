@@ -1,27 +1,30 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-10-28
+updated: 2026-10-29
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 28 Oct 2026 (an evening session, the director present).
+Rewritten, never appended (`base:state`). Last rewritten 29 Oct 2026 (a morning session, the director present).
 
-## Now (28 Oct): the pack command planned (T-6009), for the next session; the packs at 1.0.1 released; the bug sweep triaged
+## Now (29 Oct): the pack command's stage 1 landed (T-6010); stage 2 (T-6011) waits on the director's go
 
-- **The pack command** (`T-6009`, lane full, `plan`; the director: "to smoothen out the update experience for the
-  packs, i want to implement a new feature in bonsai", from the studio's "Asks for Bonsai", item 1). **The plan
-  `records/plans/P-T-6009.md` is final** (seven review rounds by a fresh Opus verifier, 10 blocking findings fixed,
-  PASS `M-2026-10-28-cf3cfeda`) and **waits on the director's approval**, then the build starts **next session** (their
-  word: "once finialised, then we will start work on this from next session"). `bonsai pack outdated / set / add /
-  remove`, a cached newer tag in plain status, BUG-139; the director's six answers, eight picks (stage 2) and the
-  studio's three (the `--json` preview's fields, `bonsai.packs/1`, `--expect` fingerprints), all in the run report
-  `records/runs/R-2026-10-28-T-6009-pack-command.md`. Two stages, each its own task and landing: stage 1 about 10-15 h,
-  stage 2 about 6-9 h; one Opus builder each and a fresh Opus verifier. The approval also covers four protected texts
-  (spec sections 4 and 7, contract 12 and the changes format's words). Still owed: the studio's reply, one verdict per
-  item (the items and the orchestrator's verdicts are in that run report's 21:15 line). BUG-137 to 140 filed from it.
+- **The pack command** (`T-6009`, lane full, `approved`; the plan `records/plans/P-T-6009.md` approved by the director
+  29 Oct: "approved. now build it end to end in this session"). **Stage 1 landed** as `T-6010` (`done`): `main` at
+  `5129ba87`, 15 commits, CI 9 of 9 on the branch (both windows jobs). `bonsai pack outdated / set / add / remove`, one
+  preview and one `--yes` each through update's run; the byte-preserving `bonsai.yaml` editor; the loosening gate (a
+  plan that drops a protection is the person's, for `pack` and `update` alike); the packs' cache in the home and
+  status's `ref` and `newer`, offline; formats set 13 (`bonsai.changes/1`'s new fields, `bonsai.packs/1`); the
+  fingerprint and `--expect`; BUG-017 and BUG-139 fixed. A fresh Opus verifier passed it (tests and correctness; security
+  after one blocking finding, S1, a non-literal `pack` subcommand past the guard, fixed in `81528a6f`). The Windows
+  CI jobs' test timeout went 20m to 30m (cmd/bonsai took 992-1081 s on main, past 1200 s with the pack tests).
+  Run report `records/runs/R-2026-10-29-T-6010-pack-command-core.md`. **Stage 2** is `T-6011` (`todo`, the director's
+  eight picks, steps 9-17, grants spec section 7's file): **the director: "pause once stage 1 is done. then continue
+  on my go"**. It ships in Bonsai 1.0.2 with base 1.0.2 (base's operating-setup skill changed in stage 1). Still owed:
+  the studio's reply on its asks (the T-6009 run report's 21:15 line). Filed today: BUG-141 (a variable command word
+  past the guard, on main), BUG-142 (a grant of the lock opens a direct edit of it).
 - **The packs at 1.0.1** (`T-6008`, `done`; the director: "lets release 1.0.1 for the packs which needs to"):
   landed on `main` at `9098f6fa` (base `version: "1.0.1"`; base's ci skill and the pack template download bonsai
   1.0.1 by its SHA-256; README and docs/install.md install lines at v1.0.1), CI green on the branch (9 of 9, both
@@ -36,7 +39,7 @@ Rewritten, never appended (`base:state`). Last rewritten 28 Oct 2026 (an evening
   bugs read at `main` by an auditor (Sonnet, four briefs) and 30 of them blind by a fresh verifier (Opus); two run
   natively on Windows. On the director's rule ("if you are confident that something isnt a bug anymore, then remove
   it"), only high confidence left Open: 8 to Fixed, 10 to "Known, not bugs"; 28 rows reworded; BUG-135 and 136 filed.
-  **60 open.** The board (run report `records/runs/R-2026-10-28-T-6007-bug-sweep.md`): eight fix batches, 34 bugs,
+  **60 open** then (64 on 29 Oct: BUG-137 to 142 filed, 017 and 139 fixed). The board (run report `records/runs/R-2026-10-28-T-6007-bug-sweep.md`): eight fix batches, 34 bugs,
   about 12-18 h (A flaky tests 131, 132; B the log and hours table 034, 044, 095, 096, 110, 111; C words 009, 019,
   087, 099, 101, 114, 136; D formats set 13 017, 082; E CI and release 008, 081, 102; F the guard and hook lines
   **018** (a 0-byte bonsai lets every hook line pass: a fail-open), 011, 108; G the ladder and stop gate 048, 049,
@@ -365,7 +368,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 ## Waiting on the director
 
 - **Now:** theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
-- **Now:** approve P-T-6009 (the pack command), so its build starts next session.
+- **Now:** the go for T-6011, the pack command's stage 2 (the eight picks).
 - **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
   059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).
 - **Their call:** whether the pi side's brief (pi-bonsai-work.md in design/, untracked) is committed.
