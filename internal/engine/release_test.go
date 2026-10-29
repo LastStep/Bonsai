@@ -193,7 +193,9 @@ func TestReleaseStates(t *testing.T) {
 	}
 	writeRecord(t, home, recordOf101)
 	cases := []struct{ version, state string }{
-		{"1.0.0", ReleaseNewer}, {"0.9.9", ReleaseNewer}, {"1.0.1", ReleaseCurrent}, {"1.1.0", ReleaseCurrent},
+		// 1.1.0 installed against a record naming 1.0.1 was current here before BUG-139; it reads unknown now, held by
+		// TestReleaseRecordOlderThanInstalled.
+		{"1.0.0", ReleaseNewer}, {"0.9.9", ReleaseNewer}, {"1.0.1", ReleaseCurrent},
 		{"dev", ReleaseNotRelease}, {"1.0.1-rc.1", ReleaseNotRelease}, {"", ReleaseNotRelease},
 	}
 	for _, c := range cases {
@@ -392,5 +394,31 @@ func TestCheckRelease(t *testing.T) {
 	r.checkRelease()
 	if len(r.Warnings) != 0 || len(r.Notes) != 1 || !strings.Contains(r.Notes[0], "over 7 days ago: bonsai status --full reads them again") {
 		t.Errorf("an old record: %+v %v", r.Warnings, r.Notes)
+	}
+}
+
+// BUG-139: a record whose newest is below the installed version (1.0.0 read on its day, 1.0.1 installed since) is no
+// proof that the installed copy is current: it reads unknown, its why naming the older release and its day, its next
+// step status --full; never current.
+func TestReleaseRecordOlderThanInstalled(t *testing.T) {
+	home := t.TempDir()
+	writeRecord(t, home, `{"newest": "1.0.0", "read": "2026-10-25T08:15:00Z", "source": "`+ReleaseSource+`", "failed": null}`)
+	for _, installed := range []string{"1.0.1", "1.1.0", "2.0.0"} {
+		s := LoadRelease(home).State(home, installed)
+		if s.State != ReleaseUnknown {
+			t.Errorf("installed %s, newest recorded 1.0.0: state %s, want unknown", installed, s.State)
+			continue
+		}
+		if s.Why == nil || !strings.Contains(*s.Why, "1.0.0") || !strings.Contains(*s.Why, "2026-10-25T08:15:00Z") ||
+			!strings.Contains(*s.Why, "v"+installed) || !strings.Contains(*s.Why, "bonsai status --full") {
+			t.Errorf("installed %s: why %v, want the older release, its day, this bonsai and bonsai status --full", installed, s.Why)
+		}
+		if s.Lines != nil || s.Newest == nil || *s.Newest != "1.0.0" {
+			t.Errorf("installed %s: %+v, want no lines and newest 1.0.0 kept", installed, s)
+		}
+	}
+	// The same version as recorded is current, as before.
+	if s := LoadRelease(home).State(home, "1.0.0"); s.State != ReleaseCurrent || s.Why != nil {
+		t.Errorf("installed 1.0.0, newest 1.0.0: %+v, want current", s)
 	}
 }

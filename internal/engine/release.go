@@ -290,8 +290,15 @@ func (rr ReleaseRead) State(home, version string) *format.StatusRelease {
 	default:
 		newest, _ := PlainVersion(*rec.Newest)
 		s.State = ReleaseCurrent
-		if older(have, newest) {
+		switch {
+		case older(have, newest):
 			s.State, s.Lines = ReleaseNewer, ReleaseLines(*rec.Newest, runtime.GOARCH)
+		case older(newest, have):
+			// BUG-139: the record names an older release than this bonsai (it was read before this one was installed),
+			// so it says nothing of what is newest now: unknown, never current.
+			s.State = ReleaseUnknown
+			return why("the home's record names v" + *rec.Newest + ", an older release than this bonsai's v" + ascii(version) +
+				", as read at " + *rec.Read + ", so it cannot say whether a newer one exists: bonsai status --full reads the releases again")
 		}
 	}
 	return s
