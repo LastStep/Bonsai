@@ -83,9 +83,11 @@ Who may apply: an agent under a task whose bonsai.allows holds bonsai.yaml and .
 A change that takes protections away (pack remove, or a version that drops a deny rule or a protected path) is a
 person's: the preview lists each protection that goes (Loosens; --json: loosening), and in an agent's session --yes
 is refused (person-command, exit 4), whatever the task grants. The same holds for update after a hand edit.
-After --yes wrote, the Commit lines are the two commands that commit the files written (--json: commit_lines), and
-when the workspace's plugin marketplace name moved and Claude Code still lists the old one, the plugin step names it
-and the command that removes it (old-marketplace), a person's step once no other checkout uses it: nothing removes it.
+After --yes wrote, the Commit lines are the two commands that commit the files written, each on a line of its own
+(--json: commit_lines; none, and a note to commit by hand, when a path written holds a byte no command line may),
+and when the workspace's plugin marketplace name moved, the plugin step names the old one and the command that
+removes it (old-marketplace), a person's step once no other checkout uses it: Bonsai asks Claude Code nothing for it
+and removes nothing.
 `
 
 // packRefused is a pack action's --json for a refusal before a plan: bonsai.changes/1, command update, word pack.
