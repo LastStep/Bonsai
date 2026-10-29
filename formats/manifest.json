@@ -464,7 +464,7 @@
     },
     {
       "path": "schemas/changes.schema.json",
-      "sha256": "0f767ce5192643ab0a1331a448ae4af805c707e770136094a6a2d92b8d840e21"
+      "sha256": "36baf276c3058b9639e26712e38d78a5148f6f1bee15e9686e332996beaf8df9"
     },
     {
       "path": "schemas/check.schema.json",
