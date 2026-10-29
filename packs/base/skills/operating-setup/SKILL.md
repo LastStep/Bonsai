@@ -75,6 +75,16 @@ A preview whose `loosening` is not empty takes protections away (a pack taken ou
 dropped): it is the person's alone, and in an agent's session `--yes` is refused (`person-command`) whatever the
 task grants, `bonsai update` after a hand edit too. Hand them the exact line. Why: an agent choosing the packs that
 hold it would be judging its own work. `bonsai check --json` after every change.
+`bonsai pack show <id> --json` prints one pack's details offline (version, needs, skills, roles, deny rules,
+protected paths, kinds, the cache's newer release); `bonsai pack outdated --changes` lists each behind pack's commit
+titles (text only), and a set preview's `pack_changes` holds them too: hand them to the person with the change.
+`bonsai pack set --all` moves every pack behind to its newest release in one preview (a pack at a commit or a branch
+is left and named). A move back to an older release tag is refused (`pack-downgrade`) until the person's word adds
+`--downgrade`; a version that needs a newer Claude Code than this machine runs, or a pack format this Bonsai does not
+read, is refused before anything is written (`pack-needs`): the person updates Claude Code or Bonsai first. After
+`--yes`, commit with the two lines `commit_lines` gives, each on its own line (never joined by `&&`); when the
+plugins' marketplace name moved, a plugin result (old-marketplace) names the old one and the person's command that
+removes it, once no other checkout uses it.
 
 ## Status moves
 

@@ -828,9 +828,13 @@ sides again:
   caught after the fact, like any write to a person-only path (question A); and a mod can approve past them (above). In
   a linked project they bind Rohan's own sessions too: there Claude cannot change his user or local settings for him
   (he uses `/config`, `/permissions` or edits by hand). Nothing needs an admin step.
-- **No Claude Code version pin** (question B). Claude Code updates itself as today, on its own channel. **Warn only,
-  never refuse** (Rohan, 7 Oct, format review 6.5): `bonsai check` warns when it is older than needed, a warning that
-  never changes the exit code (§6); no command, hook or rung refuses for it. `status --json` lists the floor as a `needs` entry (kind `tool`, id
+- **No Claude Code version pin** (question B). Claude Code updates itself as today, on its own channel. **Warn, and
+  refuse only a pack move** (7 Oct, format review 6.5: warn only; changed by the director's word of 28 Oct, "Refuse,
+  change the rule", plan P-T-6009's pick 5): `bonsai check` warns when it is older than needed, a warning that never
+  changes the exit code (§6), and `status`, `update`, the hooks and the rungs never refuse for it. Only `bonsai pack
+  set` and `bonsai pack add` (`set --all` among them) refuse, before anything is written (`pack-needs`): a pack version
+  whose `needs.claude_code` is newer than the Claude Code this machine runs, or whose `bonsai/pack.yaml` is in a pack
+  format this Bonsai does not read; when `claude --version` cannot be read, their preview says so and nothing refuses. `status --json` lists the floor as a `needs` entry (kind `tool`, id
   `claude-code`, contract §12) for the studio's move checklist. The floor is the higher of two: Bonsai's own, a constant
   each release sets to the oldest Claude Code its tests ran on (the first from the gate's measured versions, §15), and
   any pack's, a `claude_code` entry under `needs` in `bonsai/pack.yaml` (§5). Bonsai reads `claude --version` (whether

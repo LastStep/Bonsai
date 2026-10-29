@@ -18,8 +18,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--yes` given it writes nothing (`plan-changed`) if the plan built now differs.
 - **`bonsai.changes/1`** carries the `bonsai.yaml` edit, the protections a plan takes away, update's memory and
   cache lines (BUG-017), the fingerprint and the word that printed it.
+- **What a pack move changes:** `pack set`'s preview lists the pack's own commit titles between the locked version
+  and the new one (at most 30, limited to its folder; `--json`: `pack_changes`), and `pack outdated --changes` does
+  the same for every pack behind.
+- **`pack set --all`** moves every pack behind to its newest release in one preview and one `--yes`; a pack at a
+  commit or a branch is left and named.
+- **`pack show <id>`**: one pack's version, source, needs, skills, roles, deny rules, protected paths and newer
+  release, offline (`--json`: `bonsai.packs/1`).
+- **A session's opening context names the packs behind** (`Packs behind: ...`), from the cache, with no network.
+- **Commit lines:** after `update --yes` or a `pack` `--yes`, the two commands that commit the files written, one per
+  line (`--json`: `commit_lines`), so they work in PowerShell too.
+- **The old plugin marketplace's hint:** after a move that renames the workspace's marketplace, the plugin step names
+  the old one and the command that removes it, to run once no other checkout uses it (BUG-107, in part). Nothing is
+  removed for you.
 
 ### Changed
+- **A move to an older release tag needs `--downgrade`** (`pack-downgrade` without it); a commit, a branch or a tag
+  with no version number is never judged a downgrade.
+- **A pack version this machine cannot run is refused before anything is written** (`pack-needs`): one whose
+  `needs.claude_code` is newer than the Claude Code here, or whose `pack.yaml` is in a format this Bonsai does not
+  read. Only `pack set` and `pack add` refuse; `check` and `status` still warn (spec section 7, the director's word of
+  28 Oct).
 - **A plan that takes protections away is a person's to write**: a pack taken out, or a version that drops a deny
   rule or a protected path. In an agent's session its `--yes` is refused, whatever the task grants, for `update`
   after a hand edit of `bonsai.yaml` as for `pack`.
