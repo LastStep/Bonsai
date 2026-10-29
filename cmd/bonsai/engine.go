@@ -114,7 +114,7 @@ var applyPlan = engine.Apply
 // packRun is what bonsai pack hands the update run (pack.go): bonsai.yaml's edited bytes, the edit, the
 // subcommand, and the arguments as typed, for the command lines it names.
 type packRun struct {
-	edit *engine.ConfigEdit
+	edit  *engine.ConfigEdit
 	more  []*engine.ConfigEdit // pack set --all: the other ref lines the edit changes
 	sub   string
 	args  []string

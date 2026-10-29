@@ -145,8 +145,8 @@ type Plan struct {
 	WordName, WordSub string
 	// Memory and Cache are update's Memory and Cache lines after a write (BUG-017), set by the command once it ran
 	// those steps, for bonsai.changes/1; empty for a preview and a refusal.
-	Memory     []format.ChangesLine
-	Cache      *format.ChangesLine
+	Memory []format.ChangesLine
+	Cache  *format.ChangesLine
 	// MoreEdits are Request.MoreEdits (pack set --all's other ref lines). PackChanges are the moved packs' commit
 	// titles (FillPackChanges, which bonsai pack set calls), for the preview and bonsai.changes/1's pack_changes; nil
 	// for none read. CommitLinesOut are the commands that commit what a --yes wrote (CommitLines), set by the command
@@ -156,17 +156,17 @@ type Plan struct {
 	CommitLinesOut []string
 	NeedsUnread    []string
 	Packs          []PackMove
-	Files      []*FileResult
-	Settings   []SettingsChange // the settings lines the plan adds, changes or removes (when it writes the file)
-	Conflicts  []*FileResult
-	RunsCode   []CodeItem       // what the plan writes that runs code: it needs --allow-exec as well as --yes (consent.go)
-	OwnHooks   []SettingsChange // at a first link, Bonsai's own hook lines the plan adds, which --yes writes (rule 6)
-	LeftHooks  []string         // a link again with the lock missing, or an unverified pack: hook lines left as the project's own
-	Unverified []string         // locked packs whose lock does not match their commit and folder: no baseline for consent
-	AllowExec  bool             // the request's --allow-exec
-	EmptyLocal int              // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
-	Format0    int              // at a first link: the format-0 files the lock lists (contract §2.3)
-	LockWrite  bool
+	Files          []*FileResult
+	Settings       []SettingsChange // the settings lines the plan adds, changes or removes (when it writes the file)
+	Conflicts      []*FileResult
+	RunsCode       []CodeItem       // what the plan writes that runs code: it needs --allow-exec as well as --yes (consent.go)
+	OwnHooks       []SettingsChange // at a first link, Bonsai's own hook lines the plan adds, which --yes writes (rule 6)
+	LeftHooks      []string         // a link again with the lock missing, or an unverified pack: hook lines left as the project's own
+	Unverified     []string         // locked packs whose lock does not match their commit and folder: no baseline for consent
+	AllowExec      bool             // the request's --allow-exec
+	EmptyLocal     int              // init --new-id: files in .bonsai/local/ to remove; -1 for none to remove
+	Format0        int              // at a first link: the format-0 files the lock lists (contract §2.3)
+	LockWrite      bool
 
 	Plugins []PluginResult // what UninstallPlugins and InstallPlugins did after the plan was written (or had nothing to write)
 

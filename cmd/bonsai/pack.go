@@ -609,7 +609,9 @@ func runPackShow(c *call) int {
 		newer = map[string]string{engine.PackNewer: p.Newer.Tag + " is released", engine.PackCurrent: "no newer release",
 			engine.PackStaleS: "stale (the read is old, or below the locked version)"}[p.Newer.State] + ", read " + p.Newer.Read
 	}
-	row := func(k, v string, tone textui.Tone) textui.Row { return textui.R(textui.T(k, textui.Key), textui.T(v, tone)) }
+	row := func(k, v string, tone textui.Tone) textui.Row {
+		return textui.R(textui.T(k, textui.Key), textui.T(v, tone))
+	}
 	d := &textui.Doc{}
 	d.Title("bonsai pack show", p.ID+" "+engine.ASCII(p.Version))
 	d.Section("Pack",
