@@ -64,13 +64,17 @@ step. Hand them the exact line, old and new, and why, or ask (`--type Decide`); 
 **A role's budget** (`roles` under a pack's entry) is neither: change a default or max either way under a task
 granting `bonsai.yaml`; it holds for agents started after the commit. So are the `messages` thresholds.
 
-**A pack's version is the person's step, whatever the preview would show:** a pack's `ref`, `source` or `path`
-changed, a pack added to a linked project, a pack taken out. A request for one is not their word. Read
-`bonsai status --full --json` (newer tags), hand the person the exact edit (the line, old and
-new, or the entry) and why in one message, or ask; change nothing. On their yes to that edit make it, read
-`bonsai update --json` line by line, hand back a move that removes a wall, deny rule, label definition or protected
-path, else run `--yes`. Why: an agent loosening the checks it is held to, or choosing the packs that hold it, would
-be judging its own work. `bonsai check --json` after every edit.
+**A pack's version is the person's word, applied with `bonsai pack`** (`bonsai pack --help`): see which are behind
+with `bonsai pack outdated --json` (it reads the network and keeps the answer, which `bonsai status --json` shows in
+`packs[].newer`). A move, an added pack or one taken out is the person's choice: a request for one is not their word.
+Hand them the change and why in one message, or ask; on their yes, preview it, `bonsai pack set <id>@<ref> --json`,
+`bonsai pack add --source <url> --ref <ref> --json` or `bonsai pack remove <id> --json`, read it line by line (its
+`config` is the `bonsai.yaml` line, only the ref's text changing), then the same with `--yes --expect <fingerprint>`
+(the preview's `fingerprint`: `plan-changed` means read it again), under a task granting `bonsai.yaml` and the lock.
+A preview whose `loosening` is not empty takes protections away (a pack taken out, a deny rule or protected path
+dropped): it is the person's alone, and in an agent's session `--yes` is refused (`person-command`) whatever the
+task grants, `bonsai update` after a hand edit too. Hand them the exact line. Why: an agent choosing the packs that
+hold it would be judging its own work. `bonsai check --json` after every change.
 
 ## Status moves
 

@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **`bonsai pack`**: `pack set <id>@<ref>` moves a pack to another version, `pack add` links one more and `pack
+  remove` takes one out, each in one preview (the `bonsai.yaml` line and everything the update changes) and one
+  all-or-nothing `--yes`. Only the ref's text changes on its line; its comment stays. `pack outdated` lists each
+  pack's version against the newest release of its source (formats set 13: `bonsai.packs/1`).
+- **Plain `bonsai status` shows whether a pack has a newer release**, offline, from what `pack outdated` or `status
+  --full` last read (`packs[].ref` and `packs[].newer`).
+- **`--expect <fingerprint>`** on `update` and `pack`: the `--json` preview prints the plan's fingerprint, and a
+  `--yes` given it writes nothing (`plan-changed`) if the plan built now differs.
+- **`bonsai.changes/1`** carries the `bonsai.yaml` edit, the protections a plan takes away, update's memory and
+  cache lines (BUG-017), the fingerprint and the word that printed it.
+
+### Changed
+- **A plan that takes protections away is a person's to write**: a pack taken out, or a version that drops a deny
+  rule or a protected path. In an agent's session its `--yes` is refused, whatever the task grants, for `update`
+  after a hand edit of `bonsai.yaml` as for `pack`.
+
+### Fixed
+- **Bonsai's own newer-release line** no longer calls the installed release current against a record naming an
+  older one: it reads unknown and names `bonsai status --full` (BUG-139).
+
 ## [1.0.1] - 2026-10-26
 
 > Fixes from linking Bonsai 1.0 to its first existing projects. No format is removed or renamed: `bonsai.yaml` gains

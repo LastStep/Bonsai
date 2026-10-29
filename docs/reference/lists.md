@@ -68,6 +68,7 @@ error words.
 - Ladder modes
 - Ladder rung kinds
 - Status: a pack's state
+- status: packs[].newer.state
 - Status: status_writes
 - Active task: how it was found
 - Status: where a role's limit came from
@@ -81,6 +82,7 @@ error words.
 - Changes: commands
 - Changes: a settings line's change
 - Changes: a code item's change
+- changes: loosening[].kind
 - Asks: an ask's state
 - Message kinds
 - Message statuses
@@ -94,6 +96,9 @@ error words.
 - line: ladder
 - line: error.next.who
 - now: error.next.who
+- packs: command
+- packs: packs[].newer.state
+- packs: error.next.who
 
 ## Exit codes
 
@@ -150,7 +155,8 @@ error words.
 | `needs-yes` | person | the command writes, and was given no --yes with no terminal to ask at: it printed the preview and wrote nothing |
 | `needs-allow-exec` | person | the plan writes code that runs on this machine, which needs --allow-exec as well as --yes: nothing was written |
 | `conflicts` | person | files edited here were changed by the pack too: nothing is written until each is settled with --keep or --adopt |
-| `person-command` | person | an agent's session (one of the agent markers set: CLAUDE_CODE_CHILD_SESSION, AI_AGENT, PI_CODING_AGENT, CODEX_THREAD_ID, GEMINI_CLI, CURSOR_AGENT, OPENCODE, GOOSE_TERMINAL) ran a command only a person runs: init or update with --allow-exec, unlink, an update that changes or takes out Bonsai's guard or stop line, or an init or update that would record another base branch, or settings for the checks looser than the ones this machine accepted; an agent may run one only in a project in command mode, under a running task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json. Nothing was written |
+| `plan-changed` | person | update or bonsai pack was given --expect with a fingerprint the plan built now does not have: something the preview showed would now come out differently, so nothing was written (exit 4); the next step is to read the preview again and run it with the fingerprint it prints |
+| `person-command` | person | an agent's session (one of the agent markers set: CLAUDE_CODE_CHILD_SESSION, AI_AGENT, PI_CODING_AGENT, CODEX_THREAD_ID, GEMINI_CLI, CURSOR_AGENT, OPENCODE, GOOSE_TERMINAL) ran a command only a person runs: init or update with --allow-exec, unlink, an update that changes or takes out Bonsai's guard or stop line, or an init or update that would record another base branch, or settings for the checks looser than the ones this machine accepted; an agent may run one only in a project in command mode, under a running task whose bonsai.allows a person gave bonsai.yaml and .bonsai/lock.json. Two no grant opens: settings set and labels attach or detach, and a --yes (bonsai pack remove, pack set or add, update or init) whose plan takes protections away, a pack taken out or a deny rule or protected path dropped. Nothing was written |
 | `test-build` | agent | a test build of Bonsai (stamped with its hook lines' place and a scratch folder) was asked to link, update, unlink or run the ladder outside its scratch folder, or was stamped with one of the two only: it writes nothing there |
 | `ask-not-open` | agent | bonsai answer or ask --resolve names a key that has no ask, or whose ask is already answered or resolved, or ask --status names a key that has no ask: the message says which, and nothing was written (exit 4) |
 | `answer-own-session` | person | the session that filed the ask tried to answer it: only a person, or a session that did not ask, answers (contract section 9.3), and nothing was written (exit 4) |
@@ -711,9 +717,9 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `delete-unsplit` | deny | a shell call's line the delete check cannot split (a quote or bracket left open, nesting past three levels) that holds a delete word, or whose runner words run past the walk's bound |
 | `delete-named` | allow | a shell call whose deletes and moves all name what they take, none of it guarded |
 | `move-unnamed` | allow | a shell call's git mv whose operands come from a loop's variable, xargs or a pipeline: git moves only what it tracks and keeps both sides in the next commit, so rung 0 judges what moved after the fact; what it names is still judged, a named destination folder with everything below it and each literal word of the loop's list (bash's for ... in, PowerShell's foreach and a literal list piped into ForEach-Object) (delete-protected), and plain mv and every delete fed the same way stay delete-unnamed; text printf or echo writes into xargs is not read as names |
-| `person-command` | deny | bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes an agent marker (CLAUDE_CODE_CHILD_SESSION, AI_AGENT or another of the list the error code person-command names): a person's commands, allowed to an agent only in a project in command mode under a running task's grant of bonsai.yaml and .bonsai/lock.json |
+| `person-command` | deny | bonsai with --allow-exec, bonsai unlink, or a line that unsets or changes an agent marker (CLAUDE_CODE_CHILD_SESSION, AI_AGENT or another of the list the error code person-command names): a person's commands, allowed to an agent only in a project in command mode under a running task's grant of bonsai.yaml and .bonsai/lock.json; and bonsai pack remove --yes, which no grant opens |
 | `home-command` | deny | bonsai settings set, bonsai labels attach or detach: never in an agent session |
-| `bonsai-command` | allow | a bonsai command an agent may run: init and update judged as an edit of bonsai.yaml and the lock, every other word free |
+| `bonsai-command` | allow | a bonsai command an agent may run: init, update, and pack set and pack add with --yes judged as an edit of bonsai.yaml and the lock, every other word free (a pack line with no --yes, and pack outdated, among them) |
 | `shell-not-judged` | allow | a Bash, PowerShell or Monitor call whose line changes nothing the guard judges: no delete or move, no bonsai command, every agent marker left as it is |
 | `tool-not-judged` | allow | a tool other than the file tools and the shells |
 | `call-allowed` | allow | where the lock declares roles: an Agent, Task, SendMessage or Workflow call the caller's role may make, or a Skill whose frontmatter forks into a type it may call (the person's session any role but its own; a lead a declared helper or a type no pack declares; SendMessage from the person's session to main or another session); the record's target is the type asked for, or the message's to |
@@ -1064,6 +1070,14 @@ Values: `guard`, `command`, `ver-git`.
 
 Values: `ok`, `changed`, `missing`.
 
+## status: packs[].newer.state
+
+- Closed list.
+- Defined in: formats/schemas/status.schema.json (`packs[].newer.state`).
+- Printed in a project by: `bonsai check --schema bonsai.status`.
+
+Values: `newer`, `current`, `stale`.
+
 ## Status: status_writes
 
 - Closed list.
@@ -1168,6 +1182,14 @@ Values: `add`, `change`, `remove`.
 
 Values: `add`, `change`, `remove`.
 
+## changes: loosening[].kind
+
+- Closed list.
+- Defined in: formats/schemas/changes.schema.json (`loosening[].kind`).
+- Printed in a project by: `bonsai check --schema bonsai.changes`.
+
+Values: `pack`, `deny`, `protected`.
+
 ## Asks: an ask's state
 
 - Closed list.
@@ -1269,5 +1291,29 @@ Values: `agent`, `person`.
 - Closed list.
 - Defined in: formats/schemas/now.schema.json (`error.next.who`).
 - Printed in a project by: `bonsai check --schema bonsai.now`.
+
+Values: `agent`, `person`.
+
+## packs: command
+
+- Closed list.
+- Defined in: formats/schemas/packs.schema.json (`command`).
+- Printed in a project by: `bonsai check --schema bonsai.packs`.
+
+Values: `outdated`, `show`.
+
+## packs: packs[].newer.state
+
+- Closed list.
+- Defined in: formats/schemas/packs.schema.json (`packs[].newer.state`).
+- Printed in a project by: `bonsai check --schema bonsai.packs`.
+
+Values: `newer`, `current`, `stale`.
+
+## packs: error.next.who
+
+- Closed list.
+- Defined in: formats/schemas/packs.schema.json (`error.next.who`).
+- Printed in a project by: `bonsai check --schema bonsai.packs`.
 
 Values: `agent`, `person`.
