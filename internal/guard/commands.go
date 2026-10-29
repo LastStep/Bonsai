@@ -13,9 +13,10 @@ package guard
 //     grant; in command mode only a person's tap puts a person-only path there, tripwire.go).
 //   - bonsai init, update and unlink are judged as one edit of bonsai.yaml and .bonsai/lock.json at the top of the
 //     checkout they run in (may), so an agent's update needs a grant of both, as any edit of them does.
-//   - bonsai pack is judged per subcommand (T-6009, the director's answers of 28 Oct): pack outdated, and any pack line
-//     with no --yes (a preview, as init's and update's), pass for every role; pack set and pack add with --yes are
-//     judged as update is, an edit of bonsai.yaml and the lock, so a grant opens them; pack remove with --yes is a
+//   - bonsai pack is judged per subcommand (T-6009, the director's answers of 28 Oct): pack outdated and pack show
+//     (T-6011: a read, offline), and any pack line with no --yes (a preview, as init's and update's), pass for every
+//     role; pack set (pack set --all among them, its flags --all and --downgrade changing nothing of this) and pack
+//     add with --yes are judged as update is, an edit of bonsai.yaml and the lock, so a grant opens them; pack remove with --yes is a
 //     person's command that no grant opens (ownPerson: it always takes a pack's protections away). The command holds
 //     the same line itself, and refuses any plan that takes protections away in an agent's session (cmd/bonsai).
 //   - Every other word is allowed (bonsai-command), and so is a call that writes nothing whatever its word (T-5505's
@@ -96,7 +97,7 @@ func personSub(word, sub string) bool {
 
 // packSubs are pack's subcommands as written: a pack call whose subcommand is not one of them as plain text (a
 // variable, a substitution or a glob in its place or before it) could be any, remove among them (packOpenSub).
-var packSubs = []string{"outdated", "set", "add", "remove"}
+var packSubs = []string{"outdated", "show", "set", "add", "remove"}
 
 // packOpenSub reports a pack call whose subcommand cannot be told from its words: one not literal (literal false) and
 // not one of packSubs as written (S1, the verifier of 29 Oct: bonsai pack $S base@x --yes, bonsai pack se* ...).
@@ -210,7 +211,7 @@ func (j *judge) ownCommand(dir string, argv []string, literal bool) Decision {
 		// Its subcommand could be remove, and a word that is not literal could stand for --yes: judged as remove --yes.
 		d := deny(RulePersonCommand, "bonsai pack refused: its subcommand is not plain text (a variable, a substitution or a "+
 			"glob), so it could be pack remove, a person's command that no task's grant opens; write the subcommand out "+
-			"(outdated, set, add or remove)", personNext)
+			"(outdated, show, set, add or remove)", personNext)
 		d.Target = target(j.session, []string{filepath.Join(checkoutTop(dir), workspace.ConfigFile)})
 		return d
 	case personSub(word, sub) && (yesArg(args) || !literal):
@@ -269,8 +270,10 @@ func helpArg(args []string) bool {
 // preview and writes neither bonsai.yaml nor the lock (a line that changes the variable is a person's step, judged
 // apart: shell_env.go).
 func (j *judge) preview(word string, args []string, literal bool) bool {
-	if word == "pack" && literal && packSub(args) == "outdated" && !allowExec(args) {
-		return true // pack outdated writes only the home's cache of the packs' tags, never a project file
+	if sub := packSub(args); word == "pack" && literal && (sub == "outdated" || sub == "show") && !allowExec(args) {
+		// pack outdated writes only the home's cache of the packs' tags (and, with --changes, its clones), never a
+		// project file; pack show reads only.
+		return true
 	}
 	if word != "init" && word != "update" && word != "pack" || !literal || allowExec(args) || j.getenv == nil || j.getenv(ChildSessionEnv) == "" {
 		return false
