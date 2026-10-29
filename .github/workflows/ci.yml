@@ -57,10 +57,11 @@ jobs:
         run: GOOS=windows GOARCH=amd64 go build ./...
 
   # Its own job, not a matrix on test: a matrix would rename the check "test (ubuntu-latest)" (design/plan.md).
-  # -timeout 20m in the Windows jobs: on windows-latest cmd/bonsai and internal/engine take about 10 minutes each, past
-  # go test's default limit per package (step 5.4). The plain and the fault-tag passes are two jobs that run at once
-  # (each took about 26 minutes in a row; T-5617): the plain pass keeps the name "windows" and holds the packs check,
-  # which runs once for both; the tagged pass is "windows (fault tag)".
+  # -timeout 30m in the Windows jobs: on windows-latest cmd/bonsai and internal/engine take 10 minutes or more each,
+  # past go test's default limit per package (step 5.4); cmd/bonsai took about 17-18 minutes on main (992 s and 1081 s)
+  # and passed 20 with the pack tests (T-6010, run 40845271999), so 20m became 30m. The plain and the fault-tag passes
+  # are two jobs that run at once (each took about 26 minutes in a row; T-5617): the plain pass keeps the name
+  # "windows" and holds the packs check, which runs once for both; the tagged pass is "windows (fault tag)".
   windows:
     runs-on: windows-latest
     steps:
@@ -80,7 +81,7 @@ jobs:
         run: go version
 
       - name: Run tests
-        run: go test -timeout 20m ./...
+        run: go test -timeout 30m ./...
 
       - name: Run vet
         run: go vet ./...
@@ -124,7 +125,7 @@ jobs:
         run: go version
 
       - name: Run tests with the fault tag
-        run: go test -timeout 20m -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
+        run: go test -timeout 30m -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
 
       - name: Run vet with the fault tag
         run: go vet -tags bonsai_test_fault ./cmd/bonsai ./internal/guard ./internal/ladder ./internal/reference ./internal/reference/gen ./internal/rung0 ./internal/stopgate
