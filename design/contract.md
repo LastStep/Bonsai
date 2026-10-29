@@ -1027,7 +1027,8 @@ bridge to run often; `--full` adds `checks` (vision A.1).
   "local": { "log": "<root>/.bonsai/local/log", "asks": "<root>/.bonsai/local/asks", "ladder": "<root>/.bonsai/local/ladder" },
   "formats": { "bonsai.task": { "read": [0, 1], "write": 1 }, "bonsai.log": { "read": [1], "write": 1 } },
   "documents": [ { "kind": "task", "from": "bonsai", "path": "studio/tasks", "id": "^T-\\d{4,6}$", "format": "bonsai.task" } ],
-  "packs": [ { "id": "base", "version": "1.0.0", "commit": "<sha>", "state": "ok" } ],
+  "packs": [ { "id": "base", "version": "1.0.0", "commit": "<sha>", "state": "ok", "ref": "base-v1.0.0",
+               "newer": { "tag": "base-v1.0.1", "read": "2026-10-29T08:15:00Z", "state": "newer" } } ],
   "files": { "changed": 0, "missing": 0, "format0_changed": 0 },
   "labels": [ { "namespace": "bonsai", "from": "bonsai", "version": 1 },
               { "namespace": "trinetra", "from": "machine", "version": 1 } ],
@@ -1050,7 +1051,7 @@ bridge to run often; `--full` adds `checks` (vision A.1).
 | `local` | The main checkout's record folders, absolute (`<root>` is `workspace.root`), so the forwarder never builds paths; printed locally, never forwarded |
 | `formats` | Which majors this Bonsai reads and writes, per format (§2.2) |
 | `documents` | Every declared document kind (§7.3) |
-| `packs` | From the lock (§14); `state` `ok`, `changed` or `missing` |
+| `packs` | From the lock (§14); `state` `ok`, `changed` or `missing`; `ref` as `bonsai.yaml` names it; `newer` from the home's cache (below) |
 | `files` | Counts of edited, missing and changed format-0 files |
 | `labels` | Namespaces in force, where each came from, and its version |
 | `lanes` | The lanes defined, with their rules (§6) |
@@ -1074,6 +1075,15 @@ every other field is `null`.
 > role, parent, task, brief, last call, counts and limits, report and token counts), copied as recorded and never
 > interpreted (Rohan, 14 Oct: no derived state, share, cost, estimate or prediction; the studio computes those). Each
 > reads only and never acts (`design/plan-5.md`, step 5.5, notes 5.5.0 and 5.5.12).
+
+> **Changed 29 Oct (the director's approval of `records/plans/P-T-6009.md`, formats set 13):** each `packs` item gains
+> `ref` (the ref `bonsai.yaml` names, `null` when it no longer names a pack the lock holds) and `newer` at its end:
+> `{tag, read, state}`, or `null` when the home's `cache/packs.json` holds no good read of the pack's source. The
+> default stays offline: it reads only that cache, which `bonsai pack outdated` and `status --full` write after
+> reading every source live. The verdict is worked out at each read against the locked version, never stored; `state`
+> is `newer`, `current`, or `stale` (the read older than 7 days, or its newest release tag below the locked version).
+> `bonsai_release` never reads `current` from a record naming an older release than the installed Bonsai: it reads
+> `unknown`, its `why` naming `bonsai status --full` (BUG-139).
 
 ## 13. The active task: one definition (T-0011)
 

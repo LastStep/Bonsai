@@ -45,13 +45,21 @@
       "id": "base",
       "version": "1.0.0",
       "commit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
-      "state": "ok"
+      "state": "ok",
+      "ref": "base-v1.0.0",
+      "newer": {
+        "tag": "base-v1.0.1",
+        "read": "2026-10-29T08:15:00Z",
+        "state": "newer"
+      }
     },
     {
       "id": "workflow",
       "version": "1.2.0",
       "commit": "1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5",
-      "state": "ok"
+      "state": "ok",
+      "ref": "v1.2.0",
+      "newer": null
     }
   ],
   "files": {

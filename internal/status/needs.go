@@ -58,11 +58,23 @@ func needsOf(lock *workspace.Lock, installed map[string]bool) []any {
 //	             without starting a session, unknown where it cannot: none in formats set 4 (bonsai.pack/1's needs holds
 //	             only claude_code), so []
 //
-// It gives the packs' plugins installed, by pack id, for needs (nil when Claude Code could not be asked).
-func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lock, o Options) (schema.Object, map[string]bool) {
-	tags := o.Tags
-	if tags == nil {
-		tags = func(source string) ([]string, error) { return engine.RemoteTags(source, engine.PackTagsTimeout) }
+// It gives the packs' plugins installed, by pack id, for needs (nil when Claude Code could not be asked), and each
+// source's read, once per source in the lock's order, for the home's cache (engine.RecordPackTags).
+func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lock, o Options) (schema.Object, map[string]bool, []engine.PackTagRead) {
+	live := o.Tags
+	if live == nil {
+		live = func(source string) ([]string, error) { return engine.RemoteTags(source, engine.PackTagsTimeout) }
+	}
+	var reads []engine.PackTagRead
+	tags := func(source string) ([]string, error) {
+		for _, rd := range reads {
+			if rd.Source == source {
+				return rd.Tags, rd.Err
+			}
+		}
+		list, err := live(source)
+		reads = append(reads, engine.PackTagRead{Source: source, Tags: list, Err: err})
+		return list, err
 	}
 	refs, paths := map[string]string{}, map[string]string{}
 	for _, p := range cfg.Packs {
@@ -133,7 +145,7 @@ func fullChecks(r *engine.CheckResult, cfg *workspace.Config, lock *workspace.Lo
 	claude := schema.Object{{Key: "version", Value: version}, {Key: "floor", Value: st.Floor}, {Key: "from", Value: st.From},
 		{Key: "state", Value: st.State}, {Key: "why", Value: why}}
 	return schema.Object{{Key: "packs", Value: packs}, {Key: "plugins", Value: plugins}, {Key: "claude_code", Value: claude},
-		{Key: "mcp", Value: []any{}}}, installed
+		{Key: "mcp", Value: []any{}}}, installed, reads
 }
 
 // Active is status --active (contract §13's read-only command; spec §4): the active task for the checkout holding

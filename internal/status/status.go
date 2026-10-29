@@ -6,7 +6,8 @@
 //
 //   - format, bonsai, mode (offline; full with --full), workspace, home, local, person_only: bonsai.yaml, the home and
 //     git (plan part 2);
-//   - packs, files, problems: bonsai check's own findings (internal/engine's Check, offline from the lock), problems
+//   - packs, files, problems: bonsai check's own findings (internal/engine's Check, offline from the lock), each pack
+//     with bonsai.yaml's ref and its newer release from the home's cache/packs.json alone (set 13: withNewer), problems
 //     one sentence each with its next step (contract §12: "the same findings bonsai check reports"); check's warnings
 //     are never problems (spec §6). Two need more than the default may spend, so --full alone adds them: approve_first
 //     from git history (every commit that touched the task folder) and the plugin drift Claude Code reports. The
@@ -191,9 +192,17 @@ func gather(dir, version string, o Options) (map[string]any, *engine.Error) {
 	if o.Full {
 		mode = ModeFull
 		var c schema.Object
-		c, installed = fullChecks(checked, cfg, lock, o)
+		var reads []engine.PackTagRead
+		c, installed, reads = fullChecks(checked, cfg, lock, o)
 		checks = c
+		if len(reads) > 0 {
+			if _, err := engine.RecordPackTags(home, reads); err != nil && o.NotKept != nil {
+				o.NotKept("the packs' release read was not kept in " + engine.PackCachePath(home) + " (" + ascii(err.Error()) +
+					"): plain bonsai status will not show it")
+			}
+		}
 	}
+	packs = withNewer(packs, cfg, lock, home)
 	roles, messages := any([]any{}), any(nil)
 	committed, problem := committedConfig(co, cfg) // one git call, for the roles and the messages' thresholds
 	if problem != "" {
@@ -236,6 +245,42 @@ func gather(dir, version string, o Options) (map[string]any, *engine.Error) {
 		"messages":       messages,
 		"bonsai_release": releaseOf(home, version, o),
 	}, nil
+}
+
+// withNewer adds each pack's ref (bonsai.yaml's; null when bonsai.yaml no longer names the locked pack) and newer
+// (set 13): the home's cache/packs.json as it stands, the verdict worked out now against the locked version
+// (engine.PackNewerOf), null when the cache holds no good read of the pack's source. It never reads a source: --full
+// has already written its reads to the cache, and plain status reads only the file. A cache Bonsai cannot read gives
+// null for every pack (bonsai status --full or bonsai pack outdated write it again).
+func withNewer(packs []any, cfg *workspace.Config, lock *workspace.Lock, home string) []any {
+	cache, err := engine.LoadPackCache(home)
+	if err != nil {
+		cache = engine.PackCache{}
+	}
+	for i, p := range packs {
+		po := p.(schema.Object)
+		id := po.String("id")
+		var ref, newer any
+		var source, path, version string
+		version = po.String("version")
+		if lock != nil {
+			for _, lp := range lock.Packs {
+				if lp.ID == id {
+					source, path = lp.Source, lp.Path
+				}
+			}
+		}
+		for _, cp := range cfg.Packs {
+			if cp.ID == id {
+				ref = cp.Ref
+				if n := engine.PackNewerOf(cache, source, id, cp.Ref, path, version); n != nil {
+					newer = schema.Object{{Key: "tag", Value: n.Tag}, {Key: "read", Value: n.Read}, {Key: "state", Value: n.State}}
+				}
+			}
+		}
+		packs[i] = append(po, schema.Member{Key: "ref", Value: ref}, schema.Member{Key: "newer", Value: newer})
+	}
+	return packs
 }
 
 // releaseOf is bonsai_release: with --full the home's record read again when a read is due (a write that fails told
@@ -594,8 +639,21 @@ func TextToIn(d *textui.Doc, doc schema.Object, loc *time.Location, utc bool) {
 		if state == "ok" {
 			tone = textui.Ok
 		}
-		packs = append(packs, textui.R(textui.T(ascii(po.String("id")), textui.Key), textui.C(ascii(po.String("version"))),
-			textui.C("at "+ascii(commit)), textui.T(ascii(state), tone)))
+		row := textui.R(textui.T(ascii(po.String("id")), textui.Key), textui.C(ascii(po.String("version"))),
+			textui.C("at "+ascii(commit)), textui.T(ascii(state), tone))
+		if nv, _ := po.Get("newer"); nv != nil {
+			n := nv.(schema.Object)
+			read := ascii(shownTime(n.String("read"), loc, utc))
+			switch n.String("state") {
+			case engine.PackNewer:
+				row = append(row, textui.T(ascii(n.String("tag"))+" is released (read "+read+"; bonsai pack outdated)", textui.Warn))
+			case engine.PackCurrent:
+				row = append(row, textui.T("no newer release (read "+read+")", textui.Dim))
+			default:
+				row = append(row, textui.T("newer releases unknown: last read "+read+" (bonsai pack outdated reads them)", textui.Dim))
+			}
+		}
+		packs = append(packs, row)
 	}
 	if len(packs) == 0 {
 		packs = []textui.Row{textui.R(textui.T("none locked", textui.Dim))}

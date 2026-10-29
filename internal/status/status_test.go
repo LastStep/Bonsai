@@ -363,7 +363,7 @@ func TestStatusOfAProjectTheEngineLinked(t *testing.T) {
 	}
 	checkShape(t, doc, false)
 	for k, want := range map[string]string{
-		"packs": `[{"id":"demo-pack","version":"0.1.0","commit":"` + pack.A + `","state":"ok"}]`,
+		"packs": `[{"id":"demo-pack","version":"0.1.0","commit":"` + pack.A + `","state":"ok","ref":"` + pack.A + `","newer":null}]`,
 		"files": `{"changed":0,"missing":0,"format0_changed":0}`,
 	} {
 		if v, _ := doc.Get(k); schema.Show(v) != want {

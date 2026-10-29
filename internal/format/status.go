@@ -138,7 +138,18 @@ type StatusPack struct {
 	Version string        `json:"version"`
 	Commit  string        `json:"commit"`
 	State   string        `json:"state"` // the closed list: ok, changed, missing
+	Ref     *string       `json:"ref"`   // set 13: bonsai.yaml's ref, or null when it no longer names the pack
+	Newer   *StatusNewer  `json:"newer"` // set 13: the home's cache's newer record, or null
 	Extra   schema.Object `json:"-"`
+}
+
+// StatusNewer is a pack's newer release as the home's cache/packs.json holds it (set 13), its verdict worked out at
+// each read against the locked version.
+type StatusNewer struct {
+	Tag   string        `json:"tag"`   // the newest release tag when state is newer; else the locked ref
+	Read  string        `json:"read"`  // the source's last good read, RFC 3339 UTC
+	State string        `json:"state"` // the closed list: newer, current, stale
+	Extra schema.Object `json:"-"`
 }
 
 // StatusFiles counts the files that differ from the lock.

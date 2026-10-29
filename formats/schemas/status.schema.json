@@ -413,7 +413,13 @@
             "id": "base",
             "version": "1.0.0",
             "commit": "0a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4",
-            "state": "ok"
+            "state": "ok",
+            "ref": "base-v1.0.0",
+            "newer": {
+              "tag": "base-v1.0.1",
+              "read": "2026-10-29T08:15:00Z",
+              "state": "newer"
+            }
           }
         ],
         null
@@ -428,7 +434,9 @@
           "id",
           "version",
           "commit",
-          "state"
+          "state",
+          "ref",
+          "newer"
         ],
         "properties": {
           "id": {
@@ -464,6 +472,66 @@
               "changed",
               "missing"
             ]
+          },
+          "ref": {
+            "description": "The ref bonsai.yaml names for the pack (a tag, a branch or a commit), as written there; null when bonsai.yaml no longer names a pack the lock still holds (set 13).",
+            "examples": [
+              "base-v1.0.0",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "newer": {
+            "description": "Whether the pack has a newer release, from the home's cache/packs.json alone (set 13): plain status never reads a source; bonsai pack outdated and bonsai status --full read every source live and write the cache. The verdict is worked out each time against the locked version, never stored. null when the cache holds no good read of the pack's source (none made, or only failed ones; a failed read after a good one keeps the good one).",
+            "examples": [
+              {
+                "tag": "base-v1.0.1",
+                "read": "2026-10-29T08:15:00Z",
+                "state": "newer"
+              },
+              null
+            ],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "tag",
+              "read",
+              "state"
+            ],
+            "properties": {
+              "tag": {
+                "description": "The newest release tag the cache holds for the pack by its prefix rules (the ref's own prefix for a release tag; else the pack's id and a dash or a slash, and bare v tags for a pack at its repository's top), when state is newer; otherwise the locked ref itself, as bonsai.yaml names it (a commit hash for a pack locked to a commit).",
+                "examples": [
+                  "base-v1.0.1",
+                  "base-v1.0.0"
+                ],
+                "type": "string"
+              },
+              "read": {
+                "description": "When the pack's source was last read successfully, RFC 3339 in UTC.",
+                "examples": [
+                  "2026-10-29T08:15:00Z"
+                ],
+                "type": "string"
+              },
+              "state": {
+                "description": "A closed list: newer (a release tag newer than the locked version is known), current (none newer, and the read is fresh), stale (none newer known, and the read is older than 7 days or its newest release tag sorts below the locked version, so it was made before the lock moved: bonsai pack outdated reads it again).",
+                "examples": [
+                  "newer",
+                  "current"
+                ],
+                "enum": [
+                  "newer",
+                  "current",
+                  "stale"
+                ]
+              }
+            }
           }
         }
       }
