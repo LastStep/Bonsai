@@ -61,6 +61,19 @@ func NewerTags(tags []string, ref, id, path, version string) []string {
 	if !ok {
 		return []string{}
 	}
+	out := []string{}
+	for _, t := range ReleaseTagsFor(tags, ref, id, path) {
+		v, _, _ := ParseVersion(releaseTag().FindStringSubmatch(t)[2])
+		if older(locked, v) {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// ReleaseTagsFor gives the tags that count as the pack's releases by NewerTags' prefix rules, oldest first by
+// version (a stable sort: tags of one version keep their order).
+func ReleaseTagsFor(tags []string, ref, id, path string) []string {
 	// A pack kept in a subfolder shares its repository with other tags (Bonsai's own v0.4.3): only its own name's
 	// count. A pack at the repository's top owns the bare v tags too.
 	prefixes := map[string]bool{id + "-": true, id + "/": true}
@@ -74,20 +87,19 @@ func NewerTags(tags []string, ref, id, path, version string) []string {
 		tag string
 		v   [3]int
 	}
-	var newer []tagged
+	var found []tagged
 	for _, t := range tags {
 		m := releaseTag().FindStringSubmatch(t)
 		if m == nil || !prefixes[m[1]] {
 			continue
 		}
-		v, _, ok := ParseVersion(m[2])
-		if ok && older(locked, v) {
-			newer = append(newer, tagged{t, v})
+		if v, _, ok := ParseVersion(m[2]); ok {
+			found = append(found, tagged{t, v})
 		}
 	}
-	sort.SliceStable(newer, func(i, j int) bool { return older(newer[i].v, newer[j].v) })
+	sort.SliceStable(found, func(i, j int) bool { return older(found[i].v, found[j].v) })
 	out := []string{}
-	for _, n := range newer {
+	for _, n := range found {
 		out = append(out, n.tag)
 	}
 	return out
