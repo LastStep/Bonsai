@@ -124,3 +124,40 @@ func TestPackFedYesIsJudged(t *testing.T) {
 	}
 	wantRule(t, dir, bashIn(dir, "Bash", `bonsai pack remove base --yes "`), RulePersonCommand, ChildSessionEnv, "1")
 }
+
+// S1 (the verifier of 29 Oct): a pack call whose subcommand, or a word before it, is not literal (a variable, a
+// substitution, a glob) could be pack remove: refused person-command with --yes on the line or a word that could
+// stand for it, with and without a grant of bonsai.yaml and the lock; the literal forms are judged as before.
+func TestPackSubcommandNotLiteral(t *testing.T) {
+	lines := []string{"bonsai pack $S base@x --yes", "S=set; bonsai pack $S base@x --yes", "bonsai pack se* base@x --yes",
+		"bonsai pack $(echo remove) base --yes", "bonsai pack $S base@x", "bonsai pack `echo remove` base"}
+	for _, granted := range []bool{false, true} {
+		dir := withTask(t, "running")
+		if granted {
+			dir = withTask(t, "running", "bonsai.yaml", ".bonsai/lock.json")
+		}
+		for _, line := range lines {
+			code, s := answer(t, dir, bashIn(dir, "Bash", line), ChildSessionEnv, "1")
+			if code != 2 || !strings.Contains(s, "rule: person-command.") {
+				t.Errorf("granted %v: %s: exit %d: %s", granted, line, code, s)
+			}
+		}
+		// The literal forms, unchanged: set with --yes judged as an edit (allowed under the grant), remove --yes a
+		// person's command, previews free.
+		code, s := answer(t, dir, bashIn(dir, "Bash", "bonsai pack set base@x --yes"), ChildSessionEnv, "1")
+		if granted != (code == 0) {
+			t.Errorf("granted %v: a literal set --yes: exit %d: %s", granted, code, s)
+		}
+		wantRule(t, dir, bashIn(dir, "Bash", "bonsai pack remove base --yes"), RulePersonCommand, ChildSessionEnv, "1")
+		wantRule(t, dir, bashIn(dir, "Bash", "bonsai pack set base@x"), RuleBonsaiCommand, ChildSessionEnv, "1")
+		wantRule(t, dir, bashIn(dir, "Bash", "bonsai pack outdated"), RuleBonsaiCommand, ChildSessionEnv, "1")
+	}
+	// A role that changes nothing: refused as such.
+	dir := briefProject(t)
+	started(t, dir, sessA, "workflow:verifier")
+	wantAnswer(t, dir, shellAs(dir, "v1", "workflow:verifier", "bonsai pack $S base@x --yes", false), 2, RuleRoleWritesNothing, ChildSessionEnv, "1")
+	// xargs: a glob subcommand is open to its input.
+	if ownOpen([]string{"bonsai", "pack", "se*", "base@x"}) == "" {
+		t.Error("a glob subcommand is not open to xargs")
+	}
+}

@@ -94,6 +94,16 @@ func personSub(word, sub string) bool {
 	return false
 }
 
+// packSubs are pack's subcommands as written: a pack call whose subcommand is not one of them as plain text (a
+// variable, a substitution or a glob in its place or before it) could be any, remove among them (packOpenSub).
+var packSubs = []string{"outdated", "set", "add", "remove"}
+
+// packOpenSub reports a pack call whose subcommand cannot be told from its words: one not literal (literal false) and
+// not one of packSubs as written (S1, the verifier of 29 Oct: bonsai pack $S base@x --yes, bonsai pack se* ...).
+func packOpenSub(args []string, literal bool) bool {
+	return !literal && !listHas(packSubs, packSub(args))
+}
+
 // yesArg reports --yes in any form among a call's words (as preview reads it).
 func yesArg(args []string) bool {
 	for _, a := range args {
@@ -137,7 +147,7 @@ func ownOpen(argv []string) string {
 	case listHas(ownWrites, word):
 		return "with the command " + oneLine(word) + ", which its input may give --allow-exec"
 	case word == "pack":
-		if sub := packSub(argv[1:]); sub == "" || listHas(ownPackWrites, sub) {
+		if sub := packSub(argv[1:]); sub == "" || listHas(ownPackWrites, sub) || !listHas(packSubs, sub) {
 			return "with the command pack and no subcommand, or one that writes, which its input may give --yes"
 		}
 	case ownSubs(word) != nil:
@@ -182,7 +192,7 @@ func (j *judge) ownCommand(dir string, argv []string, literal bool) Decision {
 		return false
 	}
 	if rs := j.sh; rs != nil {
-		if d := j.roleCommand(rs, word, argv); !d.Allow {
+		if d := j.roleCommand(rs, word, argv, literal); !d.Allow {
 			return d
 		}
 	}
@@ -196,6 +206,13 @@ func (j *judge) ownCommand(dir string, argv []string, literal bool) Decision {
 	case subs != nil && later(subs...):
 		return deny(RuleHomeCommand, fmt.Sprintf("%s refused: it writes this machine's settings or label files in Bonsai's "+
 			"home, which never change from an agent's session", shown), personNext)
+	case word == "pack" && packOpenSub(args, literal):
+		// Its subcommand could be remove, and a word that is not literal could stand for --yes: judged as remove --yes.
+		d := deny(RulePersonCommand, "bonsai pack refused: its subcommand is not plain text (a variable, a substitution or a "+
+			"glob), so it could be pack remove, a person's command that no task's grant opens; write the subcommand out "+
+			"(outdated, set, add or remove)", personNext)
+		d.Target = target(j.session, []string{filepath.Join(checkoutTop(dir), workspace.ConfigFile)})
+		return d
 	case personSub(word, sub) && (yesArg(args) || !literal):
 		d := deny(RulePersonCommand, fmt.Sprintf("%s --yes refused: it takes a pack and its protections out of the project, "+
 			"a person's command that no task's grant opens; its preview (no --yes) is anyone's", shown), personNext)
@@ -264,13 +281,13 @@ func (j *judge) preview(word string, args []string, literal bool) bool {
 // roleCommand judges a bonsai call for the roles' rules (rolecmds.go): bonsai message's --from and --kind brief; bonsai
 // init, update, unlink and check --write refused to a role that changes nothing; and bonsai ladder --task <id> noted for
 // the agent's red runs once the call is allowed.
-func (j *judge) roleCommand(rs *shellRole, word string, argv []string) Decision {
+func (j *judge) roleCommand(rs *shellRole, word string, argv []string, literal bool) Decision {
 	args := argv[1:]
 	switch {
 	case word == "message":
 		return rs.messageCall(argv)
 	case rs.changesNothing() && (listHas(ownWrites, word) || word == "check" && hasArg(args, "--write") ||
-		word == "pack" && listHas(ownPackWrites, packSub(args))):
+		word == "pack" && (listHas(ownPackWrites, packSub(args)) || packOpenSub(args, literal))):
 		return deny(RuleRoleWritesNothing, fmt.Sprintf("bonsai %s refused: it writes the project's files, and %s changes nothing "+
 			"(its role's writes: false)", oneLine(word), rs.w.shown()), "put what you would change in your report")
 	case word == "ladder" && rs.w.counted:
