@@ -89,7 +89,7 @@ func readEngineFlags(c *call) *engineFlags {
 	for _, g := range c.given {
 		switch g.name {
 		case "--yes", "--diff", "--explain", "--json", "--expect":
-		case "--new-id":
+		case "--new-id", "--all", "--downgrade": // flags with no value (the last two pack set's)
 			f.typed = append(f.typed, g.name)
 		case "--allow-exec":
 			if !exec {
@@ -115,8 +115,10 @@ var applyPlan = engine.Apply
 // subcommand, and the arguments as typed, for the command lines it names.
 type packRun struct {
 	edit *engine.ConfigEdit
-	sub  string
-	args []string
+	more  []*engine.ConfigEdit // pack set --all: the other ref lines the edit changes
+	sub   string
+	args  []string
+	notes []string // the preview's notes of the word's own (a move with no order; the packs --all leaves)
 }
 
 // runEngine runs init or update: build the plan, print it, ask or refuse, write.
@@ -165,7 +167,12 @@ func runEngineAs(c *call, pack *packRun) int {
 		req.Init = &f.values
 	}
 	if pack != nil {
-		req.Command, req.Config, req.Edit = "update", pack.edit.Raw, pack.edit
+		req.Command, req.Config, req.Edit, req.MoreEdits = "update", pack.edit.Raw, pack.edit, pack.more
+		// The compatibility check (the director's pick 5, "Refuse, change the rule"): before anything is written, each
+		// pack set or add moves to must be a format this Bonsai reads and need no newer Claude Code than this machine's.
+		if pack.sub == "set" || pack.sub == "add" {
+			req.Needs = &engine.Needs{Claude: claudeVersion, Code: "pack-needs"}
+		}
 	}
 	plan, err := engine.Build(req)
 	if err != nil {
@@ -173,6 +180,9 @@ func runEngineAs(c *call, pack *packRun) int {
 	}
 	if pack != nil {
 		plan.WordName, plan.WordSub = "pack", pack.sub
+		if pack.sub == "set" {
+			plan.FillPackChanges() // the moved packs' own commit titles, from the clones the plan fetched (pick 1)
+		}
 	}
 	// out prints the plan's outcome: with --json the changes output (its error object filled from refusal), else
 	// the Doc on stdout, ending in the refusal's block when there is one.
@@ -206,6 +216,11 @@ func runEngineAs(c *call, pack *packRun) int {
 		d := &textui.Doc{}
 		d.Title("bonsai "+word, "the preview")
 		plan.PreviewTo(d, f.diff, f.explain)
+		if pack != nil {
+			for _, n := range pack.notes {
+				d.Para("note", engine.ASCII(n), textui.Dim)
+			}
+		}
 		return d
 	}
 	// In an agent's session, recording another base branch for the workspace is a person's command (agent.go): the
@@ -371,6 +386,7 @@ func runEngineAs(c *call, pack *packRun) int {
 	plan.PluginsTo(d)
 	if req.Command == "update" {
 		cacheCleanTo(d, home, plan)
+		commitLinesTo(d, plan)
 	}
 	closing(d)
 	return out("applied", engine.ExitOK, nil, d)
@@ -426,8 +442,27 @@ func pluginStep(plan *engine.Plan, again string, written bool) []engine.PluginRe
 	out = append(out, engine.InstallPlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI, plan.PluginConsent(again))...)
 	if written {
 		out = append(out, engine.PruneStalePlugins(plan.Root, plan.Config, plan.NewLock(), pluginCLI)...)
+		// The old marketplace's hint (the director's pick 6, "Hint, don't remove"): named with the command that
+		// removes it, a person's step once no other checkout uses it; nothing removes it here.
+		if hint := engine.OldMarketHint(plan, pluginCLI); hint != nil {
+			out = append(out, *hint)
+		}
 	}
 	return out
+}
+
+// commitLinesTo adds, after update's or bonsai pack's --yes wrote, the two commands that commit the files written,
+// one per line and never joined by && (PowerShell 5.1 has none), and keeps them for --json's commit_lines (pick 7).
+func commitLinesTo(d *textui.Doc, plan *engine.Plan) {
+	plan.CommitLinesOut = plan.CommitLines()
+	if len(plan.CommitLinesOut) == 0 {
+		return
+	}
+	rows := []textui.Row{textui.R(textui.C("to commit what was written, run each line:"))}
+	for _, l := range plan.CommitLinesOut {
+		rows = append(rows, textui.R(textui.T(l, textui.Path)))
+	}
+	d.Section("Commit", rows...)
 }
 
 // recorded writes this machine's record of the checkout (engine.RecordCheckout) once init or update ended without a
