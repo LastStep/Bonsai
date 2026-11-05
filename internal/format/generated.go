@@ -97,6 +97,9 @@ var GeneratedKinds = []GeneratedKind{
 	{Kind: "tasks", Where: ".bonsai/tasks.md", What: "the tasks table",
 		Writer: "bonsai check --write, from the task files",
 		Never:  "-", When: "never: the table is rebuilt whole", Rule: false},
+	{Kind: "cache", Where: ".bonsai/local/cache/sessions.json", What: "the sessions cache: each session log file's spans, by the file's size and modification time, so a run reads again only the log files that changed",
+		Writer: "bonsai check (and check --write, and bonsai status, which runs it), rewritten whole when a log file changed",
+		Never:  "-", When: "never by the cleaner: it is rebuilt from the log; deleting it is safe and costs only one slower run, which reads the whole log and writes it again", Rule: false},
 }
 
 // DefaultGenerated is bonsai.yaml's generated: section as init writes it: each kind's default rule.

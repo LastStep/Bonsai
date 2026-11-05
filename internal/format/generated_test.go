@@ -48,7 +48,7 @@ func TestGeneratedKindsAreTheSchemas(t *testing.T) {
 // A kind's default in words is built from its numbers, so a changed number changes every page that prints it.
 func TestDefaultWordsFollowTheNumbers(t *testing.T) {
 	want := map[string]string{"log": "30 days after a file's last line", "asks": "kept", "ladder": "7 days after the result's finished",
-		"run": "kept", "sessions": "kept", "tasks": "a rebuild: nothing to clean",
+		"run": "kept", "sessions": "kept", "tasks": "a rebuild: nothing to clean", "cache": "a rebuild: nothing to clean",
 		"messages": "30 days after a thread's last message", "agents": "30 days after a session folder's last line"}
 	for _, k := range GeneratedKinds {
 		if got := k.DefaultWords(); got != want[k.Kind] {

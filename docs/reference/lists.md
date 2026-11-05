@@ -505,6 +505,7 @@ error words.
 | `messages` | .bonsai/local/messages/ | messages between agents | bonsai message, one file per message, one folder per recipient, created new and never overwritten | 30 days after a thread's last message | an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it | at a session's end, with the log, within the same budget | yes |
 | `agents` | .bonsai/local/agents/ | each agent's state | the guard: one folder per session, one file per agent with one line a call, and a tie file per brief | 30 days after a session folder's last line | a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept | at a session's end, with the log, within the same budget | yes |
 | `tasks` | .bonsai/tasks.md | the tasks table | bonsai check --write, from the task files | a rebuild: nothing to clean | - | never: the table is rebuilt whole | no |
+| `cache` | .bonsai/local/cache/sessions.json | the sessions cache: each session log file's spans, by the file's size and modification time, so a run reads again only the log files that changed | bonsai check (and check --write, and bonsai status, which runs it), rewritten whole when a log file changed | a rebuild: nothing to clean | - | never by the cleaner: it is rebuilt from the log; deleting it is safe and costs only one slower run, which reads the whole log and writes it again | no |
 
 ## Bonsai's document kinds
 

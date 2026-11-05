@@ -93,6 +93,16 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 - Cleaned: never: the table is rebuilt whole.
 - Rule in bonsai.yaml: none; this kind takes no rule.
 
+### `cache`
+
+- What: the sessions cache: each session log file's spans, by the file's size and modification time, so a run reads again only the log files that changed.
+- Where it lives: .bonsai/local/cache/sessions.json.
+- Written by: bonsai check (and check --write, and bonsai status, which runs it), rewritten whole when a log file changed.
+- Default: a rebuild: nothing to clean.
+- Never cleaned: -.
+- Cleaned: never by the cleaner: it is rebuilt from the log; deleting it is safe and costs only one slower run, which reads the whole log and writes it again.
+- Rule in bonsai.yaml: none; this kind takes no rule.
+
 ## The rules
 
 1. **The protections come first.** A protected file or row is never cleaned, whatever the rule says, and it still
