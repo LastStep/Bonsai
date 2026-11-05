@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.2] - 2026-11-05
+
+> The pack command: a project's packs are added, removed, moved and checked from the command line, each change in one
+> preview and one `--yes`, instead of a hand edit of `bonsai.yaml` and an update. No format is removed or renamed:
+> formats set 13 adds `bonsai.packs/1` and new fields at the end of `bonsai.changes/1` and `bonsai.status/1`, and
+> every file written by 1.0.1 reads as before.
 
 ### Added
 - **`bonsai pack`**: `pack set <id>@<ref>` moves a pack to another version, `pack add` links one more and `pack
@@ -27,7 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   release, offline (`--json`: `bonsai.packs/1`).
 - **A session's opening context names the packs behind** (`Packs behind: ...`), from the cache, with no network.
 - **Commit lines:** after `update --yes` or a `pack` `--yes`, the two commands that commit the files written, one per
-  line (`--json`: `commit_lines`), so they work in PowerShell too.
+  line (`--json`: `commit_lines`), so they work in PowerShell too. A file whose path no shell line can name safely
+  (a quote, a character outside plain ASCII, a git pattern character, a leading `-`) gets no commit lines: the next
+  step says to commit the files by hand, and why.
 - **The old plugin marketplace's hint:** after a move that renames the workspace's marketplace, the plugin step names
   the old one and the command that removes it, to run once no other checkout uses it (BUG-107, in part). Nothing is
   removed for you.
@@ -37,8 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with no version number is never judged a downgrade.
 - **A pack version this machine cannot run is refused before anything is written** (`pack-needs`): one whose
   `needs.claude_code` is newer than the Claude Code here, or whose `pack.yaml` is in a format this Bonsai does not
-  read. Only `pack set` and `pack add` refuse; `check` and `status` still warn (spec section 7, the director's word of
-  28 Oct).
+  read. Only `pack set` and `pack add` refuse; `check` and `status` still warn (spec section 7).
 - **A plan that takes protections away is a person's to write**: a pack taken out, or a version that drops a deny
   rule or a protected path. In an agent's session its `--yes` is refused, whatever the task grants, for `update`
   after a hand edit of `bonsai.yaml` as for `pack`.
