@@ -1,6 +1,6 @@
 ---
 name: run
-description: "The run report template (bonsai.run/1): every field of a run report, its allowed values and the template to copy. Use it when a session starts work on a task, to open the session's report, and to check one."
+description: "The run report template (bonsai.run/1): every field of a run report, its allowed values and the template to copy. Use it when a session that changes files starts work on a task, to open the session's report, and to check one (a role that writes nothing opens none)."
 ---
 
 # The run report template
@@ -9,7 +9,10 @@ A run report is the log of one agent session on one task: opened before the sess
 the work goes, never written at the end from memory. It is one markdown file in the format `bonsai.run/1`: a short
 frontmatter, then the body below. A verifier and the person read it to see what was done and how it was proved.
 
-**When to use this skill.** At the start of a session that works on a task, to open its report; and to check one.
+**When to use this skill.** At the start of a session that works on a task and changes files, to open its report; and
+to check one. **A session of a role whose writes are false** (a role the guard stops from changing any file in the
+project) opens no run report: its report message is its record, and the orchestrator copies what matters into its own
+run report.
 The same fields and values are printed by `bonsai check --schema bonsai.run`.
 
 **Where it goes.** One file per session in the folder `bonsai.yaml` names under `documents.run` (`bonsai status
