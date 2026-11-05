@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -66,7 +65,7 @@ func checkSchema(s Object, at string, top bool) []string {
 	if p, ok := s.Get("pattern"); ok {
 		if ps, ok := p.(string); !ok {
 			out = append(out, at+": pattern is not a string")
-		} else if _, err := regexp.Compile(ps); err != nil {
+		} else if _, err := compiled(ps); err != nil {
 			out = append(out, fmt.Sprintf("%s: pattern %q: %v", at, ps, err))
 		}
 	}
@@ -184,7 +183,7 @@ func validate(s Object, v any, at string) []string {
 	case string:
 		if p, ok := s.Get("pattern"); ok {
 			ps, _ := p.(string)
-			if re, err := regexp.Compile(ps); err != nil || !re.MatchString(x) {
+			if re, err := compiled(ps); err != nil || !re.MatchString(x) {
 				out = append(out, fmt.Sprintf("%s: %s does not match %s", at, Show(x), ps))
 			}
 		}
