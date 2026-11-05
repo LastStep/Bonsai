@@ -240,7 +240,7 @@ pre-release on, the one they had is kept in `~/bonsai-checks/prerelease/previous
   you finish. Never kill what you did not start: another agent's run looks the same.
 
 <!-- bonsai:block start: written by bonsai init and update from bonsai.yaml and each pack's bonsai/block.md (its docs); edit those, not this block. -->
-This project is linked to Bonsai as workspace bonsai; its packs: base 0.1.0, workflow 0.1.0.
+This project is linked to Bonsai as workspace bonsai; its packs: base 1.0.2, workflow 1.0.1.
 Always-on protocols, read in full: @records/protocols/session-start.md
 Project memory, an index of notes kept in records/memory: @records/memory/INDEX.md
 Labels a document may carry under its labels: field (name: the value it takes; the documents it goes on; who sets it):
