@@ -47,7 +47,7 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 
 - What: run reports, committed history.
 - Where it lives: the run reports' folder (documents.run).
-- Written by: the agent that did the work, in the run report format (a role that writes nothing opens none; the orchestrator files its report in its own).
+- Written by: the agent that did the work, in the run report format.
 - Default: kept.
 - Never cleaned: any, by Bonsai: past a rule, bonsai check lists them and a person deletes them.
 - Cleaned: never, by Bonsai.
