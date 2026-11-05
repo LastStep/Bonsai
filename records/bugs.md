@@ -1,6 +1,6 @@
 ---
 title: Known bugs   # the bugs register; every field and how to fill it: skill workflow:bugs
-updated: 2026-10-29
+updated: 2026-11-05
 ---
 
 # Known bugs
@@ -68,7 +68,7 @@ were wrong were reworded, BUG-057 split (BUG-135). The evidence per row: records
 | **BUG-100** | The guard's watch on a marker named through a variable (`X=PI_CODING_AGENT; unset $X`) holds for Claude's marker only; the other seven agents' markers pass it | internal/guard's marker watch (T-5727's verifier, run) | T-5727's verifier `M-2026-10-23-2b4b4a39`; after 1.0 (agent-neutral section 9) |
 | **BUG-101** | About 118 printed lines (28 Oct; about 130 when filed) cite "contract section N", "spec section N" or a design/ file a new user's project does not hold | cmd/bonsai, internal/* printed strings (ran, 28 Oct: a grep of non-test .go files; T-5729's sweep took plan-step words, not these) | T-5729's builder; after 1.0 |
 | **BUG-102** | release.yml:141's checksum substitution inside echo does not stop its step, and :282's `for id in $(gh api ...)` does not fail the draft cleanup; both fail closed later | .github/workflows/release.yml:141, :282 (V1's notes A and B) | V1 `M-2026-10-20-2a5d18eb`; after 1.0 (the director, 23 Oct) |
-| **BUG-107** | Adding or moving a pack renames the plugin marketplace, and the old marketplace stays registered (the running session's "Unknown skill" words were fixed in rc.3, T-5736: init and update say /reload-plugins or a fresh start); the cleanup is open | internal/engine/plugins.go:28-31 (removal only when a pack is taken out); ~/.claude/plugins records (pointed, 28 Oct) | T-5733; after 1.0 |
+| **BUG-107** | Adding or moving a pack renames the plugin marketplace, and the old marketplace stays registered (the running session's "Unknown skill" words were fixed in rc.3, T-5736: init and update say /reload-plugins or a fresh start); the cleanup is open. **5 Nov (T-6011):** after a write that moved a pack's marketplace name, the next step names the old marketplace and the exact Claude Code command that removes it (the plugin result `old-marketplace`); nothing is removed for the person, by their word of 28 Oct ("Hint, don't remove") | internal/engine/plugins.go:28-31 (removal only when a pack is taken out); ~/.claude/plugins records (pointed, 28 Oct) | T-5733; after 1.0 |
 | **BUG-108** | Guard, role-writes-nothing: a relative redirect after `cd $VAR` (to /tmp) is judged as a write inside the project, so a researcher's and a verifier's scratch writes are refused (the refusal's words were fixed in rc.3, T-5737: it says the cd was not followed and asks for the full path); the reading is open; akin to BUG-011 | internal/guard/rolecmds.go writePath, dirsFor (pointed, 28 Oct); LinkSink log s-19462946 lines 344, 810 | T-5733 `M-2026-10-24-d85969b6` B; after 1.0 |
 | **BUG-109** | bonsai message refuses a pointer into Claude Code's /tmp scratchpad, where workflow:prototype puts spikes, so a builder there cannot point at its outputs | LinkSink log s-19462946 line 2073 (said, auditor#1) | T-5733; after 1.0 |
 | **BUG-110** | sessions.md: every subagent row and each resumed session has an empty Model, though the usage records name one (28 Oct: 599 of 599 subagent rows, 622 of 649 rows) | .bonsai/sessions.md (ran, 28 Oct); LinkSink .bonsai/sessions.md | T-5733; after 1.0 |

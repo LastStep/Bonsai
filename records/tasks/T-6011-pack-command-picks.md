@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6011
 title: "T-6009's stage 2, the director's eight picks: what changed, the session nudge, set --all, the downgrade guard, the compatibility check, the old registration's hint, commit lines, pack show"
-status: todo
+status: done
 lane: null
 done_when:
   - "Steps 9-17 of records/plans/P-T-6009.md (approved by the director 29 Oct) built on main with stage 1 (T-6010): PackChanges in set's preview and outdated --changes, the start hook's packs-behind line, pack set --all, pack-downgrade and --downgrade, pack-needs before any write and spec section 7's line rewritten, the old marketplace's hint, the commit lines in text and commit_lines, pack show and bonsai.packs/1 filled, the docs"
@@ -11,8 +11,8 @@ done_when:
 depends_on: [T-6010]
 blocked_by: null
 created: 2026-10-29
-started: null
-finished: null
+started: 2026-10-29
+finished: 2026-11-05
 labels:
   bonsai.ladder: []
   bonsai.allows: ["design/bonsai-spec.md"]
