@@ -9,7 +9,7 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the director present).
 
-## Now (5 Nov): the pack command is on main, both stages (T-6009 done); it ships in Bonsai 1.0.2
+## Now (5 Nov): Bonsai 1.0.2 released and installed (the pack command); base 1.0.2 next
 
 - **The pack command** (`T-6009`, `done`; the plan `records/plans/P-T-6009.md`, approved by the director 29 Oct:
   "approved. now build it end to end in this session"). Both stages landed on `main`, each passed by a fresh Opus
@@ -24,8 +24,12 @@ Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the directo
     marketplace's hint for BUG-107, commit lines, `pack show`). Verifier findings B1 (a PowerShell injection through a
     pack's file path in the printed `git add`), B2 (the lines wrapped), B3 (the stricter quoting broke project paths)
     fixed; a path starting with `-` held. Run report `records/runs/R-2026-10-29-T-6011-pack-command-picks.md`.
-  - **Not released yet:** it goes out in Bonsai 1.0.2 with base 1.0.2 (base's operating-setup skill changed), the
-    director's tags. Still owed: the studio's reply on its asks (the T-6009 run report's 21:15 line). Filed 29 Oct:
+  - **Released:** Bonsai 1.0.2 (`T-6012`, `done`): CHANGELOG's `[1.0.2]` at `08eaf0ec`, tagged `v1.0.2` by the director,
+    published 5 Nov 09:21 UTC, read back (six archives against checksums.txt, attestation, `bonsai 1.0.2`), installed on
+    both sides and checked. The way back: 1.0.1 in `~/bonsai-checks/prerelease/previous/`. Run report
+    `records/runs/R-2026-11-05-T-6012-notes-1-0-2.md`. One-command installers, the director's own (outside the repo):
+    `sh ~/bonsai-checks/scripts/install-bonsai.sh [version]`, and `install-bonsai.ps1` in `%USERPROFILE%\bonsai-checks\scripts\`.
+    **Next:** base 1.0.2 (its version, pins and install lines at 1.0.2), then the director's `base-v1.0.2` tag. Still owed: the studio's reply on its asks (the T-6009 run report's 21:15 line). Filed 29 Oct:
     BUG-141 (a variable command word past the guard, on main), BUG-142 (a grant of the lock opens a direct edit of it).
 - **The packs at 1.0.1** (`T-6008`, `done`; the director: "lets release 1.0.1 for the packs which needs to"):
   landed on `main` at `9098f6fa` (base `version: "1.0.1"`; base's ci skill and the pack template download bonsai
@@ -370,7 +374,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 ## Waiting on the director
 
 - **Now:** theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
-- **Now:** whether to release Bonsai 1.0.2 and base 1.0.2 with the pack command (their tags). Also theirs: whether the ladder
+- **Now:** base 1.0.2's task, then their `base-v1.0.2` tag. Also theirs: whether the ladder
   gains a gofmt rung (CI's lint caught three unformatted files the climb passed; a rung added is the director's word).
 - **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
   059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).
