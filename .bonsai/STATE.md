@@ -9,7 +9,7 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the director present).
 
-## Now (5 Nov): Bonsai 1.0.2 and base 1.0.2 released (the pack command); each project's move is the director's
+## Now (5 Nov): Bonsai 1.0.2 and base 1.0.2 released (the pack command); Bonsai's own repo moved to them
 
 - **The pack command** (`T-6009`, `done`; the plan `records/plans/P-T-6009.md`, approved by the director 29 Oct:
   "approved. now build it end to end in this session"). Both stages landed on `main`, each passed by a fresh Opus
@@ -31,7 +31,14 @@ Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the directo
     `sh ~/bonsai-checks/scripts/install-bonsai.sh [version]`, and `install-bonsai.ps1` in `%USERPROFILE%\bonsai-checks\scripts\`.
     **base 1.0.2** (`T-6013`, `done`): its version, the ci skill's and the template's pins at 1.0.2, README and
     docs/install.md at 1.0.2, landed `2aa82b84`, tagged `base-v1.0.2` by the director 5 Nov. Run report
-    `records/runs/R-2026-11-05-T-6013-base-1-0-2.md`. The workflow pack unchanged since its v1.0.1. Still owed: the studio's reply on its asks (the T-6009 run report's 21:15 line). Filed 29 Oct:
+    `records/runs/R-2026-11-05-T-6013-base-1-0-2.md`. The workflow pack unchanged since its v1.0.1.
+  - **Bonsai's own repo on the released packs** (`T-6014`, `done`; the director: "move bonsai to new packs"): base
+    `base-v1.0.2`, workflow `v1.0.1`, each by `bonsai pack set <id>@<ref> --yes --expect` after its preview (no
+    loosening, no hook line, no code); `42a081ae`. Its plugins' marketplace is now `bonsai-bonsai-010f664f`, registered
+    and installed after the director's restart; four old Bonsai marketplaces removed (only a scratch copy or nothing
+    named them). The move turned `main`'s CI red (an editor test read the live bonsai.yaml's refs), fixed forward in
+    `af40566e`. BUG-143 filed (the old-marketplace hint after two moves names one never registered). Run report
+    `records/runs/R-2026-11-05-T-6014-bonsai-packs.md`. Still owed: the studio's reply on its asks (the T-6009 run report's 21:15 line). Filed 29 Oct:
     BUG-141 (a variable command word past the guard, on main), BUG-142 (a grant of the lock opens a direct edit of it).
 - **The packs at 1.0.1** (`T-6008`, `done`; the director: "lets release 1.0.1 for the packs which needs to"):
   landed on `main` at `9098f6fa` (base `version: "1.0.1"`; base's ci skill and the pack template download bonsai
@@ -376,7 +383,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 ## Waiting on the director
 
 - **Now:** theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
-- **Now:** theirs, each project's move to base 1.0.2 (the studio, ZenGarden-AI-API; Bonsai's own repo on their word): `bonsai pack set --all`, then `--yes`. Also theirs: whether the ladder
+- **Now:** theirs, each project's move to base 1.0.2 (the studio, ZenGarden-AI-API): `bonsai pack set --all`, then `--yes`. Also theirs: whether the ladder
   gains a gofmt rung (CI's lint caught three unformatted files the climb passed; a rung added is the director's word).
 - **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
   059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).

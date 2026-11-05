@@ -5,6 +5,7 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-6014 | Bonsai's own repo moves to the released packs: base from commit 4b41790b to base-v1.0.2, workflow from commit 1a9f6b4e to v1.0.1, by bonsai pack set | done | | 2026-11-05 | 2026-11-05 |
 | T-6013 | base 1.0.2: base and the pack template take Bonsai 1.0.2 (version, download pins), the install lines at 1.0.2, ready for the director's base-v1.0.2 tag | done | | 2026-11-05 | 2026-11-05 |
 | T-6012 | Bonsai 1.0.2's notes: CHANGELOG's Unreleased section becomes [1.0.2], the pack command (T-6010, T-6011), landed with CI green, for the director's tag | done | light | 2026-11-05 | 2026-11-05 |
 | T-6011 | T-6009's stage 2, the director's eight picks: what changed, the session nudge, set --all, the downgrade guard, the compatibility check, the old registration's hint, commit lines, pack show | done | | 2026-10-29 | 2026-11-05 |
