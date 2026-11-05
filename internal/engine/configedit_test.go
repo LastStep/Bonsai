@@ -23,7 +23,24 @@ func repoConfig(t *testing.T) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n")) // a Windows checkout may hold it CRLF: LF here, CRLF made below
+	raw = bytes.ReplaceAll(raw, []byte("\r\n"), []byte("\n")) // a Windows checkout may hold it CRLF: LF here, CRLF made below
+	// The packs' refs are set to fixed commits, so the tests hold the file's shape and comments without following its
+	// live refs: a move to a ref a test sets would change nothing, and the bare and single-quoted copies are made from
+	// these values (T-6014: the repository's own move to base-v1.0.2 turned both into plain copies).
+	fixed := map[string]string{"base": "4b41790bb40b220785b4d18000824356d4829a6f", "workflow": "1a9f6b4ec7848b4d31e8d990f96c6a7afd68873d"}
+	cfg, err := workspace.ReadConfigFull(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range cfg.Packs {
+		ref, ok := fixed[p.ID]
+		old := []byte(`ref: "` + p.Ref + `"`)
+		if !ok || !bytes.Contains(raw, old) {
+			t.Fatalf("bonsai.yaml's pack %s (ref %q): the test fixes only base and workflow, each written as ref: \"...\"", p.ID, p.Ref)
+		}
+		raw = bytes.Replace(raw, old, []byte(`ref: "`+ref+`"`), 1)
+	}
+	return raw
 }
 
 func crlf(raw []byte) []byte { return bytes.ReplaceAll(raw, []byte("\n"), []byte("\r\n")) }
