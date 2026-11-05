@@ -411,6 +411,60 @@ func TestSkipsAndMarks(t *testing.T) {
 	}
 }
 
+// node's TAP with three tests passing, then the same run in CI with the marked test "live" skipped: its summary's
+// "# pass" leaves the skip out.
+const (
+	tapThreePass = "TAP version 13\nok 1 - a\nok 2 - b\nok 3 - live\n1..3\n# tests 3\n# pass 3\n# fail 0\n# skipped 0\n# todo 0\n"
+	tapLiveSkip  = "TAP version 13\nok 1 - a\nok 2 - b\nok 3 - live # SKIP real-checkouts-only: needs a checkout\n1..3\n# tests 3\n" +
+		"# pass 2\n# fail 0\n# skipped 1\n# todo 0\n"
+)
+
+// A rung counting by capture gives the same count locally and under --ci (BUG-138): the accepted marked skips are added
+// back under --ci, as on a rung whose tests are the count, and a marked test that ran is not counted twice.
+func TestCaptureCountUnderCI(t *testing.T) {
+	r := rung{n: 1, name: "tests", command: show("out.tap"), required: true, ratchet: "n_tests", tst: "tap",
+		capture: "\n      n_tests: \"^# pass (\\\\d+)\""}
+	files := map[string]string{"out.tap": tapThreePass, "work/tasks/T-0901-a.md": taskText("T-0901", "running", "")}
+	f := project(t, yamlOf("[1]", "\n  n_tests: 3", `["live"]`, r), files)
+	ratchetOf := func(task string) (*format.LadderRatchet, string) {
+		l := f.result(task)
+		reason := ""
+		if l.Rungs[0].Reason != nil {
+			reason = *l.Rungs[0].Reason
+		}
+		return l.Rungs[0].Ratchet, reason
+	}
+	// Locally every test runs: 3 passed, at the floor.
+	a := f.climb("", Options{Task: "T-0901"})
+	if rt, reason := ratchetOf("T-0901"); a.Exit != ExitGreen || rt == nil || rt.Now != "3" || !rt.OK {
+		t.Fatalf("local: exit %d, ratchet %+v, %q", a.Exit, rt, reason)
+	}
+	// The same run under --ci with nothing skipped: 3, not 3 plus a skip that did not happen.
+	a = f.climb("", Options{CI: true})
+	if rt, reason := ratchetOf("ci"); a.Exit != ExitGreen || rt == nil || rt.Now != "3" || !rt.OK {
+		t.Fatalf("--ci, the marked test ran: exit %d, ratchet %+v, %q", a.Exit, rt, reason)
+	}
+	// Under --ci the marked test skips: the capture reads 2 and the accepted skip makes it 3, at the floor.
+	f.write("out.tap", tapLiveSkip)
+	f.commit("the marked test skips")
+	a = f.climb("", Options{CI: true})
+	l := f.result("ci")
+	if rt, reason := ratchetOf("ci"); a.Exit != ExitGreen || rt == nil || rt.Now != "3" || !rt.OK || len(l.Skipped) != 1 || !l.Skipped[0].Accepted {
+		t.Fatalf("--ci, the marked test skipped: exit %d, ratchet %+v, skipped %+v, %q", a.Exit, rt, l.Skipped, reason)
+	}
+	// A capture that counts the skip itself ("# tests") disagrees with the tests read as passed, skip added to both or
+	// not: red, never 4.
+	f.write("bonsai.yaml", yamlOf("[1]", "\n  n_tests: 3", `["live"]`, rung{n: 1, name: "tests", command: show("out.tap"), required: true,
+		ratchet: "n_tests", tst: "tap", capture: "\n      n_tests: \"^# tests (\\\\d+)\""}))
+	f.commit("count every test")
+	f.accept() // a rung's capture changed reads as looser: a person's step
+	a = f.climb("", Options{CI: true})
+	if rt, reason := ratchetOf("ci"); a.Exit != ExitRed || !strings.Contains(reason, "its capture read 4, and the tests read as tap name 3 passed") ||
+		!strings.Contains(reason, "under --ci each count holds the 1 accepted marked skip") {
+		t.Fatalf("--ci, a capture counting the skip: exit %d, ratchet %+v, %q", a.Exit, rt, reason)
+	}
+}
+
 func showOf(o schema.Object, key string) string {
 	v, _ := o.Get(key)
 	return schema.Show(v)

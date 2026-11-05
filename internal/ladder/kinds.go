@@ -251,8 +251,8 @@ type Step struct {
 }
 
 // Count is a rung's ratchet and the count this climb read for it (5.4.0 note 2): the rung's capture of the ratchet's
-// name, else, on a rung whose tests were read, the tests the output names as passed (under --ci with the accepted
-// marked skips added, as today).
+// name, else, on a rung whose tests were read, the tests the output names as passed. Under --ci, on a rung whose tests
+// were read, either count has the accepted marked skips added (the capture's since BUG-138), and Parsed too.
 type Count struct {
 	Name   string      // the ratchet's name
 	Floor  json.Number // the floor, ratchets[name] in bonsai.yaml; 0 when it names none

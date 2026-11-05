@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/leftovers"
+	"github.com/LastStep/Bonsai/internal/ratchet"
 	"github.com/LastStep/Bonsai/internal/redact"
 	"github.com/LastStep/Bonsai/internal/rungjob"
 	"github.com/LastStep/Bonsai/internal/schema"
@@ -408,6 +410,12 @@ func captures(spec any, out []byte) schema.Object {
 // On a rung whose tests were read, a count from the capture comes with the tests named as passed (Parsed), which
 // internal/ratchet's Judge holds it to: two reads of one output must agree. nil when the rung has no ratchet; Now ""
 // when none could be read (or the ratchet is not a name).
+//
+// Under --ci the accepted skips are added to a count from the capture too (BUG-138), to Now and to Parsed alike, so a
+// floor counted locally, where every marked test runs and passes, holds in CI. An accepted skip is a test the tests
+// read name as skipped, so it is not among the tests named as passed; and the capture must equal those (Judge's
+// cross-check, on the two numbers with the same skips added), so it counts the passing tests only and holds no skip
+// either: no test is counted twice. A capture that counts skips too ("# tests") disagrees and the rung is red.
 func (c *Climb) count(r format.Rung, caps schema.Object, rep *testout.Report, accepted int) *Count {
 	if r.Ratchet == nil {
 		return nil
@@ -422,7 +430,8 @@ func (c *Climb) count(r format.Rung, caps schema.Object, rep *testout.Report, ac
 		if n, isNum := v.(json.Number); isNum {
 			k.Now, k.From = n, "capture"
 			if rep != nil {
-				k.Parsed, k.Form = json.Number(strconv.Itoa(rep.Passed())), rep.Form
+				k.Parsed, k.Form = json.Number(strconv.Itoa(rep.Passed()+accepted)), rep.Form
+				k.Now = plusSkips(n, accepted)
 			}
 			return k
 		}
@@ -431,6 +440,22 @@ func (c *Climb) count(r format.Rung, caps schema.Object, rep *testout.Report, ac
 		k.Now, k.From = json.Number(strconv.Itoa(rep.Passed()+accepted)), "tests"
 	}
 	return k
+}
+
+// plusSkips is a captured count with the accepted skips added; the capture as read when there are none, or when it
+// does not read as a number Bonsai can compare (Judge makes that rung red).
+func plusSkips(n json.Number, accepted int) json.Number {
+	if accepted == 0 {
+		return n
+	}
+	if i, err := strconv.ParseInt(string(n), 10, 64); err == nil && i <= math.MaxInt64-int64(accepted) {
+		return json.Number(strconv.FormatInt(i+int64(accepted), 10))
+	}
+	f, ok := ratchet.Number(n)
+	if !ok {
+		return n
+	}
+	return json.Number(f.Add(f, new(big.Float).SetInt64(int64(accepted))).Text('f', -1))
 }
 
 // floorOf is a ratchet's floor in bonsai.yaml's ratchets, 0 when it names none. bad is the floor as written when it is

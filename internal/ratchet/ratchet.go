@@ -65,7 +65,7 @@ type Reading struct {
 	Captures schema.Object // what the rung's captures read (the result's captures)
 	Tests    schema.Object // the result's tests: under --ci its skipped list marks each accepted skip
 	CI       bool          // a --ci climb, whose count holds the accepted marked skips
-	Parsed   json.Number   // with a count from the capture on a rung whose tests were read: the tests read as passed; else ""
+	Parsed   json.Number   // with a count from the capture on a rung whose tests were read: the tests read as passed (under --ci plus the accepted skips, as Now); else ""
 	Form     string        // the tests form Parsed was read in ("tap"), for the reason; "" with no Parsed
 }
 
@@ -98,12 +98,19 @@ func Judge(r Reading) Verdict {
 			Next:   "a person writes ratchets." + r.Name + " in bonsai.yaml as a plain number; then run: bonsai check --json"}
 	}
 	v := Verdict{Ratchet: &format.LadderRatchet{Name: r.Name, Was: r.Floor, Now: r.Now, OK: now.Cmp(floor) >= 0}}
+	held := "" // under --ci a count holds the accepted marked skips, from the tests read or added to the capture (BUG-138)
+	if n := AcceptedSkips(r.Tests); r.CI && n > 0 {
+		held = fmt.Sprintf("; under --ci the count holds %d accepted marked %s", n, plural(n, "skip", "skips"))
+		if r.From == "capture" {
+			held = fmt.Sprintf("; under --ci each count holds the %d accepted marked %s", n, plural(n, "skip", "skips"))
+		}
+	}
 	if r.From == "capture" && r.Parsed != "" {
 		if parsed, ok := Number(r.Parsed); !ok || parsed.Cmp(now) != 0 {
 			v.Red = true
 			v.Reason = fmt.Sprintf("the ratchet %s's two counts disagree: its capture read %s, and the tests read as %s name %s passed; a "+
-				"count is taken only when both reads of the output agree, since a test can print a line its runner prints", shownName(r),
-				r.Now, r.Form, r.Parsed)
+				"count is taken only when both reads of the output agree, since a test can print a line its runner prints%s", shownName(r),
+				r.Now, r.Form, r.Parsed, held)
 			v.Next = "find the line the capture " + r.Name + " took (the last line it matches; a test's own output can print a runner's " +
 				"summary line) and the test that printed it, and take that print out; if the capture counts something else than the " +
 				"passing tests, a person changes it in bonsai.yaml or takes it out, so the tests read are the count"
@@ -116,9 +123,7 @@ func Judge(r Reading) Verdict {
 	v.Red = true
 	v.Reason = r.Name + " went backwards: " + string(r.Floor) + " -> " + string(r.Now) + " (its floor is bonsai.yaml's ratchets." + r.Name +
 		"; a count may only rise)"
-	if n := AcceptedSkips(r.Tests); r.CI && r.From == "tests" && n > 0 {
-		v.Reason += fmt.Sprintf("; under --ci the count holds %d accepted marked %s", n, plural(n, "skip", "skips"))
-	}
+	v.Reason += held
 	v.Next = "find why " + r.Name + " fell from " + string(r.Floor) + " to " + string(r.Now) + " (a test removed, renamed, skipped or no " +
 		"longer run: git integrity's rung lists the changed test files) and bring it back; a floor is lowered only by a person, in " +
 		"bonsai.yaml's ratchets"
