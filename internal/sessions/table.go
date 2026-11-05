@@ -14,38 +14,19 @@ package sessions
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
 
 	"github.com/LastStep/Bonsai/internal/format"
-	"github.com/LastStep/Bonsai/internal/record"
 )
 
 // Found gives the rows of every ended span in the session files of the log folder dir, as of now, sorted and with no
 // key twice. A folder that is not there holds none. A file that cannot be read is an error.
+// It reads every file: FoundCached gives the same rows reading only what changed.
 func Found(dir string, now time.Time) ([]format.SessionRow, error) {
-	files, err := record.ListLog(dir)
-	if err != nil {
-		return nil, err
-	}
-	var rows []format.SessionRow
-	for _, name := range files.Sessions {
-		f, err := Read(filepath.Join(dir, name), now)
-		if err != nil {
-			return nil, err
-		}
-		for _, s := range f.Spans {
-			if s.Open {
-				continue
-			}
-			if r, ok := rowOf(s); ok {
-				rows = append(rows, r)
-			}
-		}
-	}
-	return sortRows(dedupe(rows, nil)), nil
+	rows, _, err := FoundCached(dir, nil, now)
+	return rows, err
 }
 
 // Key is a row's key: its session, subagent and start.

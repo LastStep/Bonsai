@@ -85,6 +85,15 @@ func Read(path string, now time.Time) (*File, error) {
 // Spans finds the spans in a log file's records. fileSession is the session the file's name holds, which names the
 // spans; "" takes each record's own session.
 func Spans(lf *record.LogFile, fileSession string, now time.Time) *File {
+	out, last := parse(lf, fileSession)
+	out.settle(last, now)
+	return out
+}
+
+// parse finds the spans in a log file's records as the records alone say, with no clock: the 24-hour rule is
+// settle's. It gives the file and its last record's time (the zero time for none). What parse gives depends only on
+// the file's bytes and its name, which is what lets the sessions cache (cache.go) keep it.
+func parse(lf *record.LogFile, fileSession string) (*File, time.Time) {
 	out := &File{Spans: []Span{}, Records: len(lf.Records), Unreadable: lf.Skipped}
 	cur := -1 // the open session span
 	started := false
@@ -139,22 +148,28 @@ func Spans(lf *record.LogFile, fileSession string, now time.Time) *File {
 		}
 		last = at
 	}
-	if len(out.Spans) > 0 && now.Sub(last) > Stale {
-		for i := range out.Spans {
-			if out.Spans[i].Open {
-				s := &out.Spans[i]
+	return out, last
+}
+
+// settle applies the 24-hour rule as of now (an unended span in a file whose last record, at last, is more than Stale
+// old ends at that record), then sets Ended.
+func (f *File) settle(last, now time.Time) {
+	f.Ended = nil
+	if len(f.Spans) > 0 && now.Sub(last) > Stale {
+		for i := range f.Spans {
+			if f.Spans[i].Open {
+				s := &f.Spans[i]
 				s.End, s.Open = clamp(last, s.Start), false
 			}
 		}
 	}
-	for i := len(out.Spans) - 1; i >= 0; i-- {
-		if out.Spans[i].Subagent == "" {
-			ended := !out.Spans[i].Open
-			out.Ended = &ended
+	for i := len(f.Spans) - 1; i >= 0; i-- {
+		if f.Spans[i].Subagent == "" {
+			ended := !f.Spans[i].Open
+			f.Ended = &ended
 			break
 		}
 	}
-	return out
 }
 
 const timeLayout = "2006-01-02T15:04:05.000Z"

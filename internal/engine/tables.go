@@ -198,7 +198,7 @@ func (r *CheckResult) checkTasksTable(next string) {
 }
 
 func (r *CheckResult) checkSessionsTable(next string) {
-	found, err := sessions.Found(logDir(r.Main), tablesNow())
+	found, err := foundRows(r.Main)
 	if err != nil {
 		return
 	}
@@ -223,6 +223,26 @@ func (r *CheckResult) checkSessionsTable(next string) {
 	}
 }
 
+// foundRows is sessions.Found for the main checkout main, through the sessions cache (sessions.CacheFile, under
+// .bonsai/local/): only the log files changed since the last run are read again, and the cache is written back when
+// it changed. The rows are Found's whatever the cache holds. A cache that cannot be read is none, and one that cannot
+// be written is no error: the next run reads those files again.
+func foundRows(main string) ([]format.SessionRow, error) {
+	path := filepath.Join(main, filepath.FromSlash(workspace.LocalDir), filepath.FromSlash(sessions.CacheFile))
+	cache, err := os.ReadFile(path)
+	if err != nil {
+		cache = nil
+	}
+	rows, next, err := sessions.FoundCached(logDir(main), cache, tablesNow())
+	if err != nil {
+		return nil, err
+	}
+	if next != nil {
+		_ = workspace.WriteFileAtomic(path, next)
+	}
+	return rows, nil
+}
+
 // logDir is the log folder of the main checkout main.
 func logDir(main string) string {
 	return filepath.Join(main, filepath.FromSlash(workspace.LocalDir), record.LogFolder)
@@ -245,7 +265,7 @@ func BuildSessionsTable(main string, local workspace.Local) ([]byte, []clean.Ite
 			return nil, nil, unreadTable(err)
 		}
 	}
-	found, err := sessions.Found(logDir(main), tablesNow())
+	found, err := foundRows(main)
 	if err != nil {
 		return nil, nil, errorf("read-failed", ExitRuntime, "check that the log folder (.bonsai/local/log/) can be read, then run: "+WriteCommand,
 			"the log cannot be read: %v", err)
