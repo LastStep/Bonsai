@@ -478,7 +478,12 @@ func TestGetBonsaiPs1Refusals(t *testing.T) {
 				arch = "AMD64"
 			}
 			t.Setenv("PROCESSOR_ARCHITECTURE", arch)
+			// Unset, not empty: an empty PROCESSOR_ARCHITEW6432 in its environment leaves Windows PowerShell 5.1 reading
+			// PROCESSOR_ARCHITECTURE as empty too.
 			t.Setenv("PROCESSOR_ARCHITEW6432", "")
+			if err := os.Unsetenv("PROCESSOR_ARCHITEW6432"); err != nil {
+				t.Fatal(err)
+			}
 			t.Setenv("TEMP", tmp)
 			cmd := exec.Command(ps, append([]string{"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", abs}, c.args...)...)
 			cmd.Dir = tmp
