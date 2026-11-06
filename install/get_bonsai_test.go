@@ -31,7 +31,12 @@ var getScripts = []string{"get-bonsai.sh", "get-bonsai.ps1"}
 // verify with the lines' flags, evaluates no text as code, and names no person's folder.
 func TestGetBonsaiScriptsDocumented(t *testing.T) {
 	for _, name := range getScripts {
+		// Read as committed: .gitattributes keeps *.sh LF on every checkout, and holds no line for get-bonsai.ps1, so
+		// Windows' core.autocrlf may give it CRLF there (raw.githubusercontent.com serves the committed LF bytes).
 		s := read(t, name)
+		if name == "get-bonsai.ps1" {
+			s = strings.ReplaceAll(s, "\r\n", "\n")
+		}
 		for i := 0; i < len(s); i++ {
 			if c := s[i]; c == '\r' || c > '~' || (c < ' ' && c != '\n' && c != '\t') {
 				t.Fatalf("%s holds a byte that is not ASCII text with LF line ends at offset %d: %q", name, i, c)
