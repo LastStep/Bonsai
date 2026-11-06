@@ -37,7 +37,9 @@ workflow built it), and run its installer. You need `gh` 2.97 or newer, logged i
 
 **In one command.** A script in this repository takes the three steps for you, with every check, for the newest
 release (or the version you put after it, as `sh get-bonsai.sh 1.0.2`), and runs the installer only once every check
-passed. Fetch it, read it, then run it:
+passed. The script itself is main's file as fetched, over HTTPS from GitHub, not pinned to a release and not signed,
+so read it before you run it (the archive it downloads is still checked, by its SHA-256 and its attestation). Fetch
+it, read it, then run it:
 
 ```sh
 # Linux and WSL, as yourself (not under sudo)

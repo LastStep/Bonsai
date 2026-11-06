@@ -31,7 +31,10 @@ Two scripts in this repository make the same checks as the lines below, in the s
 that fails: `install/get-bonsai.sh` for Linux and WSL, `install/get-bonsai.ps1` for Windows. Each takes the newest
 release, or the version you give it; checks the archive's SHA-256 against `checksums.txt`; runs the same
 `gh attestation verify`; and only then runs the release's own installer. They need what the lines need, above, `gh`
-2.97 or newer and logged in among it, and have no option that skips a check. Fetch the script, read it, then run it.
+2.97 or newer and logged in among it, and have no option that skips a check. The script itself is what you trust:
+main's file as fetched, over HTTPS from GitHub, not pinned to a release and not signed, so read it before you run it
+(the archive it downloads is still checked, by its SHA-256 and its attestation). Fetch the script, read it, then run
+it. The Windows one refuses an elevated PowerShell, as the Linux one refuses `sudo`.
 
 Linux and WSL, as yourself (not under `sudo`):
 
