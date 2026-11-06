@@ -22,3 +22,7 @@ packs/** text eol=lf
 # The installers (install/): install.sh is LF through *.sh above; install.ps1 is LF too, on every checkout, Windows'
 # core.autocrlf included, since install/install_test.go holds both scripts to ASCII with LF line ends.
 install/install.ps1 text eol=lf
+
+# The one-command installers: get-bonsai.sh is LF through *.sh above; get-bonsai.ps1 is LF too, on every checkout, as
+# raw.githubusercontent.com serves it (install/get_bonsai_test.go holds both to ASCII with LF line ends).
+install/get-bonsai.ps1 text eol=lf
