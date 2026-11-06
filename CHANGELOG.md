@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Bonsai installs in one command** (T-6020): `install/get-bonsai.sh` (Linux and WSL) and `install/get-bonsai.ps1`
+  (Windows PowerShell 5.1), fetched from main's raw files, take the newest release or a named one, check the
+  archive's SHA-256 against its `checksums.txt` and its provenance with `gh attestation verify` as the install page's
+  lines do, and only then run the release's own installer. Each refuses, naming its next step, when `gh` is missing,
+  older than 2.97 or not logged in, for a version that is not one, a machine with no build, and (the sh one) under
+  `sudo`. No option skips a check. `docs/install.md` and the README name them; the manual lines are as they were.
+
 ## [1.0.3] - 2026-11-06
 
 > Speed and a CI count, from the first projects on 1.0.2. No format changes: every file written by 1.0.2 reads as
