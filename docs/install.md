@@ -4,7 +4,10 @@
 fails, the way out, and how to check an installed copy. The two install blocks below are held byte for byte to the one
 table Bonsai writes its install lines from (internal/engine/release.go, releaseLines) by the test
 internal/selfcheck/install_test.go: change a line there and here in the same commit. For a newer release, Bonsai
-itself gives the same seven lines with that release's number: `bonsai status --full --json`, `bonsai_release.lines`. -->
+itself gives the same seven lines with that release's number: `bonsai status --full --json`, `bonsai_release.lines`.
+"In one command" names the scripts install/get-bonsai.sh and install/get-bonsai.ps1, fetched from main's raw files,
+which make the same checks (install/get_bonsai_test.go holds them). -->
+
 
 Bonsai is one program, `bonsai`, installed once per release on each side: Linux (and WSL) and Windows. You type the
 install lines yourself, one at a time; Bonsai never installs or updates itself, and an agent hands you these lines but
@@ -21,6 +24,33 @@ checks that GitHub built it from Bonsai's own release workflow; only then are th
   fixed GHSA-mm27-mwq9-fr5g, where a lookalike workflow name could pass the check.
 - `gh`, like `sh` and `tar`, is found on the PATH, so the one that runs is the first the PATH names: `which -a gh` (on
   Windows, `where.exe gh`) should name the system's own `gh` first.
+
+## In one command
+
+Two scripts in this repository make the same checks as the lines below, in the same order, and stop at the first
+that fails: `install/get-bonsai.sh` for Linux and WSL, `install/get-bonsai.ps1` for Windows. Each takes the newest
+release, or the version you give it; checks the archive's SHA-256 against `checksums.txt`; runs the same
+`gh attestation verify`; and only then runs the release's own installer. They need what the lines need, above, `gh`
+2.97 or newer and logged in among it, and have no option that skips a check. Fetch the script, read it, then run it.
+
+Linux and WSL, as yourself (not under `sudo`):
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/LastStep/Bonsai/main/install/get-bonsai.sh
+sh get-bonsai.sh
+```
+
+Windows, in a normal PowerShell (not as administrator):
+
+```powershell
+curl.exe -fsSLO https://raw.githubusercontent.com/LastStep/Bonsai/main/install/get-bonsai.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\get-bonsai.ps1
+```
+
+For one release, put its version after the script: `sh get-bonsai.sh 1.0.2`, or `-Version 1.0.2` after
+`.\get-bonsai.ps1`; that is also the way back to the release you had. Each script works in a new temporary folder,
+prints its path and leaves it for you to read. A refusal is one sentence and its next step, and nothing is installed
+unless every check passed.
 
 ## Install on Linux and WSL
 

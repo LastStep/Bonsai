@@ -33,7 +33,25 @@ Every refusal names its next step, and whether an agent or a person takes it.
 ## Install
 
 Three steps: download the release, check it (its SHA-256, then `gh attestation verify`: Bonsai's own release
-workflow built it), and run its installer. You need `gh` 2.97 or newer, logged in. One line at a time:
+workflow built it), and run its installer. You need `gh` 2.97 or newer, logged in.
+
+**In one command.** A script in this repository takes the three steps for you, with every check, for the newest
+release (or the version you put after it, as `sh get-bonsai.sh 1.0.2`), and runs the installer only once every check
+passed. Fetch it, read it, then run it:
+
+```sh
+# Linux and WSL, as yourself (not under sudo)
+curl -fsSLO https://raw.githubusercontent.com/LastStep/Bonsai/main/install/get-bonsai.sh
+sh get-bonsai.sh
+```
+
+```powershell
+# Windows, in a normal PowerShell (not as administrator)
+curl.exe -fsSLO https://raw.githubusercontent.com/LastStep/Bonsai/main/install/get-bonsai.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\get-bonsai.ps1
+```
+
+**Or one line at a time:**
 
 > [!NOTE]
 > These lines install 1.0.3. For another release or a pre-release, put its version from the
