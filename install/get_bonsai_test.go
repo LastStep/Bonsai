@@ -31,8 +31,8 @@ var getScripts = []string{"get-bonsai.sh", "get-bonsai.ps1"}
 // verify with the lines' flags, evaluates no text as code, and names no person's folder.
 func TestGetBonsaiScriptsDocumented(t *testing.T) {
 	for _, name := range getScripts {
-		// Read as committed: .gitattributes keeps *.sh LF on every checkout, and holds no line for get-bonsai.ps1, so
-		// Windows' core.autocrlf may give it CRLF there (raw.githubusercontent.com serves the committed LF bytes).
+		// .gitattributes keeps both LF on every checkout (*.sh, and get-bonsai.ps1's own line); a CRLF checkout of the
+		// .ps1 made before that line, which PowerShell runs as well, is read as LF.
 		s := read(t, name)
 		if name == "get-bonsai.ps1" {
 			s = strings.ReplaceAll(s, "\r\n", "\n")
@@ -115,11 +115,16 @@ func TestGetBonsaiPs1Parses(t *testing.T) {
 // --- get-bonsai.sh, on Linux, against stubs ---
 
 // getSh is one run's folders: bin (the only folder on the PATH: wrappers of the real tools and stubs of gh and curl),
-// rel (the files the curl stub serves, by name), and the logs the stubs write.
+// rel (the files the curl stub serves, by name), and the logs the stubs write. steps is the order the checks and the
+// install ran in, one line each: sha256sum (the SHA-256 check), attestation (gh attestation verify), tar (the
+// unpacking) and install.sh (the release's installer).
 type getSh struct {
-	tmp, bin, rel, curlLog, ghLog, mark string
-	env                                 []string
+	tmp, bin, rel, curlLog, ghLog, mark, steps string
+	env                                        []string
 }
+
+// stepped are the tools whose wrapper writes its name to the steps log before it runs.
+var stepped = map[string]bool{"sha256sum": true, "tar": true}
 
 // The tools get-bonsai.sh, the stubs and a release's install.sh stub run, found on the real PATH.
 var getTools = []string{"sh", "awk", "id", "uname", "mktemp", "sha256sum", "tar", "gzip", "cat"}
@@ -138,7 +143,7 @@ case $1 in
 --version) printf 'gh version %s (2026-09-30)\nhttps://github.com/cli/cli/releases/tag/v%s\n' "$GET_GH_VERSION" "$GET_GH_VERSION" ;;
 auth) exit "$GET_GH_AUTH" ;;
 api) printf '%s\n' "$GET_GH_LATEST" ;;
-attestation) exit "$GET_GH_ATTEST" ;;
+attestation) echo attestation >>"$GET_STEPS"; exit "$GET_GH_ATTEST" ;;
 *) exit 9 ;;
 esac
 `
@@ -151,7 +156,8 @@ func newGetSh(t *testing.T, skip ...string) *getSh {
 	}
 	tmp := t.TempDir()
 	g := &getSh{tmp: tmp, bin: filepath.Join(tmp, "bin"), rel: filepath.Join(tmp, "release"),
-		curlLog: filepath.Join(tmp, "curl.log"), ghLog: filepath.Join(tmp, "gh.log"), mark: filepath.Join(tmp, "installed")}
+		curlLog: filepath.Join(tmp, "curl.log"), ghLog: filepath.Join(tmp, "gh.log"), mark: filepath.Join(tmp, "installed"),
+		steps: filepath.Join(tmp, "steps.log")}
 	for _, d := range []string{g.bin, g.rel, filepath.Join(tmp, "tmp")} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
 			t.Fatal(err)
@@ -169,7 +175,11 @@ func newGetSh(t *testing.T, skip ...string) *getSh {
 		if err != nil {
 			t.Skip(tool + " is not on the PATH")
 		}
-		g.stub(t, tool, "#!/bin/sh\nexec '"+real+"' \"$@\"\n")
+		log := ""
+		if stepped[tool] {
+			log = "echo " + tool + " >>\"$GET_STEPS\"\n"
+		}
+		g.stub(t, tool, "#!/bin/sh\n"+log+"exec '"+real+"' \"$@\"\n")
 	}
 	if !skipped["curl"] {
 		g.stub(t, "curl", curlStub)
@@ -178,7 +188,7 @@ func newGetSh(t *testing.T, skip ...string) *getSh {
 		g.stub(t, "gh", ghStub)
 	}
 	g.env = []string{"PATH=" + g.bin, "HOME=" + filepath.Join(tmp, "person"), "TMPDIR=" + filepath.Join(tmp, "tmp"), "LC_ALL=C",
-		"GET_CURL_LOG=" + g.curlLog, "GET_GH_LOG=" + g.ghLog, "GET_REL=" + g.rel, "GET_MARK=" + g.mark,
+		"GET_CURL_LOG=" + g.curlLog, "GET_GH_LOG=" + g.ghLog, "GET_REL=" + g.rel, "GET_MARK=" + g.mark, "GET_STEPS=" + g.steps,
 		"GET_GH_VERSION=2.102.0", "GET_GH_AUTH=0", "GET_GH_ATTEST=0", "GET_GH_LATEST=v9.9.9"}
 	return g
 }
@@ -196,7 +206,7 @@ func (g *getSh) release(t *testing.T, ver, arch string, sums func(name, sum stri
 	zw := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(zw)
 	for name, body := range map[string]string{
-		"install.sh": "#!/bin/sh\nprintf 'installed\\n' >\"$GET_MARK\"\necho 'install.sh: done'\n",
+		"install.sh": "#!/bin/sh\necho install.sh >>\"$GET_STEPS\"\nprintf 'installed\\n' >\"$GET_MARK\"\necho 'install.sh: done'\n",
 		"bonsai":     "not a program\n",
 	} {
 		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o755, Size: int64(len(body)), Typeflag: tar.TypeReg}); err != nil {
@@ -287,6 +297,10 @@ func TestGetBonsaiShInstalls(t *testing.T) {
 				if !strings.Contains(out, want) {
 					t.Errorf("the output does not hold %q:\n%s", want, out)
 				}
+			}
+			// Both checks, then the unpacking, then the installer: nothing from the archive is read before its origin is.
+			if got, want := g.log(g.steps), "sha256sum\nattestation\ntar\ninstall.sh\n"; got != want {
+				t.Errorf("the steps ran in the order\n%s\nwant\n%s", got, want)
 			}
 		})
 	}
@@ -432,14 +446,44 @@ func TestGetBonsaiShStopsAtFirstFailure(t *testing.T) {
 			if got := strings.Contains(g.log(g.ghLog), "attestation verify"); got != c.attest {
 				t.Fatalf("gh attestation verify called %v; want %v", got, c.attest)
 			}
+			if steps := g.log(g.steps); strings.Contains(steps, "tar\n") || strings.Contains(steps, "install.sh\n") {
+				t.Fatalf("the archive was unpacked or its installer run after a failed check; the steps:\n%s", steps)
+			}
 		})
+	}
+}
+
+// In each script's text the unpacking and the installer come after both checks, and the download after every check
+// of the machine (the refusal of root or an elevated PowerShell among them): get-bonsai.ps1's order after its
+// download is read here, since no test can stub the curl.exe it runs by its full path.
+func TestGetBonsaiOrder(t *testing.T) {
+	for name, marks := range map[string][]string{
+		"get-bonsai.sh": {`if [ "$(id -u)" = 0 ]; then`, "gh auth status", "\ncurl -fsSLO \"$base/$archive\"", "\nsha256sum -c archive.sha256",
+			"\ngh attestation verify ", "\ntar -xzf ", "\nsh ./install.sh"},
+		"get-bonsai.ps1": {"gh @('auth', 'status')", "\nif ($admin) {", "(Invoke-Native $curl @('-fsSLO', \"$base/$archive\"))", "\nif ($got -cne $want[0]) {",
+			"(Invoke-Native $gh @('attestation', 'verify'", "\n    Expand-Archive ", "(Invoke-Native $powershell @("},
+	} {
+		s := strings.ReplaceAll(read(t, name), "\r\n", "\n")
+		at := -1
+		for _, m := range marks {
+			if strings.Count(s, m) != 1 {
+				t.Errorf("%s holds %q %d times; want once", name, m, strings.Count(s, m))
+				continue
+			}
+			i := strings.Index(s, m)
+			if i < at {
+				t.Errorf("%s: %q comes before the step that should precede it", name, m)
+			}
+			at = i
+		}
 	}
 }
 
 // --- get-bonsai.ps1, on Windows, before any download ---
 
 // Windows' own folders only on the PATH (windowsOnly), with a stub gh.cmd where one is given: a bad version, a machine
-// with no build, gh missing, older than 2.97 or logged out, each refused with its next step before curl.exe runs.
+// with no build, gh missing, older than 2.97 or logged out, and an elevated PowerShell (where the test runs elevated),
+// each refused with its next step before curl.exe runs.
 func TestGetBonsaiPs1Refusals(t *testing.T) {
 	ps := windowsOnly(t)
 	abs, err := filepath.Abs("get-bonsai.ps1")
@@ -453,6 +497,7 @@ func TestGetBonsaiPs1Refusals(t *testing.T) {
 	for _, c := range []struct {
 		name, gh, arch, refused string
 		args                    []string
+		elevated                bool
 	}{
 		{name: "latest", gh: ghOK, args: []string{"-Version", "latest"}, refused: "'latest' is not a release version"},
 		{name: "x", gh: ghOK, args: []string{"x"}, refused: "'x' is not a release version"},
@@ -462,8 +507,13 @@ func TestGetBonsaiPs1Refusals(t *testing.T) {
 		{name: "no gh", args: []string{"9.9.9"}, refused: "gh, GitHub's command line, is not on the PATH"},
 		{name: "gh 2.96", gh: "@echo gh version 2.96.0 (2026-01-01)\r\n", args: []string{"9.9.9"}, refused: "gh is 2.96, older than 2.97"},
 		{name: "gh logged out", gh: ghStubCmd("1"), args: []string{"9.9.9"}, refused: "gh is not logged in"},
+		{name: "elevated", gh: ghOK, args: []string{"9.9.9"}, refused: "it runs in an elevated PowerShell (as administrator)", elevated: true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
+			if c.elevated && !psElevated(t, ps) {
+				// Not elevated, every check passes and the run would go on to download: no test raises a Windows prompt.
+				t.Skip("this PowerShell is not elevated, so the refusal cannot show; CI's windows jobs run elevated")
+			}
 			tmp := t.TempDir()
 			if c.gh != "" {
 				bin := filepath.Join(tmp, "bin")
@@ -502,4 +552,15 @@ func TestGetBonsaiPs1Refusals(t *testing.T) {
 			}
 		})
 	}
+}
+
+// psElevated reports whether a PowerShell started by this test runs as administrator, read as get-bonsai.ps1 reads it.
+func psElevated(t *testing.T, ps string) bool {
+	t.Helper()
+	out, err := exec.Command(ps, "-NoProfile", "-NonInteractive", "-Command",
+		"([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)").CombinedOutput()
+	if err != nil {
+		t.Fatalf("reading whether PowerShell is elevated: %v\n%s", err, out)
+	}
+	return strings.TrimSpace(string(out)) == "True"
 }

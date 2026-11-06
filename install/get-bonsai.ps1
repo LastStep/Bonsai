@@ -3,7 +3,7 @@ get-bonsai.ps1: installs a Bonsai release on this Windows machine in one command
 lines make (docs/install.md), in the same order, stopping at the first that fails. Written for Windows PowerShell 5.1.
 
 What it does: checks this machine first (an amd64 or arm64 Windows; Windows' own curl.exe; gh, GitHub's command line,
-2.97 or newer and logged in); takes the newest release (gh api repos/LastStep/Bonsai/releases/latest) or the version
+2.97 or newer and logged in; a normal PowerShell, not an elevated one, which it refuses); takes the newest release (gh api repos/LastStep/Bonsai/releases/latest) or the version
 given; in a new folder of its own under %TEMP% (its path printed and left for you to read), downloads the release's
 archive for this machine (bonsai_<version>_windows_<amd64|arm64>.zip) and its checksums.txt; checks the archive's
 SHA-256 against the one line checksums.txt holds for it; checks where it was built (gh attestation verify: Bonsai's own
@@ -136,6 +136,13 @@ if (-not $ok) {
 }
 if ((Read-Native $gh @('auth', 'status')).Code -ne 0) {
     Stop-Get 'gh is not logged in to GitHub; the provenance check needs it' 'run gh auth login, then run this again'
+}
+
+# Not as administrator, as get-bonsai.sh refuses root: nothing downloaded runs elevated before install.ps1's own
+# Windows question, and install.json lands in your own %USERPROFILE%.
+$admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if ($admin) {
+    Stop-Get 'it runs in an elevated PowerShell (as administrator); the release''s install.ps1 asks Windows for that itself, at its one step that needs it' 'run it again in a normal PowerShell, not as administrator'
 }
 
 if (-not $given) {
