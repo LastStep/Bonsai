@@ -1,6 +1,6 @@
 ---
 title: Known bugs   # the bugs register; every field and how to fill it: skill workflow:bugs
-updated: 2026-11-05
+updated: 2026-11-06
 ---
 
 # Known bugs
@@ -87,6 +87,8 @@ were wrong were reworded, BUG-057 split (BUG-135). The evidence per row: records
 | **BUG-141** | A `bonsai` line whose command word is not literal (`bonsai $W --yes`, `W=update`) passes the guard for an agent with no grant: the guard judges the word only when it is written out, as S1 found for `pack`'s subcommand (fixed there in T-6010); `update --yes` this way writes bonsai.yaml's planned files and the lock with no grant (a loosening plan is still refused at the command) | internal/guard/commands.go (`ownCommand`) | verifier@T-6010 `M-2026-10-29-9d7bd534` |
 | **BUG-142** | Under a grant of `.bonsai/lock.json`, an agent may edit or delete the lock directly, which drops the protected paths the guard reads from it; deleting it then `init --yes` leaves the plan's loosening list empty (nothing old to compare). For the director: whether a grant of the lock should cover a direct edit at all | internal/guard (the lock's protected paths); internal/engine (`PackLoosening` with no old lock) | verifier@T-6010 `M-2026-10-29-9d7bd534` |
 | **BUG-143** | The old-marketplace hint after a pack move names the marketplace of the old lock without asking Claude Code, so after two moves before one session registered the first (Bonsai's own repo, 5 Nov: base then workflow), it names the in-between `bonsai-bonsai-5be83a3e`, never registered, and says `claude plugin marketplace list` shows it; the one really left over (`bonsai-bonsai-f61b414f`) was named only by the first move's hint. Read the registered list (or carry the first old name) before naming one | internal/engine/packpicks.go (`OldMarketHint`); ran, `~/bonsai-checks/T-6014/wf-apply.json` | T-6014 |
+| **BUG-144** | The sessions cache's version number is not tied to the build: a later change to how log files are read that forgets to raise it would trust spans the old reader made | internal/sessions/cache.go (said by the verifier, not run) | verifier@T-6016 `M-2026-11-06-fb3e78c1` |
+| **BUG-145** | A write of the sessions cache killed mid-way leaves its temporary file in `.bonsai/local/cache/`, which nothing cleans | internal/sessions/cache.go, workspace.WriteFileAtomic (said by the verifier, not run) | verifier@T-6016 `M-2026-11-06-fb3e78c1` |
 
 ## Fixed
 

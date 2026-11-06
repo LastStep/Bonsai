@@ -5,6 +5,10 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-6018 | The packs' text matches the guard for roles that write nothing (no run report; the report is the record) and says how a brief passes to a replacement agent: base:run here, the workflow pack's researcher, session-start, lanes and orchestrate; for base 1.0.3 and workflow 1.0.2 | done | | 2026-11-05 | 2026-11-06 |
+| T-6017 | A ratchet's count under ladder --ci adds back the ci_marked_tests that skipped when the rung counts by capture, as it does when it reads the tests (BUG-138); for 1.0.3 | done | | 2026-11-05 | 2026-11-06 |
+| T-6016 | bonsai status --json fast in a repo with a large log (BUG-137): the schema's patterns compiled once, the sessions table check skipped while the log is unchanged; for 1.0.3 | done | | 2026-11-05 | 2026-11-06 |
+| T-6015 | The studio's asks, round 2 (5 Nov, after 1.0.2): one verdict per item, A to F and the three spec lines, from a profile of status and a read of the code, for the director to carry back | done | | 2026-11-05 | 2026-11-05 |
 | T-6014 | Bonsai's own repo moves to the released packs: base from commit 4b41790b to base-v1.0.2, workflow from commit 1a9f6b4e to v1.0.1, by bonsai pack set | done | | 2026-11-05 | 2026-11-05 |
 | T-6013 | base 1.0.2: base and the pack template take Bonsai 1.0.2 (version, download pins), the install lines at 1.0.2, ready for the director's base-v1.0.2 tag | done | | 2026-11-05 | 2026-11-05 |
 | T-6012 | Bonsai 1.0.2's notes: CHANGELOG's Unreleased section becomes [1.0.2], the pack command (T-6010, T-6011), landed with CI green, for the director's tag | done | light | 2026-11-05 | 2026-11-05 |

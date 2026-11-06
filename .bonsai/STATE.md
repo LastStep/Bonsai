@@ -9,8 +9,18 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the director present).
 
-## Now (5 Nov): Bonsai 1.0.2 and base 1.0.2 released (the pack command); Bonsai's own repo moved to them
+## Now (6 Nov): Bonsai 1.0.3 released (status fast, the CI ratchet count); base 1.0.3, workflow 1.0.2 and the installers next
 
+- **Bonsai 1.0.3 released** (6 Nov; the director: "yes, build 1.0.3", from the studio's round 2, T-6015's verdicts in
+  `records/runs/R-2026-11-05-T-6015-studio-asks.md`; C's question to the director still open: whether a tap through the
+  studio counts as them). Landed as one batch at `55c08d81`, CI green, a fresh Opus verifier's PASS (`M-2026-11-06-fb3e78c1`):
+  `T-6016` status fast (BUG-137: `status --json` in Bonsai's repo 8 s to 0.25 s unchanged, a sessions cache in
+  `.bonsai/local/cache/`), `T-6017` the CI ratchet count (BUG-138), `T-6018` the packs' text for write-nothing roles
+  and replacement agents (base's run skill here; the workflow repo's branch `t-6018-pack-text` `08f4f18`, not yet on
+  its main). Tagged `v1.0.3` by the director, published 6 Nov 10:48 UTC, read back. BUG-144, 145 filed (the verifier's
+  notes). **Next:** base 1.0.3 and the workflow pack's v1.0.2 (pins to 1.0.3, the branch merged), and the installer
+  scripts moved into the repo for anyone (the director: "can we move these installer scripts within bonsai repo ... so
+  anyone can use").
 - **The pack command** (`T-6009`, `done`; the plan `records/plans/P-T-6009.md`, approved by the director 29 Oct:
   "approved. now build it end to end in this session"). Both stages landed on `main`, each passed by a fresh Opus
   verifier, CI 9 of 9 on each branch (both windows jobs):
@@ -383,7 +393,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 ## Waiting on the director
 
 - **Now:** theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
-- **Now:** theirs, each project's move to base 1.0.2 (the studio, ZenGarden-AI-API): `bonsai pack set --all`, then `--yes`. Also theirs: whether the ladder
+- **Now:** the director's install of 1.0.3 on both sides; then base 1.0.3's and workflow v1.0.2's tags; C's answer for the studio. Also theirs: ZenGarden-AI-API's move to base 1.0.2 (`bonsai pack set --all`, then `--yes`; the studio has moved). Also theirs: whether the ladder
   gains a gofmt rung (CI's lint caught three unformatted files the climb passed; a rung added is the director's word).
 - **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
   059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).
