@@ -9,7 +9,7 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the director present).
 
-## Now (6 Nov): Bonsai 1.0.3, base 1.0.3 and workflow 1.0.2 released; one-command installers on main; the scratch audit
+## Now (6 Nov): Bonsai 1.0.3, base 1.0.3 and workflow 1.0.2 released; one-command installers on main; the scratch folders cleaned
 
 - **Bonsai 1.0.3 released** (6 Nov; the director: "yes, build 1.0.3", from the studio's round 2, T-6015's verdicts in
   `records/runs/R-2026-11-05-T-6015-studio-asks.md`; C's question to the director still open: whether a tap through the
@@ -24,7 +24,7 @@ Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the directo
   and `install/get-bonsai.ps1`, fetched from main's raw files, no release: the director, "we are not putting 1.0.4 just
   yet"); Bonsai's own repo on base-v1.0.3 and v1.0.2 (`T-6021`, `85aae391`, by `pack set --all`; its marketplace
   `bonsai-bonsai-57c7dc9a`; the old one removed). A link change on main cannot climb (rung 0 never grants
-  .claude/settings.json): its proof is the tests by hand and CI. **Now:** the scratch folders' audit (`T-6022`).
+  .claude/settings.json): its proof is the tests by hand and CI. The scratch folders audited and cleaned (`T-6022`, 6 Nov).
 - **The pack command** (`T-6009`, `done`; the plan `records/plans/P-T-6009.md`, approved by the director 29 Oct:
   "approved. now build it end to end in this session"). Both stages landed on `main`, each passed by a fresh Opus
   verifier, CI 9 of 9 on each branch (both windows jobs):
@@ -151,7 +151,7 @@ are done (gate report `records/gate-skeleton.md`). At the gate (9 Oct) the direc
 - **Step 5.5, the packs, the roles and their messages: done** (16 Oct). `base` in Bonsai's repo (`packs/base`) and
   `workflow` public at `LastStep/bonsai-workflow` (`ef5b5ae`); both linked in Bonsai's repo (`16fb557b`), both plugins installed;
   the pre-release at `bf7cc3d` installed (sha256 `70516eb8...a2478`; the way back in `~/bonsai-checks/prerelease/previous/`);
-  the floors `92de82c8`; the end verifier `T-5522` (report `~/bonsai-checks/verify-5.5-end/report.md` and `report-r2.md`).
+  the floors `92de82c8`; the end verifier `T-5522` (its scratch reports removed in the 6 Nov clean-up, `T-6022`; its run report keeps the findings).
   Every 5.5 task `T-5500`-`T-5522` and `T-5590`-`T-5599` is `done`; run reports `records/runs/R-2026-10-1[456]-T-55*.md`.
 - **Step 5.6, the machine pieces: done** (19 Oct). Settings and labels, personal memory, the status line, the release
   read, the installers, the CLI look, the operating split, `workflow`'s changelog, prototype and correct skills; the
@@ -397,7 +397,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 ## Waiting on the director
 
 - **Now:** theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
-- **Now:** the scratch folders' audit table (T-6022), then the clean-up they approve; C's answer for the studio. Also theirs: ZenGarden-AI-API's move to base 1.0.2 (`bonsai pack set --all`, then `--yes`; the studio has moved). Also theirs: whether the ladder
+- **Now:** C's answer for the studio. Also theirs: ZenGarden-AI-API's move to base 1.0.2 (`bonsai pack set --all`, then `--yes`; the studio has moved). Also theirs: whether the ladder
   gains a gofmt rung (CI's lint caught three unformatted files the climb passed; a rung added is the director's word).
 - **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
   059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).
@@ -425,9 +425,10 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
   push, and never stage a file this session did not write.
 - The director's own local settings file (settings.local.json in .claude, out of git) holds their `skillOverrides` and `"autoMemoryEnabled": true` (out of
   git; the guard refuses agents' edits of it).
-- Scratch under `~/bonsai-checks/` and `%USERPROFILE%\bonsai-checks\`: every piece's and verifier's folder (this
-  session's: `T-5503`, `T-5511`, `T-5513`, `T-5514`, `T-5595`, `T-5598`, `T-5599`, `batch-1`, `verify-5.5-VG2`,
-  `verify-5.5-VG3`), the launchers, the pre-release's source clone and build. Some hold the Windows user name or raw
-  payloads (`%USERPROFILE%\bonsai-checks\T-5511\win2\raw\`): never paste from them. `T-5599`'s unused backup and script
-  stay in `~/bonsai-checks/T-5599/`. 19 Oct's: `~/bonsai-checks/5.7-prep/decisions-2026-10-19.md` (the three
-  answers) and `~/bonsai-checks/T-5791/` (the team research's scratch; its findings copied to the studio, the rest to clean).
+- Scratch, cleaned 6 Nov (`T-6022`, the director's yes to the audit table; 8.4 GB to 420 MB in WSL, 2.9 GB to 66 MB on
+  Windows). What stays in `~/bonsai-checks/`: `bonsai-workflow`, `bonsai-test-pack`, `scripts`, `prerelease` (the ways
+  back), `release-1.0.3`, `pi-trial` and `pi-trial-home`, `briefs`, `5.6-prep`, `5.7-prep`, `T-5711`, `T-5793`,
+  `T-5795`, `T-5797`, `home` (claude-here's BONSAI_HOME), `bin` (`claude-here`, and an old `bonsai` the guard keeps
+  for a person to delete), the 6 Nov work `T-6013` to `T-6020` and their loose notes, `morning-2026-10-16.md`. In
+  `%USERPROFILE%\bonsai-checks\`: `scripts`, `T-6020`, and `bin\bonsai.exe` (an old build, for a person to delete).
+  A new piece's scratch goes in a folder named by its task; it is removed once the task is done and no STATE line names it.
