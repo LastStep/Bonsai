@@ -5,9 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.3] - 2026-11-06
+
+> Speed and a CI count, from the first projects on 1.0.2. No format changes: every file written by 1.0.2 reads as
+> before.
 
 ### Fixed
+- **`bonsai status` and `bonsai check` are fast in a project with a large log** (BUG-137): a project whose
+  `.bonsai/local/log/` held 58 MB took about 8 s for `status --json`; it now takes about 0.25 s when nothing changed
+  since the last run, and under 2 s on a first run, with the same output. The sessions table check keeps what it read
+  from each log file in `.bonsai/local/cache/sessions.json` (never committed; deleting it costs one slower run) and
+  reads a file again only when its size or time changed; the schemas' patterns are compiled once.
 - **A ratchet counted by a rung's `capture` no longer falls by one per accepted skip under `ladder --ci`** (BUG-138):
   the marked tests `ci_marked_tests` lets skip in CI are added back, as they already were on a rung whose tests are
   the count, so a floor met locally holds in CI. A marked test that ran is not counted twice.
