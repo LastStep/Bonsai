@@ -9,7 +9,7 @@ labels: {}
 
 Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the director present).
 
-## Now (6 Nov): Bonsai 1.0.3 released (status fast, the CI ratchet count); base 1.0.3, workflow 1.0.2 and the installers next
+## Now (6 Nov): Bonsai 1.0.3, base 1.0.3 and workflow 1.0.2 released; one-command installers on main; the scratch audit
 
 - **Bonsai 1.0.3 released** (6 Nov; the director: "yes, build 1.0.3", from the studio's round 2, T-6015's verdicts in
   `records/runs/R-2026-11-05-T-6015-studio-asks.md`; C's question to the director still open: whether a tap through the
@@ -18,9 +18,13 @@ Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the directo
   `.bonsai/local/cache/`), `T-6017` the CI ratchet count (BUG-138), `T-6018` the packs' text for write-nothing roles
   and replacement agents (base's run skill here; the workflow repo's branch `t-6018-pack-text` `08f4f18`, not yet on
   its main). Tagged `v1.0.3` by the director, published 6 Nov 10:48 UTC, read back. BUG-144, 145 filed (the verifier's
-  notes). **Next:** base 1.0.3 and the workflow pack's v1.0.2 (pins to 1.0.3, the branch merged), and the installer
-  scripts moved into the repo for anyone (the director: "can we move these installer scripts within bonsai repo ... so
-  anyone can use").
+  notes). **Then (6 Nov):** base 1.0.3 and the workflow pack's v1.0.2 (`T-6019`, landed `00126a52`; the workflow repo's main
+  `ac89ce3e`; tagged `base-v1.0.3` and `v1.0.2` by the director, the workflow release published); the one-command
+  installers for anyone (`T-6020`, landed `e6f068e1`, a fresh Opus verifier's PASS on security: `install/get-bonsai.sh`
+  and `install/get-bonsai.ps1`, fetched from main's raw files, no release: the director, "we are not putting 1.0.4 just
+  yet"); Bonsai's own repo on base-v1.0.3 and v1.0.2 (`T-6021`, `85aae391`, by `pack set --all`; its marketplace
+  `bonsai-bonsai-57c7dc9a`; the old one removed). A link change on main cannot climb (rung 0 never grants
+  .claude/settings.json): its proof is the tests by hand and CI. **Now:** the scratch folders' audit (`T-6022`).
 - **The pack command** (`T-6009`, `done`; the plan `records/plans/P-T-6009.md`, approved by the director 29 Oct:
   "approved. now build it end to end in this session"). Both stages landed on `main`, each passed by a fresh Opus
   verifier, CI 9 of 9 on each branch (both windows jobs):
@@ -393,7 +397,7 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 ## Waiting on the director
 
 - **Now:** theirs, moving each project's two `ref:` lines (the studio, ZenGarden-AI-API; Bonsai's own repo on their word).
-- **Now:** the director's install of 1.0.3 on both sides; then base 1.0.3's and workflow v1.0.2's tags; C's answer for the studio. Also theirs: ZenGarden-AI-API's move to base 1.0.2 (`bonsai pack set --all`, then `--yes`; the studio has moved). Also theirs: whether the ladder
+- **Now:** the scratch folders' audit table (T-6022), then the clean-up they approve; C's answer for the studio. Also theirs: ZenGarden-AI-API's move to base 1.0.2 (`bonsai pack set --all`, then `--yes`; the studio has moved). Also theirs: whether the ladder
   gains a gofmt rung (CI's lint caught three unformatted files the climb passed; a rung added is the director's word).
 - **Next:** the bug sweep's go (T-6007's board): which batches, in what order; five decisions there (033, 057, 135,
   059, 060). Then what else comes after 1.0 (the list under "Now: after 1.0" above).
