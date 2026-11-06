@@ -48,9 +48,13 @@ Uncommitted work you did not make is not yours to commit. Report it and leave it
 
 ## 5. Open the run report before any work on the task
 
-Before any work on the task starts, not only code: planning, research, an options write-up, a decision, a spike. From the
-template `base:run`, in the folder `bonsai status --json` names for `run`, now, and append to it as you go. The
-orchestrator keeps one for the task it is working on, and names each brief and report in it.
+**A role that writes nothing** (the verifier, researcher, auditor and runner: `writes: false` in `bonsai status --json`,
+`roles`) opens none: its report message is its record, and the orchestrator copies what matters into its own run report.
+Skip to step 6.
+
+Every other session opens one before any work on the task starts, not only code: planning, an options write-up, a
+decision, a spike. From the template `base:run`, in the folder `bonsai status --json` names for `run`, now, and append
+to it as you go. The orchestrator keeps one for the task it is working on, and names each brief and report in it.
 It is a log, not a summary written at the end: if your session dies halfway, it is what survives.
 
 ## 6. Then work

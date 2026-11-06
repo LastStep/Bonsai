@@ -11,12 +11,12 @@ packs:                                # the packs this repository takes (step 5.
   - id: base                          # Bonsai's own pack: its skills, the walls on secret files, the four labels
     source: "https://github.com/LastStep/Bonsai.git"   # this repository, public
     path: packs/base                  # the pack's folder in it
-    ref: "base-v1.0.2"                # base's release, the director's word 5 Nov (T-6014); a move is theirs: bonsai pack set
+    ref: "base-v1.0.3"                # base's release, moved 6 Nov (T-6021) on the director's word; a move: bonsai pack set
     roles: null                       # base declares no roles
   - id: workflow                      # the six roles, lanes and templates (the director's yes, 16 Oct 09:30)
     source: "https://github.com/LastStep/bonsai-workflow.git"   # its own public repository
     path: null                        # the pack is the repository's top
-    ref: "v1.0.1"                     # the workflow pack's release, the director's word 5 Nov (T-6014); a move is theirs
+    ref: "v1.0.2"                     # the workflow pack's release, moved 6 Nov (T-6021) on the director's word
     roles:                            # Bonsai's own limits where the pack's would cut a run it needed; the rest the pack's
       builder:
         minutes:                      # builders ran 230 and 416 minutes in 5.4-5.5 (the log's count, 16 Oct)
