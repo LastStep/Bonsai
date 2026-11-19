@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - YYYY-MM-DD
+## [1.1.0] - 2026-11-19
 
 > Bugs become Bonsai's own documents: one file each, one command to change them, one generated page. Formats set 14
 > adds `bonsai.bug/1`, `bonsai.bugs/1` and `bonsai.buglist/1` and a `bug` event in the log; every file written by 1.0.3
