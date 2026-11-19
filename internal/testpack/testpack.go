@@ -367,9 +367,9 @@ documents:
     stamp:
       approved: approved
     task_field: task
-  - kind: bugs
+  - kind: notes
     path: null
-    file: work/bugs.md
+    file: work/notes.md
     id: null
     statuses: []
     person: []
@@ -421,7 +421,7 @@ lanes:
 `
 
 // DeclaringPack (id base) declares one of each kind the lock's declares holds but hook lines: lanes, two document
-// kinds (plan, a folder; bugs, a file), Bonsai's own label namespace (two definitions), a protected glob and a deny
+// kinds (plan, a folder; notes, a file: not bugs, which is Bonsai's own from set 14), Bonsai's own label namespace (two definitions), a protected glob and a deny
 // rule, with an always-on protocol file and a block. It carries no code.
 func DeclaringPack(t *testing.T, tmp string) (string, []string) {
 	t.Helper()

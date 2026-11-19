@@ -448,8 +448,29 @@ func TestStatusFromTheLockAndTheMachine(t *testing.T) {
 	for _, d := range docs.([]any) {
 		kinds = append(kinds, d.(schema.Object).String("kind")+"@"+d.(schema.Object).String("from"))
 	}
-	if strings.Join(kinds, " ") != "task@bonsai run@bonsai state@bonsai answers@bonsai memory@bonsai tasks@bonsai sessions@bonsai plan@base bugs@base" {
+	if strings.Join(kinds, " ") != "task@bonsai run@bonsai state@bonsai answers@bonsai memory@bonsai tasks@bonsai sessions@bonsai bug@bonsai bugs@bonsai plan@base notes@base" {
 		t.Errorf("documents %v", kinds)
+	}
+	// Set 14: the bug folder with its statuses, moves and stamp, and the bugs page, a generated file kind. documents
+	// holds no bug of its own: a bug file that does not read is check's finding, which problems carries as it carries
+	// a task file's.
+	write(filepath.Join(root, "work", "bugs", "BUG-001.md"), "---\nformat: bonsai.bug/1\nid: [unclosed\n---\n")
+	doc, _ = Build(root, "dev")
+	docs, _ = doc.Get("documents")
+	var bugKinds []string
+	for _, d := range docs.([]any) {
+		if k := d.(schema.Object).String("kind"); k == "bug" || k == "bugs" {
+			bugKinds = append(bugKinds, schema.Show(d))
+		}
+	}
+	if got := strings.Join(bugKinds, "\n"); got != `{"kind":"bug","from":"bonsai","path":"work/bugs","id":"^BUG-[0-9]{3,6}$","format":"bonsai.bug",`+
+		`"statuses":["open","fixed","wontfix","watched"],"agent":[["open","fixed"],["open","wontfix"],["open","watched"],["watched","open"],`+
+		`["watched","fixed"],["fixed","open"],["wontfix","open"]],"stamp":{"fixed":"closed","wontfix":"closed"}}`+"\n"+
+		`{"kind":"bugs","from":"bonsai","file":"work/bugs.md","format":"bonsai.bugs"}` {
+		t.Errorf("the bug kinds:\n%s", got)
+	}
+	if v, _ := doc.Get("problems"); !strings.Contains(schema.Show(v), "work/bugs/BUG-001.md does not read as bonsai.bug/1") {
+		t.Errorf("a broken bug file is not among problems: %s", schema.Show(v))
 	}
 	// BONSAI_TASK names a task for this project's session; another project's session does not count.
 	t.Setenv("BONSAI_TASK", "T-0999")

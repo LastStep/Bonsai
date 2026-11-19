@@ -53,7 +53,8 @@ func TestBonsaiKindsAreTheSchemas(t *testing.T) {
 }
 
 // Bonsai's kinds at bonsai.yaml's places and their fixed files, then a pack's from its declares: at its default
-// place, or at the one bonsai.yaml names under its kind's name.
+// place, or at the one bonsai.yaml names under its kind's name. A pack's bugs kind (the workflow pack's before set 14)
+// is set aside: bugs is Bonsai's own, at the place bonsai.yaml names, its bug files' folder beside it.
 func TestDocKinds(t *testing.T) {
 	w := &format.Workspace{Documents: format.Documents{Task: "work/tasks", Run: "work/runs", Answers: "work/answers.md",
 		Memory: "work/memory", Protocols: "work/protocols", Extra: schema.Object{{Key: "bugs", Value: "notes/bugs.md"}}}}
@@ -78,8 +79,9 @@ func TestDocKinds(t *testing.T) {
 		`{"kind":"memory","from":"bonsai","path":"work/memory","id":"^M-[a-z0-9][a-z0-9-]*$","format":"bonsai.memory"}`,
 		`{"kind":"tasks","from":"bonsai","file":".bonsai/tasks.md","format":"bonsai.tasks"}`,
 		`{"kind":"sessions","from":"bonsai","file":".bonsai/sessions.md","format":"bonsai.sessions"}`,
+		`{"kind":"bug","from":"bonsai","path":"notes/bugs","id":"^BUG-[0-9]{3,6}$","format":"bonsai.bug","statuses":["open","fixed","wontfix","watched"],"agent":[["open","fixed"],["open","wontfix"],["open","watched"],["watched","open"],["watched","fixed"],["fixed","open"],["wontfix","open"]],"stamp":{"fixed":"closed","wontfix":"closed"}}`,
+		`{"kind":"bugs","from":"bonsai","file":"notes/bugs.md","format":"bonsai.bugs"}`,
 		`{"kind":"plan","from":"base","path":"work/plans","id":"^P-T-[0-9]{4,6}$","statuses":["draft","done"],"person":[["draft","done"]],"stamp":{"done":"done"},"task_field":"task"}`,
-		`{"kind":"bugs","from":"base","file":"notes/bugs.md"}`,
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("document kinds:\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
@@ -93,13 +95,44 @@ func TestDocKinds(t *testing.T) {
 			t.Errorf("%s: %v", k.Kind, msgs)
 		}
 	}
-	for _, name := range []string{"task", "run", "state", "answers", "memory", "tasks", "sessions"} {
+	for _, name := range []string{"task", "run", "state", "answers", "memory", "tasks", "sessions", "bug", "bugs"} {
 		if !BonsaiKind(name) {
 			t.Errorf("%s is not Bonsai's", name)
 		}
 	}
 	if BonsaiKind("plan") || BonsaiKind("protocols") {
 		t.Errorf("plan or protocols taken for Bonsai's kind")
+	}
+}
+
+// The bug kinds' places (set 14): bonsai.yaml's documents.bug and documents.bugs, each optional; the folder beside the
+// page when only the page is named; work/bugs.md and work/bugs/ when neither is.
+func TestBugPlaces(t *testing.T) {
+	for _, c := range []struct {
+		extra        schema.Object
+		folder, file string
+	}{
+		{nil, "work/bugs", "work/bugs.md"},
+		{schema.Object{{Key: "bugs", Value: "records/bugs.md"}}, "records/bugs", "records/bugs.md"},
+		{schema.Object{{Key: "bugs", Value: "BUGS.md"}}, "bugs", "BUGS.md"},
+		{schema.Object{{Key: "bug", Value: "issues/"}, {Key: "bugs", Value: "records/bugs.md"}}, "issues", "records/bugs.md"},
+		{schema.Object{{Key: "bug", Value: "issues"}}, "issues", "work/bugs.md"},
+	} {
+		w := &format.Workspace{Documents: format.Documents{Task: "t", Run: "r", Answers: "a.md", Memory: "m", Extra: c.extra}}
+		kinds, err := DocKinds(w, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := map[string]string{}
+		for _, k := range kinds {
+			got[k.Kind] = k.Path + k.File
+		}
+		if got["bug"] != c.folder || got["bugs"] != c.file {
+			t.Errorf("%s: bug %q and bugs %q, want %q and %q", schema.Show(c.extra), got["bug"], got["bugs"], c.folder, c.file)
+		}
+	}
+	if !SetAsideKind("bugs") || SetAsideKind("bug") || SetAsideKind("task") || SetAsideKind("plan") {
+		t.Error("only bugs is set aside")
 	}
 }
 

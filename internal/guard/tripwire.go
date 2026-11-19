@@ -103,6 +103,9 @@ func (j *judge) documentOf(x judged) *docKind {
 	}
 	for _, d := range l.declared {
 		for _, dp := range d.Documents {
+			if workspace.SetAsideKind(dp.Kind) {
+				continue // Bonsai's own from set 14 (bugs): a pack's old declaration of it is set aside, as DocKinds does
+			}
 			place := docPlace(l.cfg, dp.Kind)
 			if place == "" {
 				place = strings.TrimSuffix(dp.Path, "/")

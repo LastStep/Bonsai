@@ -31,7 +31,7 @@ type StampField struct {
 	Always bool
 }
 
-// BonsaiStamps gives the stamp fields of one of Bonsai's own kinds (task, run, state, memory); none for another.
+// BonsaiStamps gives the stamp fields of one of Bonsai's own kinds (task, run, state, memory, bug); none for another.
 func BonsaiStamps(kind string) []StampField {
 	switch kind {
 	case "task":
@@ -40,6 +40,8 @@ func BonsaiStamps(kind string) []StampField {
 		return []StampField{{Name: "started", Time: true}, {Name: "finished", Time: true}}
 	case "state", "memory":
 		return []StampField{{Name: "updated", Always: true}}
+	case "bug":
+		return []StampField{{Name: "created"}, {Name: "closed"}}
 	}
 	return nil
 }

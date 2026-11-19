@@ -5,6 +5,8 @@ package format
 // through EncodeYAML). The guard reads only the fields it judges by, through workspace.ReadConfig, never this.
 
 import (
+	"strings"
+
 	"github.com/LastStep/Bonsai/internal/reader"
 	"github.com/LastStep/Bonsai/internal/schema"
 )
@@ -47,6 +49,42 @@ type Documents struct {
 	Memory    string        `json:"memory"`
 	Protocols string        `json:"protocols"`
 	Extra     schema.Object `json:"-"`
+}
+
+// The places of Bonsai's two bug kinds (set 14) when bonsai.yaml names neither: every bonsai.yaml written before set
+// 14 lacks them, so they are held under documents' further keys (Extra), never required.
+const (
+	DefaultBugsFile = "work/bugs.md" // the bugs page, documents.bugs
+	bugFolderBeside = "bugs"         // the bug files' folder, beside the page, when documents.bug is absent
+	documentsBug    = "bug"
+	documentsBugs   = "bugs"
+)
+
+// BugsFile is the bugs page's place (bonsai.bugs/1): documents.bugs, else DefaultBugsFile. A project that wrote
+// documents.bugs for the workflow pack's old bugs kind (one file, its hand-kept register) keeps that path: the page
+// takes its place, and a register not moved yet is left as it is (the generated marker, format.BugsMarked).
+func (d Documents) BugsFile() string {
+	if s, ok := d.Extra.Get(documentsBugs); ok {
+		if p, ok := s.(string); ok && p != "" {
+			return p
+		}
+	}
+	return DefaultBugsFile
+}
+
+// BugFolder is the bug files' folder (bonsai.bug/1): documents.bug, else bugs/ beside the bugs page's file (a page at
+// records/bugs.md gives records/bugs; one at the project's top, bugs).
+func (d Documents) BugFolder() string {
+	if s, ok := d.Extra.Get(documentsBug); ok {
+		if p, ok := s.(string); ok && p != "" {
+			return strings.TrimSuffix(p, "/")
+		}
+	}
+	dir := d.BugsFile()
+	if i := strings.LastIndexByte(dir, '/'); i >= 0 {
+		return dir[:i] + "/" + bugFolderBeside
+	}
+	return bugFolderBeside
 }
 
 // Rung is one rung of the ladder (spec §9).
