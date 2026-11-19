@@ -95,7 +95,7 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 
 ### `bugs`
 
-- What: the bugs page, one row per bug file (set 14).
+- What: the bugs page, one row per bug file.
 - Where it lives: the bugs page's place (documents.bugs, work/bugs.md by default).
 - Written by: bonsai check --write, from the bug files (documents.bug), only while the page carries its generated marker or is missing with bug files there; a hand-kept register without the marker is never written.
 - Default: a rebuild: nothing to clean.
