@@ -14,8 +14,8 @@ package guard
 //     list and the floor's person-only paths; a glob that covers one, or lies inside one);
 //   - outside-label: an edit that sets, changes or removes a label whose definition reads set_by: outside (contract
 //     §5.2: a pack's, from the lock's declares, or one attached on this machine);
-//   - bad-format: a write of a task, a run report, STATE or a bug file that fails its format (one broken task file makes the
-//     active task none for everyone, contract §13), read under format 0 or 1.
+//   - bad-format: a write of a task, a run report, STATE or a bug file that fails its format (one broken task file
+//     makes the active task none for everyone, contract §13), read under format 0 or 1.
 //
 // Each names the workspace's status_command as the next step. The guard judges the file as it would be after the call:
 // Write's content; Edit's and MultiEdit's replacements applied to the file on disk as Claude Code applies them (line
