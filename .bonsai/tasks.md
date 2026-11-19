@@ -5,6 +5,13 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-6029 | bonsai check lists every field finding in a file, not the first only (the studio's ask 27) | todo | | | |
+| T-6028 | Bonsai's own bugs register moved to bug files by base:bug | todo | | | |
+| T-6027 | Bonsai's own repo on base 1.1.0 and workflow 1.1.0, with its documents.bug line | todo | | | |
+| T-6026 | Bugs stage 3: base:bug and base 1.1.0, the workflow pack's bugs kind out and v1.1.0, CHANGELOG 1.1.0 | todo | | | |
+| T-6025 | Bugs stage 2: the bonsai bug command, its log records, the guard's hold on bug status lines and the marked page, the operating-skill line | done | | 2026-11-19 | 2026-11-19 |
+| T-6024 | Bugs stage 1: the bonsai.bug and bonsai.bugs formats, the bug and bugs kinds and their places, check, the generated page (the marker rule), status | done | | 2026-11-19 | 2026-11-19 |
+| T-6023 | Bugs as Bonsai's own documents: one file per bug, a generated register, the bonsai bug command (the studio's ask for bug rows as JSON, 19 Nov) | approved | full | | |
 | T-6022 | An audit of the scratch folders (~/bonsai-checks and %USERPROFILE%\bonsai-checks): what each holds, what is still used, what can go; then the clean-up the director approves | done | | 2026-11-06 | 2026-11-06 |
 | T-6021 | Bonsai's own repo moves to base-v1.0.3 and the workflow pack's v1.0.2 by bonsai pack set --all, climbed on main before its push | done | | 2026-11-06 | 2026-11-06 |
 | T-6020 | One-command installers in the repo for anyone: install/get-bonsai.sh and install/get-bonsai.ps1 download a release, check its SHA-256 and provenance and run its own installer; docs/install.md and the README name them | done | | 2026-11-06 | 2026-11-06 |

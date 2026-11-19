@@ -1,15 +1,34 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-11-05
+updated: 2026-11-19
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 5 Nov 2026 (the director present).
+Rewritten, never appended (`base:state`). Last rewritten 19 Nov 2026 (the director present).
 
-## Now (6 Nov): Bonsai 1.0.3, base 1.0.3 and workflow 1.0.2 released; one-command installers on main; the scratch folders cleaned
+## Now (19 Nov): bugs as Bonsai's own documents (T-6023), stages 1 and 2 on main; stage 3 (the packs) next
+
+- **The studio's ask** (19 Nov, pasted by the director): a project's bug rows as JSON. The director chose a proper
+  bugs system (`records/options/OPT-0003-bug-rows.md`, decided): one file per bug (`bonsai.bug/1`), the register
+  generated (`bonsai.bugs/1`, only once it carries its marker: a hand-kept register is never touched), `BUG-` ids
+  only (an old id kept in `was`), no import (each project's agent moves its register by base's coming `bug` skill),
+  and "always bonsai bug": `bonsai bug` is the one way a bug's status changes, in every project; `status_writes` is
+  for tasks only. The plan `records/plans/P-T-6023.md` (approved 19 Nov after three plan reviews). Run report
+  `records/runs/R-2026-11-19-T-6023-bug-rows.md`.
+- **Landed** as one batch at `b0529acc` (CI 9 of 9 on the branch): `T-6024` stage 1 (formats set 14, the kinds,
+  check, the page, status; a fresh Opus verifier's PASS `M-2026-11-19-3b3c825f`) and `T-6025` stage 2 (`bonsai bug
+  add|fix|wontfix|watch|reopen|edit|list|show`, its log records, the guard on bug status lines and the marked page;
+  verifier FAIL then PASS `M-2026-11-19-abd6f08b`). Not released: the installed bonsai is still 1.0.3.
+- **Next:** `T-6026` stage 3 (base:bug and base 1.1.0, the workflow pack's bugs kind out and its v1.1.0,
+  CHANGELOG 1.1.0); then the director's three tags in order (Bonsai `v1.1.0`, `base-v1.1.0`, the workflow repo's
+  `v1.1.0`); then `T-6027` (Bonsai's repo on the 1.1.0 packs) and `T-6028` (Bonsai's own register moved). Proposed
+  by the builders: the guard judging shell writes onto a bug's status line (as for tasks today, only rung 0 on a
+  branch catches it); BUG-137 still sits in Open though T-6016 fixed it.
+
+## 6 Nov: Bonsai 1.0.3, base 1.0.3 and workflow 1.0.2 released; one-command installers on main; the scratch folders cleaned
 
 - **Bonsai 1.0.3 released** (6 Nov; the director: "yes, build 1.0.3", from the studio's round 2, T-6015's verdicts in
   `records/runs/R-2026-11-05-T-6015-studio-asks.md`; C's question to the director still open: whether a tap through the
