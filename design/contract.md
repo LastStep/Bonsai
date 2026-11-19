@@ -755,6 +755,12 @@ server still speaks spool/1 (§15).
 >   cannot be read, `kind` is `unknown` and `reason` says why.
 > - The fields: `parent` (on a `spawn` record, as above) and then `usage` (on a `usage` record), each `null` elsewhere.
 
+> **Changed 19 Nov (the director, plan P-T-6023):** one more event, an addition to the open list (formats set 14):
+> - `bug`: a bug file written by `bonsai bug` (§10, §7.3): `target` the bug's id, `kind` the subcommand (`add`, `fix`,
+>   `wontfix`, `watch`, `reopen`, `edit`), `reason` what changed (a move as its two statuses, `open to fixed`; a
+>   carry-over with its old id; the fields an edit changed), `text` its title, `task` and `role` whoever ran it. Every
+>   move of a bug is `bonsai bug`'s, so every one is on the log with who made it; the record has no from or to fields.
+
 ### 8.3 Claude Code's events (Claude Code only)
 
 | Claude Code hook | `event` |
@@ -891,7 +897,9 @@ instant.
   at its first status only), of the lane line, of a person-only path in `bonsai.allows`, and of an `outside` label,
   and tells the agent to run the setting's command. It also refuses writing a Bonsai-kind file that fails its format
   (one broken task file would make the active task "none" for everyone, §13). In `agents` mode agents edit task files
-  themselves.
+  themselves. **Bugs are not this switch's** (the director, 19 Nov, "always bonsai bug"): in either mode the guard
+  refuses an agent's edit of a bug file's status line (a new bug file by hand starts at `open`) and names `bonsai bug`,
+  which writes every bug move itself, in the main checkout, logged (§8.2); `status_command` is never named for a bug.
 - **Checked against Bonsai's format.** Before writing, the file must pass its format: the §2.4 rules and the JSON Schema
   of the pinned Bonsai release (until Bonsai, the schema written in this repo, §15), else `format_check`. After
   writing, the re-parsed file may differ only by the effect (`contract_field`).
@@ -909,6 +917,13 @@ For tasks, with the lane rules of §6:
 
 Other kinds: the moves their declaration lists under `person` and `agent` (§7.3). A plan's approval also moves its
 task to `approved` when it reads `todo` or `plan`, in one commit, through either door.
+
+Bugs (from Bonsai 1.1.0): the bug kind's moves (§7.3), every one an agent's and every one made by `bonsai bug`, never
+through either door: `fix` (open or watched to `fixed`, with the commit that fixed it, one the repository holds),
+`wontfix` (open, with why), `watch` (open, with why), `reopen` (fixed, wontfix or watched back to `open`). Its effects:
+the status line, the `closed` stamp (set by fixed and wontfix, cleared by the others), and the move's own fields
+(`fixed_by`, `fixed_in`, `why`, `task`). `bonsai bug add` files a bug at `open`, and `edit` changes its text, never its
+status. A task's moves stay the studio's or the agents', as above.
 
 **Effects** (a closed list): the status line, written without a comment; the dates the kind stamps; `blocked_by`; the
 lane line; for a grant, `bonsai.allows`. Nothing else in any file changes.
