@@ -4,7 +4,8 @@ package engine
 // CI; contract §2.8): a pack's folder held to the rules that keep its declarations and its documentation in step with
 // its fields. It reads the folder as it is on disk (a pack's checkout, in its CI) and nothing else: no project, no
 // Bonsai home, no git, no network, no claude (`claude plugin validate` is the pack's CI's other step, step 5.5). Each
-// rule's finding has a word of format.PackCheckWords, their one home; every one is a finding (exit 1), none a warning.
+// rule's finding has a word of format.PackCheckWords, their one home; every one is a finding (exit 1), none a warning;
+// the one warning is check's own kind-set-aside (a document kind Bonsai has taken as its own, set 14: bugs.go).
 // In the order CheckPack looks, file by file, what counts for each rule:
 //
 //   - pack-schema: bonsai/pack.yaml, and bonsai/labels.yaml and bonsai/lanes.yaml when the pack has them, as their
@@ -387,6 +388,14 @@ func (c *packCheck) packYAML(raw []byte) packYAMLRead {
 	c.put(keyComments(file, raw, m)...)
 	c.put(whyF...)
 	c.put(docsF...)
+	// A kind that is Bonsai's own now (bugs, set 14): set aside at a link, never refused, so a warning here.
+	for _, k := range out.documents {
+		if workspace.SetAsideKind(k.Kind) {
+			c.r.add("kind-set-aside", file, "", file+" declares the document kind "+k.Kind+", which is Bonsai's own from Bonsai 1.1.0: "+
+				"a project linking the pack has it set aside, and Bonsai's "+k.Kind+" in force",
+				"take the kind out of "+file+"'s documents and release the pack again; its template skill can point at base's bug skill")
+		}
+	}
 	c.put(protF...)
 	c.put(bashF...)
 	c.put(runsF...)

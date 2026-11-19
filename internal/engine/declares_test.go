@@ -87,8 +87,8 @@ func TestDeclaresRefused(t *testing.T) {
 			testpack.BasePackYAML, "bad-pack", "defines the label \"bonsai.allows\" twice"},
 		{"a kind named like Bonsai's own", testpack.BaseLabelsYAML, strings.Replace(testpack.BasePackYAML, "kind: plan", "kind: task", 1),
 			"bad-pack", "takes the name of Bonsai's own task"},
-		{"a kind with both path and file", testpack.BaseLabelsYAML, strings.Replace(testpack.BasePackYAML, "path: null\n    file: work/bugs.md",
-			"path: work/bugs\n    file: work/bugs.md", 1), "bad-pack", "both path and file"},
+		{"a kind with both path and file", testpack.BaseLabelsYAML, strings.Replace(testpack.BasePackYAML, "path: null\n    file: work/notes.md",
+			"path: work/notes\n    file: work/notes.md", 1), "bad-pack", "both path and file"},
 		{"an id pattern Go does not read", testpack.BaseLabelsYAML, strings.Replace(testpack.BasePackYAML, `"^P-T-[0-9]{4,6}$"`, `"^P-(T"`, 1),
 			"bad-pack", "is not a regular expression Bonsai reads"},
 	}

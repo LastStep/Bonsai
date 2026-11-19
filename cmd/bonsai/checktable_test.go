@@ -133,6 +133,15 @@ func labelsPack(t *testing.T, tmp, id string) (string, []string) {
 	})
 }
 
+// bugText is a bug file (bonsai.bug/1) with its id, status and closed day ("" for null).
+func bugText(id, status, closed string) string {
+	if closed != "" {
+		closed = " " + closed
+	}
+	return "---\nformat: bonsai.bug/1\nid: " + id + "\ntitle: A bug\nstatus: " + status + "\narea:\nwhere:\nfound_by:\nfiled_by:\n" +
+		"fixed_by:\nfixed_in:\ntask:\nwas:\nwhy:\ncreated: 2026-11-01\nclosed:" + closed + "\nlabels: {}\n---\n"
+}
+
 // addPack adds a pack to bonsai.yaml and updates.
 func (c *cli) addPack(id, source, ref string) {
 	c.t.Helper()
@@ -380,6 +389,21 @@ var checkCases = map[string]func(c *cli){
 	"local-unchecked": func(c *cli) { c.link(); c.write(".git/index", "not an index") },
 	// init wrote the tasks table with no rows; a task file since makes it stale: a warning, never the exit code.
 	"tables": func(c *cli) { c.link(); c.task("T-0901", "todo", "", "") },
+	// Set 14: a hand-kept register at the bugs page's place; a bug file named for another id; a fixed bug with no
+	// closed day; a linked pack still declaring the old bugs kind.
+	"bugs-not-moved": func(c *cli) { c.link(); c.write("work/bugs.md", "# Known bugs\n\n## Open\n") },
+	"bug-id":         func(c *cli) { c.link(); c.write("work/bugs/BUG-001.md", bugText("BUG-002", "open", "")) },
+	"bug-closed":     func(c *cli) { c.link(); c.write("work/bugs/BUG-001.md", bugText("BUG-001", "fixed", "")) },
+	"kind-set-aside": func(c *cli) {
+		c.link()
+		src, shas := testpack.Fixture(c.t, c.tmp, "oldflow", map[string]string{
+			".claude-plugin/plugin.json": `{"name": "oldflow", "description": "A fixture pack."}` + "\n",
+			"bonsai/pack.yaml": "format: bonsai.pack/1\nid: oldflow\nversion: \"0.1.0\"\nfiles: []\nhooks: []\ndeny: []\n" +
+				"documents:\n  - kind: bugs\n    path: null\n    file: work/bugs.md\n    id: null\n    statuses: []\n    person: []\n" +
+				"    agent: []\n    stamp: {}\n    task_field: null\n",
+		})
+		c.addPack("oldflow", src, shas[0])
+	},
 	// A fresh link, never committed (BUG-106): TestCheckUncommitted has the rest.
 	"config-uncommitted": func(c *cli) { c.link() },
 }

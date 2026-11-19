@@ -1,6 +1,7 @@
 package engine
 
 // The two tables and check --write (spec section 6, "The two tables"; contract section 7.5; steps 5.1.8 and 5.2.3).
+// check --write also builds the bugs page (set 14), under its marker rule (bugs.go).
 //
 // .bonsai/tasks.md is rebuilt whole from the task files of the main checkout (format 0 and format 1 alike): the
 // frontmatter format: bonsai.tasks/1 with its comment, the active task as contract section 13's step 2 finds it (no
@@ -169,6 +170,7 @@ func (r *CheckResult) checkTables() {
 	}
 	r.checkTasksTable(next)
 	r.checkSessionsTable(next)
+	r.checkBugsPage(next)
 }
 
 func (r *CheckResult) checkTasksTable(next string) {
@@ -299,6 +301,7 @@ func unreadTable(err error) *Error {
 type TablesResult struct {
 	Written []string // the tables whose bytes changed
 	Same    []string // the tables already as a rebuild gives them
+	Left    []string // the bugs page left as it is: a hand-kept register with no generated marker, or a newer major
 	Cleaned []string // the sessions rows generated.sessions cleaned, each a clean record in the log
 }
 
@@ -342,11 +345,47 @@ func WriteTables(dir string) (*TablesResult, *Error) {
 		return nil, errorf("read-failed", ExitRuntime, "check that "+workspace.SessionsTableFile+" can be read, then run: "+WriteCommand,
 			"the sessions table cannot be built: %v", err)
 	}
-	res := &TablesResult{}
-	for _, t := range []struct {
+	// The bugs page (bugs.go): built only while it carries the generated marker, or is missing while there are bug
+	// files (a project with neither gets no page); a hand-kept register is never overwritten.
+	tables := []struct {
 		rel   string
 		bytes []byte
-	}{{workspace.TasksTableFile, b}, {workspace.SessionsTableFile, sb}} {
+	}{{workspace.TasksTableFile, b}, {workspace.SessionsTableFile, sb}}
+	res := &TablesResult{}
+	folder, page := cfg.Full.Documents.BugFolder(), cfg.Full.Documents.BugsFile()
+	raw, exists, err := readFile(co.Root, page)
+	if err != nil {
+		return nil, err.(*Error)
+	}
+	state := pageState(raw, exists)
+	build := state == bugsMarked
+	if state == bugsMissing {
+		docs, err := readBugFiles(co.Root, folder)
+		if err != nil {
+			return nil, errorf("read-failed", ExitRuntime, "check that the bug folder (bonsai.yaml's documents.bug) can be read, then run: "+WriteCommand,
+				"the bug files cannot be read: %v", err)
+		}
+		build = len(docs) > 0
+	}
+	switch {
+	case build:
+		pb, err := BuildBugsPage(co.Root, folder)
+		if err != nil {
+			e := Unexpected(err)
+			if _, ok := err.(*Error); !ok {
+				e = errorf("read-failed", ExitRuntime, "check that the bug folder (bonsai.yaml's documents.bug) can be read, then run: "+WriteCommand,
+					"the bugs page cannot be built: %v", err)
+			}
+			return nil, e
+		}
+		tables = append(tables, struct {
+			rel   string
+			bytes []byte
+		}{page, pb})
+	case state == bugsUnmarked || state == bugsTooNew:
+		res.Left = append(res.Left, page)
+	}
+	for _, t := range tables {
 		target := filepath.Join(co.Root, filepath.FromSlash(t.rel))
 		old, rerr := os.ReadFile(target)
 		if rerr == nil && bytes.Equal(bytes.ReplaceAll(old, []byte("\r\n"), []byte("\n")), t.bytes) {
@@ -385,6 +424,9 @@ func (t *TablesResult) Notes() []string {
 	}
 	for _, p := range t.Same {
 		out = append(out, p+" is already as a rebuild gives it")
+	}
+	for _, p := range t.Left {
+		out = append(out, p+" is left as it is: it has no generated marker (a hand-kept register, not moved to bug files; skill base:bug)")
 	}
 	if n := len(t.Cleaned); n > 0 {
 		out = append(out, fmt.Sprintf("cleaned %d row(s) of %s by bonsai.yaml's generated.sessions, each a clean record in the log", n, workspace.SessionsTableFile))

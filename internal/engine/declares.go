@@ -13,7 +13,10 @@ package engine
 //     each other pack uses its own id), and every label's name starts with the namespace and a dot, once;
 //   - lanes: each name once;
 //   - document kinds: each name once, none of Bonsai's own kinds (DocKinds' bonsai rows) nor protocols (bonsai.yaml's
-//     documents key for the protocols folder), exactly one of path and file, and an id pattern Go's regexp reads;
+//     documents key for the protocols folder), exactly one of path and file, and an id pattern Go's regexp reads. The
+//     one exception is bugs (workspace.SetAsideKind), Bonsai's own from set 14, which the workflow pack declared
+//     before: its declaration is read and kept in the lock as written, set aside by every reader of the kinds in force,
+//     and named by check's warning kind-set-aside, so a project on that pack still links;
 //   - roles: each name once, and at most one with session true (the role the person's own session plays).
 // Two linked packs declaring one document kind are refused in Build (packs-overlap), and so are two declaring a role
 // with session true between them (checkSessionRoles); two declaring one role's name each keep their own, since Claude
@@ -179,7 +182,7 @@ func documentsProblems(docs []format.PackDocument) []itemProblem {
 		where := fmt.Sprintf("pack.yaml's documents item %d (%s)", i+1, k.Kind)
 		add := func(f string, args ...any) { out = append(out, itemProblem{i, where + fmt.Sprintf(f, args...)}) }
 		switch {
-		case workspace.BonsaiKind(k.Kind) || k.Kind == "protocols":
+		case (workspace.BonsaiKind(k.Kind) && !workspace.SetAsideKind(k.Kind)) || k.Kind == "protocols":
 			add(" takes the name of Bonsai's own %s; a pack's kind has a name of its own", k.Kind)
 		case seen[k.Kind]:
 			add(": the kind is declared twice")

@@ -42,7 +42,8 @@ func TestInitWritesEveryField(t *testing.T) {
 	if !strings.HasPrefix(raw, "# bonsai.yaml: ") || !strings.Contains(raw, "bonsai check --schema bonsai.workspace") {
 		t.Errorf("no header naming the schema command:\n%s", raw)
 	}
-	// Every field of the schema, in its order, at the top and in each section; the pack's kinds at their defaults.
+	// Every field of the schema, in its order, at the top and in each section; Bonsai's two bug kinds (set 14), then
+	// the pack's kinds at their defaults.
 	r := reader.ReadYAML([]byte(raw))
 	if r.Outcome != reader.Accepted {
 		t.Fatalf("bonsai.yaml does not read: %v", r.Err())
@@ -58,7 +59,7 @@ func TestInitWritesEveryField(t *testing.T) {
 	}
 	docs, _ := doc.Get("documents")
 	if got := schema.Show(docs); got != `{"task":"work/tasks","run":"work/runs","answers":"work/answers.md","memory":"work/memory",`+
-		`"protocols":"work/protocols","plan":"work/plans","bugs":"work/bugs.md"}` {
+		`"protocols":"work/protocols","bug":"work/bugs","bugs":"work/bugs.md","plan":"work/plans","notes":"work/notes.md"}` {
 		t.Errorf("documents %s", got)
 	}
 	gen, _ := doc.Get("generated")

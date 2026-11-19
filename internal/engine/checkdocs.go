@@ -7,7 +7,10 @@ package engine
 //     (contract §2.3: "a new or changed one is a finding (give it format: bonsai.task/1 first)"); with no lock, there
 //     is no list to hold it to, and the lock's own finding says so;
 //   - document: a file of one of Bonsai's kinds that does not read under its format, format 0 or 1 (task, run, state,
-//     memory and its index, the two tables);
+//     memory and its index, the two tables, a bug file, and the bugs page once it carries its generated marker: a
+//     page without it is a hand-kept register, the warning bugs-not-moved, bugs.go);
+//   - bug-id, bug-closed: the bug files held together (bugs.go); kind-set-aside (a warning): a locked pack declares a
+//     kind that is Bonsai's own now (bugs.go);
 //   - label: a format-1 document's label whose value is not the kind its definition says, or that is on a kind of
 //     document its definition does not name (contract §5.2). A label no definition in force names is left alone:
 //     Bonsai's own bonsai.* definitions arrive with the base pack (step 5.5);
@@ -143,6 +146,13 @@ func docRead(kind string, raw []byte) (labels schema.Object, fields schema.Objec
 		_, err = format.ReadTasks(raw)
 	case "sessions":
 		_, err = format.ReadSessions(raw)
+	case "bug":
+		var x *format.Bug
+		if x, err = format.ReadBug(raw); err == nil {
+			labels = x.Labels
+		}
+	case "bugs":
+		_, err = format.ReadBugs(raw)
 	default:
 		return nil, nil, nil
 	}
@@ -166,6 +176,7 @@ func (r *CheckResult) checkDocuments() {
 	sets, _ := workspace.LabelsInForce(r.Lock, r.Home, r.Main)
 	defs := r.checkLabelsTwice(sets)
 	r.checkAbsolute(workspace.ConfigFile, configFields(cfg))
+	r.checkSetAside()
 	var named []string // the files whose paths are checked: STATE and the memory notes
 	for _, k := range kinds {
 		if k.From != "bonsai" || k.Format == "" {
@@ -189,10 +200,16 @@ func (r *CheckResult) checkDocuments() {
 			if err != nil || !exists {
 				continue
 			}
+			if short == "bugs" && !format.BugsMarked(raw) {
+				continue // a hand-kept register, not the page yet: bugs-not-moved (checkBugsPage), never a finding
+			}
 			r.checkDocument(short, k.Kind, p, raw, defs)
 			if short == "memory" || short == "state" {
 				named = append(named, p)
 			}
+		}
+		if short == "bug" {
+			r.checkBugFiles(k)
 		}
 	}
 	// A pack's kinds: only their stamps (their format is the pack's).
@@ -228,6 +245,9 @@ func (r *CheckResult) checkDocument(short, kind, p string, raw []byte, defs map[
 		next := "fix it (the fields and their allowed values: bonsai check --schema bonsai." + short + "), then run: bonsai check"
 		if short == "tasks" || short == "sessions" {
 			next = "the table is generated, never edited by hand: restore it, run: git checkout -- " + ShellArg(p)
+		}
+		if short == "bugs" {
+			next = "the page is generated from the bug files, never edited by hand: rebuild it in the main checkout, run: " + WriteCommand
 		}
 		if re, ok := err.(*format.ReadError); ok && re.TooNew {
 			next = "read it with a newer Bonsai, or run: git checkout -- " + ShellArg(p)

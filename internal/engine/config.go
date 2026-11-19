@@ -75,6 +75,17 @@ func NewID() (string, error) {
 var DefaultDocuments = format.Documents{Task: "work/tasks", Run: "work/runs", Answers: "work/answers.md",
 	Memory: "work/memory", Protocols: "work/protocols"}
 
+// DefaultBugFolder is init's documents.bug: the bug files' folder beside the bugs page (format.Documents.BugFolder's
+// default, written out).
+const DefaultBugFolder = "work/bugs"
+
+// BugKindComments are the template's comments for Bonsai's two bug kinds' lines, documents.bug and documents.bugs,
+// which the schema holds as further keys of documents (not in Comments, which holds the schema's own fields).
+var BugKindComments = schema.Object{
+	{Key: "bug", Value: "the bug files' folder: one file per bug, BUG-<number>.md (bonsai.bug/1); absent: bugs/ beside the page"},
+	{Key: "bugs", Value: "the bugs page, generated from the bug files by bonsai check --write (bonsai.bugs/1)"},
+}
+
 // ConfigHeader is the comment block at the top of init's bonsai.yaml: what the file is, who changes it, how a change
 // takes effect, and where every field is documented.
 var ConfigHeader = []string{
@@ -196,7 +207,12 @@ func ConfigYAMLPacks(id string, v InitValues, packs []*PackData) ([]byte, error)
 		w.NeverRead = []string{}
 	}
 	kinds := map[string]string{}
-	w.Documents.Extra = nil
+	// Bonsai's two bug kinds (set 14), held under documents' further keys (they are optional in the schema, since
+	// every bonsai.yaml before set 14 lacks them): written first, before the packs' kinds.
+	w.Documents.Extra = schema.Object{{Key: "bug", Value: DefaultBugFolder}, {Key: "bugs", Value: format.DefaultBugsFile}}
+	for _, k := range BugKindComments {
+		kinds[k.Key] = k.Value.(string)
+	}
 	w.Packs = []format.WorkspacePack{}
 	for i, in := range v.Packs() {
 		ref := format.WorkspacePack{Source: in.Source, Ref: in.Ref}
@@ -213,8 +229,8 @@ func ConfigYAMLPacks(id string, v InitValues, packs []*PackData) ([]byte, error)
 					if k.File != nil {
 						what, place = "file", k.File
 					}
-					if place == nil {
-						continue
+					if place == nil || workspace.SetAsideKind(k.Kind) {
+						continue // a kind set aside is Bonsai's own, written above
 					}
 					w.Documents.Extra = append(w.Documents.Extra, schema.Member{Key: k.Kind, Value: *place})
 					kinds[k.Kind] = "the pack " + ref.ID + "'s document kind " + k.Kind + ": its " + what
