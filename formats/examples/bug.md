@@ -4,10 +4,10 @@ id: BUG-012
 title: The settings page forgets the dark mode switch after a restart
 status: fixed
 area: settings
-where: "src/settings/store.ts:88 (pointed)"
-found_by: "verifier@T-0901 M-2026-10-09-1a2b3c4d"
-filed_by: "builder@T-0901"
-fixed_by: "builder@T-0904"
+where: src/settings/store.ts:88 (pointed)
+found_by: verifier@T-0901 M-2026-10-09-1a2b3c4d
+filed_by: builder@T-0901
+fixed_by: builder@T-0904
 fixed_in: "0a1b2c3d (the switch is saved before the page closes)"
 task: T-0904
 was: TB-012

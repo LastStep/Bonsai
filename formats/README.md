@@ -5,7 +5,7 @@ of the formats contract (`design/contract.md` §2), the eight that set 4 added (
 the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), the
 one that set 7 added (`climb`, plan-5 5.4.0), the three that set 8 added (`message`, `messages` and `agents`, plan-5
 5.5.9) the three that set 10 added (`settings`, `attach` and `line`, plan-5 5.6.0), the one that set 11 added (`now`,
-plan P-T-5795, contract §23) the one that set 13 added (`packs`, plan P-T-6009) and the two that set 14 added (`bug` and `bugs`, plan P-T-6023), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
+plan P-T-5795, contract §23) the one that set 13 added (`packs`, plan P-T-6009) and the three that set 14 added (`bug`, `bugs` and `buglist`, plan P-T-6023), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
 from set 8, message files; from set 11, run reports), each with the one right outcome a reader must reach (accepted with this value, or refused
 for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
@@ -27,7 +27,7 @@ formats/
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
                                 asks, logs; climb; message, messages, agents; settings, attach, line; now; packs;
-                                bug, bugs
+                                bug, bugs, buglist
   examples/<name>.json      one valid document per format, as a reader returns it
   examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory, message, bug, bugs (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
@@ -67,7 +67,8 @@ pack show`: each locked pack, what it brings and whether a newer release exists)
 (`bonsai.bug/1`, a bug file: one known defect, its status and who found, filed and fixed it, one markdown file per
 bug in the folder `bonsai.yaml` names under `documents.bug`) and `bugs` (`bonsai.bugs/1`, the bugs page `bonsai check
 --write` builds from the bug files at `documents.bugs`'s place, only while the page is missing or carries its format
-line, the generated marker). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+line, the generated marker), and `buglist` (`bonsai.buglist/1`, the `--json` of `bonsai bug`: the bugs it
+listed or showed, or the one it wrote, each with its file). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
 where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
 the same way, each a new schema file: an addition.
 

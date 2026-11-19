@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.buglist/1",
+  "description": "bonsai bug --json (contract §10, §7.3; plan P-T-6023, step 6): the bugs bonsai bug list printed, the one bonsai bug show printed, or the one a writing subcommand (add, fix, wontfix, watch, reopen, edit) wrote, each with its file in the main checkout's bug folder (bonsai.yaml's documents.bug) and its frontmatter as bonsai.bug/1 holds it. Printed, never stored. Written by bonsai bug with --json; read by agents and the studio. On a refusal bugs and malformed are [] and error says why. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "workspace",
+    "command",
+    "bugs",
+    "malformed",
+    "error"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version, always the first field (contract §2.2).",
+      "examples": [
+        "bonsai.buglist/1"
+      ],
+      "const": "bonsai.buglist/1"
+    },
+    "workspace": {
+      "description": "The workspace: its id and name from bonsai.yaml, and the main checkout's absolute path, forward slashes (printed locally, never stored or forwarded); null when the command refused before reading bonsai.yaml.",
+      "examples": [
+        {
+          "id": "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b",
+          "name": "example",
+          "root": "/srv/projects/example"
+        },
+        null
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "id",
+        "name",
+        "root"
+      ],
+      "properties": {
+        "id": {
+          "description": "The workspace id (contract §3).",
+          "examples": [
+            "ws-7kq2m4xw5r3t6y2u7p4a5c3e2b"
+          ],
+          "type": "string",
+          "pattern": "^ws-[a-z0-9]{26}$"
+        },
+        "name": {
+          "description": "The workspace's name (contract §3).",
+          "examples": [
+            "example"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "root": {
+          "description": "The checkout's absolute path, forward slashes.",
+          "examples": [
+            "/srv/projects/example"
+          ],
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "description": "The subcommand that ran: list, show, add, fix, wontfix, watch, reopen or edit (bonsai bug --help lists them); null when the command refused before one was read.",
+      "examples": [
+        "list",
+        "fix",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z]+$"
+    },
+    "bugs": {
+      "description": "The bugs, for list in id order (by number, oldest first) and only those its filters keep; for show the one asked for; for a writing subcommand the one it wrote, as written. [] on a refusal.",
+      "examples": [
+        [
+          {
+            "path": "work/bugs/BUG-012.md",
+            "bug": {
+              "format": "bonsai.bug/1",
+              "id": "BUG-012",
+              "title": "The settings page forgets the dark mode switch after a restart",
+              "status": "fixed",
+              "area": "settings",
+              "where": "src/settings/store.ts:88 (pointed)",
+              "found_by": "verifier@T-0901 M-2026-10-09-1a2b3c4d",
+              "filed_by": "builder@T-0901",
+              "fixed_by": "builder@T-0904",
+              "fixed_in": "0a1b2c3d (the switch is saved before the page closes)",
+              "task": "T-0904",
+              "was": "TB-012",
+              "why": null,
+              "created": "2026-10-09",
+              "closed": "2026-10-10",
+              "labels": {}
+            },
+            "body": null
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "description": "One bug: its file, its frontmatter and, for show and every writing subcommand, its body.",
+        "type": "object",
+        "required": [
+          "path",
+          "bug",
+          "body"
+        ],
+        "properties": {
+          "path": {
+            "description": "The bug file, project-relative in the main checkout, forward slashes: in the folder bonsai.yaml names under documents.bug, named <id>.md or <id>-<slug>.md.",
+            "examples": [
+              "work/bugs/BUG-012.md"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "bug": {
+            "description": "Its frontmatter as bonsai.bug/1 holds it: format first, then id, title, status (open, fixed, wontfix or watched), area, where, found_by, filed_by, fixed_by, fixed_in, task, was, why, created, closed and labels, then any field this Bonsai does not know. An open object here, whose home is bonsai.bug/1 (the schema checker has no $ref).",
+            "examples": [
+              {
+                "format": "bonsai.bug/1",
+                "id": "BUG-012",
+                "title": "The settings page forgets the dark mode switch after a restart",
+                "status": "fixed",
+                "area": "settings",
+                "where": "src/settings/store.ts:88 (pointed)",
+                "found_by": "verifier@T-0901 M-2026-10-09-1a2b3c4d",
+                "filed_by": "builder@T-0901",
+                "fixed_by": "builder@T-0904",
+                "fixed_in": "0a1b2c3d (the switch is saved before the page closes)",
+                "task": "T-0904",
+                "was": "TB-012",
+                "why": null,
+                "created": "2026-10-09",
+                "closed": "2026-10-10",
+                "labels": {}
+              }
+            ],
+            "type": "object"
+          },
+          "body": {
+            "description": "Its body, the markdown after the frontmatter (how to repeat it, what was seen, notes), line endings LF; \"\" for none; null for list, which prints headers only.",
+            "examples": [
+              "**How to repeat it:** turn dark mode on, close the game, open it again: the switch reads off.\n",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "malformed": {
+      "description": "A file in the bug folder named by a bug id that does not read as bonsai.bug/1 (bonsai check names it as a finding): its path and why. One bad file never blocks the rest. [] for none, and for every subcommand but list and show.",
+      "examples": [
+        [
+          {
+            "path": "work/bugs/BUG-013.md",
+            "reason": "its status \"closed\" is not one of open, fixed, wontfix, watched"
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "reason"
+        ],
+        "properties": {
+          "path": {
+            "description": "The file, project-relative in the main checkout, forward slashes.",
+            "examples": [
+              "work/bugs/BUG-013.md"
+            ],
+            "type": "string",
+            "pattern": "^[^/\\\\:][^\\\\:]*$"
+          },
+          "reason": {
+            "description": "Why it does not read, one sentence, ASCII.",
+            "examples": [
+              "its frontmatter has no closing --- line"
+            ],
+            "type": "string"
+          }
+        }
+      }
+    },
+    "error": {
+      "description": "null unless the command refused or failed: then what went wrong and the next step, as bonsai.error has it.",
+      "examples": [
+        null,
+        {
+          "code": "not-linked",
+          "message": "bonsai.yaml is not in this checkout, so it is not linked to Bonsai",
+          "next": {
+            "do": "run: bonsai init in the project's main checkout",
+            "who": "person"
+          }
+        }
+      ],
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "code",
+        "message",
+        "next"
+      ],
+      "properties": {
+        "code": {
+          "description": "What went wrong, as a fixed word: an open list (contract §2.2). Later steps add words, which is an addition (format review 4.5), and a reader shows a word it does not know as other. The known words live in one table in Bonsai's code, their one home, which bonsai check --schema bonsai.error prints (and, from step 5.1.10, the reference page of lists, docs/reference/lists.md); this schema does not copy them, and the words in its examples are illustrative.",
+          "examples": [
+            "needs-yes",
+            "not-linked"
+          ],
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "message": {
+          "description": "What is wrong, one sentence for a person, in ASCII (spec §3).",
+          "examples": [
+            "no --yes, and no terminal to ask at: nothing was written"
+          ],
+          "type": "string"
+        },
+        "next": {
+          "description": "The next thing to do (spec §3: every refusal and error names it, in the human line and in the JSON): what to do and who does it.",
+          "examples": [
+            {
+              "do": "run: bonsai update --yes",
+              "who": "person"
+            }
+          ],
+          "type": "object",
+          "required": [
+            "do",
+            "who"
+          ],
+          "properties": {
+            "do": {
+              "description": "What to do: the command to run, written run: and the command line, or the step in plain words.",
+              "examples": [
+                "run: bonsai update --yes",
+                "open Claude Code in this checkout and accept its trust question"
+              ],
+              "type": "string"
+            },
+            "who": {
+              "description": "Who does it, a closed list: agent (any agent may do it, unattended) or person (a person's step: a consent such as --allow-exec, a tap, a setting, an install, or a command an agent's task does not grant it; spec §4, §6).",
+              "examples": [
+                "person",
+                "agent"
+              ],
+              "enum": [
+                "agent",
+                "person"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

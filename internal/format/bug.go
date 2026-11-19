@@ -189,3 +189,91 @@ func BugsMarked(raw []byte) bool {
 	}
 	return bytes.HasPrefix(rest, []byte(bugsMarkerAt))
 }
+
+// bugComment is the pointer comment on a bug file's format line (contract §2.8).
+const bugComment = "fields: bonsai check --schema bonsai.bug; how to fill: skill base:bug"
+
+// ReadBugFile reads a bug file's bytes: its frontmatter (ReadBug) and its body, the text after the frontmatter's
+// closing --- line and the one blank line after it, line endings read as LF.
+func ReadBugFile(raw []byte) (*Bug, string, error) {
+	b, err := ReadBug(raw)
+	if err != nil {
+		return nil, "", err
+	}
+	body, _ := markdownBody(raw)
+	return b, body, nil
+}
+
+// Object gives the bug's frontmatter as bonsai.bug/1 holds it, checked against its schema: format first, every field
+// in the schema's order, then any field this Bonsai does not know, kept.
+func (b *Bug) Object() (schema.Object, error) {
+	f := MustLookup("bug")
+	doc, err := f.Document(b)
+	if err != nil {
+		return nil, err
+	}
+	if err := f.Check(doc); err != nil {
+		return nil, err
+	}
+	return doc, nil
+}
+
+// EncodeFile writes the bug's file, held to bonsai.bug/1: the frontmatter (Object's fields), its format line carrying
+// its pointer comment, then, when body is not empty, a blank line and the body as given. LF line endings.
+func (b *Bug) EncodeFile(body string) ([]byte, error) {
+	doc, err := b.Object()
+	if err != nil {
+		return nil, err
+	}
+	y, err := yamlDocument(doc, YAMLOptions{})
+	if err != nil {
+		return nil, err
+	}
+	_, rest, _ := strings.Cut(string(y), "\n") // the format line, written with its comment below
+	var w strings.Builder
+	w.WriteString("---\nformat: " + MustLookup("bug").Versioned() + "   # " + bugComment + "\n" + rest + "---\n")
+	if body != "" {
+		w.WriteString("\n" + strings.ReplaceAll(body, "\r\n", "\n"))
+	}
+	return []byte(w.String()), nil
+}
+
+// ---------------------------------------------------------------- bonsai bug --json
+
+// BugList is the --json of bonsai bug (bonsai.buglist/1): the bugs a list or show printed, or the one a writing
+// subcommand wrote, each with its file and (for show and the writes) its body.
+type BugList struct {
+	Workspace *WorkspaceRef  `json:"workspace"` // null when the command refused before reading bonsai.yaml
+	Command   *string        `json:"command"`   // the subcommand: list, show, add, fix, wontfix, watch, reopen, edit; null when none was read
+	Bugs      []BugEntry     `json:"bugs"`
+	Malformed []BugMalformed `json:"malformed"`
+	Error     *ErrorObject   `json:"error"`
+	Extra     schema.Object  `json:"-"`
+}
+
+// BugEntry is one bug as bonsai bug prints it: its file, its frontmatter and its body.
+type BugEntry struct {
+	Path  string        `json:"path"` // project-relative, forward slashes: the main checkout's file
+	Bug   schema.Object `json:"bug"`  // its frontmatter as bonsai.bug/1 holds it, format first (Bug.Object)
+	Body  *string       `json:"body"` // its body; null for list
+	Extra schema.Object `json:"-"`
+}
+
+// BugMalformed is a file in the bug folder, named by a bug id, that does not read as bonsai.bug/1.
+type BugMalformed struct {
+	Path   string        `json:"path"`
+	Reason string        `json:"reason"` // one sentence, ASCII
+	Extra  schema.Object `json:"-"`
+}
+
+// ReadBugList reads bonsai.buglist/1's document.
+func ReadBugList(raw []byte) (*BugList, error) {
+	l := &BugList{}
+	if err := MustLookup("buglist").readJSONInto(raw, l); err != nil {
+		return nil, err
+	}
+	return l, nil
+}
+
+// Encode writes the document, held to bonsai.buglist/1.
+func (l *BugList) Encode() ([]byte, error) { return MustLookup("buglist").Encode(l) }

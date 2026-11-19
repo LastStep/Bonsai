@@ -99,6 +99,12 @@ var ErrorWords = []Word{
 	// that does not read as bonsai.labels/1 is bad-value; an agent's session is person-command.
 	{Word: "namespace-taken", Who: "person", Means: "bonsai labels attach was given definitions whose namespace is bonsai or a locked pack's, which only that pack defines (contract section 5.1): nothing was written (exit 4)"},
 	{Word: "label-redefined", Who: "person", Means: "bonsai labels attach would change a definition already attached: a definition changed or removed, or other content at the same or an older version (contract section 5.1: a definition may be added, never redefined). Nothing was written (exit 4); the person's step is bonsai labels detach <namespace> and then the attach again"},
+	// bonsai bug (set 14, plan P-T-6023 step 6): a flag or value it refuses is bad-flag, bad-value or missing-value.
+	{Word: "bug-not-found", Who: "agent", Means: "bonsai bug names an id (or an old id, its was) that no bug file in the main checkout's bug folder has, or that two files share: nothing was written or shown (exit 4)"},
+	{Word: "bug-move", Who: "agent", Means: "bonsai bug fix, wontfix, watch or reopen asks for a move the bug kind does not make from where the bug stands (open to fixed, wontfix or watched; watched to open or fixed; fixed and wontfix back to open): nothing was written (exit 4)"},
+	{Word: "bug-id-taken", Who: "agent", Means: "bonsai bug add --number names an id a bug file holds already, or --was an old id carried over already: an id is one bug's, never reused, and nothing was written (exit 4)"},
+	{Word: "bug-busy", Who: "agent", Means: "another bonsai bug held the bug lock (.bonsai/local/bug.lock) for longer than the wait: run the command again in a few seconds; a lock older than a minute is taken over. Nothing was written (exit 3)"},
+	{Word: "commit-not-found", Who: "agent", Means: "bonsai bug fix --commit names a commit the repository does not hold, or a name that is not a commit's hex name: nothing was written (exit 2)"},
 	// Part-way, and the unexpected (exit 3).
 	{Word: "partly-written", Who: "agent", Means: "the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest"},
 	{Word: "unexpected", Who: "agent", Means: "something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats"},

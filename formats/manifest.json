@@ -4,7 +4,7 @@
   "files": [
     {
       "path": "README.md",
-      "sha256": "8d9a49fdccea4b97024840b2b459ef19a7e2564b7f4a4fe881fa0afd76c48ae9"
+      "sha256": "4cb30e57a96630fc8fb8b749831821d7eded4b464b31a7d060c1519d44d9c1e3"
     },
     {
       "path": "active-task/answers.json",
@@ -300,7 +300,11 @@
     },
     {
       "path": "examples/bug.md",
-      "sha256": "d65fbe38453e90c059b8ece665e3a1060e4fb8babd9f64080eb213522b6e6ac7"
+      "sha256": "613bed9a491a90a6f207e62f973b494b975e7d1bb408a8eb74e60b1a8790054a"
+    },
+    {
+      "path": "examples/buglist.json",
+      "sha256": "6d93a8ec27702f6f17cd28b613fd72cdf267016fb99accbd619e28266499abcb"
     },
     {
       "path": "examples/bugs.json",
@@ -483,6 +487,10 @@
       "sha256": "cbfbf4d8f8de3d81b64da9725de9ad5962b22084588ee73f8ea930d08bb4d499"
     },
     {
+      "path": "schemas/buglist.schema.json",
+      "sha256": "322627b0d35fa1a2e864894675d7972489bfbfefde18e1dee8462369a0cda1de"
+    },
+    {
       "path": "schemas/bugs.schema.json",
       "sha256": "1fa9b9bd42caf8b8efd409ec639063b96ecb2c93e51a7bf44fbfc651f4d47903"
     },
@@ -528,7 +536,7 @@
     },
     {
       "path": "schemas/log.schema.json",
-      "sha256": "055b689d93a1cfff73aedd98b1f7bb019a11501b6b20794bd9a9801a99a30f36"
+      "sha256": "0329d15cf524d55eb676403b0f2f17c62aee7dfd76e6529bbdd46257af79fbf9"
     },
     {
       "path": "schemas/logs.schema.json",

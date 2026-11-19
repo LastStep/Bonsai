@@ -25,7 +25,7 @@ var goTypes = map[string]any{
 	"ladder": Ladder{}, "status": Status{}, "workspace": Workspace{}, "pack": Pack{}, "tasks": Tasks{},
 	"sessions": Sessions{}, "memory": Memory{}, "error": ErrorObject{}, "check": Check{}, "changes": Changes{}, "help": Help{},
 	"asks": Asks{}, "logs": Logs{}, "climb": Climb{}, "message": Message{}, "messages": Messages{}, "agents": Agents{},
-	"settings": Settings{}, "attach": Attach{}, "line": Line{}, "now": Now{}, "packs": Packs{}, "bug": Bug{}, "bugs": Bugs{},
+	"settings": Settings{}, "attach": Attach{}, "line": Line{}, "now": Now{}, "packs": Packs{}, "bug": Bug{}, "bugs": Bugs{}, "buglist": BugList{},
 }
 
 // readers read each format's example source into its Go type.
@@ -61,6 +61,7 @@ var readers = map[string]func([]byte) (any, error){
 	"packs":     func(b []byte) (any, error) { return ReadPacks(b) },
 	"bug":       func(b []byte) (any, error) { return ReadBug(b) },
 	"bugs":      func(b []byte) (any, error) { return ReadBugs(b) },
+	"buglist":   func(b []byte) (any, error) { return ReadBugList(b) },
 }
 
 func example(t *testing.T, file string) []byte {
@@ -190,6 +191,10 @@ func TestWritersWriteTheExamples(t *testing.T) {
 				out, err = x.Encode()
 			case *Bugs:
 				out, err = x.Encode()
+			case *Bug:
+				// A bug file (set 14): its frontmatter, then its body as read, kept as it is.
+				body, _ := markdownBody(raw)
+				out, err = x.EncodeFile(body)
 			case *Message:
 				// A message's file (set 8): its frontmatter and its body, the trust line never written.
 				out, err = x.EncodeFile()

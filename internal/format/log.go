@@ -81,6 +81,7 @@ var LogEvents = []Word{
 	{Word: "clean", Means: "a generated file Bonsai deleted; the target is its project-relative path and the reason the rule that cleaned it (contract section 8.5)"},
 	{Word: "message", Means: "a message between agents was written by bonsai message (bonsai.message/1); the target is its id, the text its kind, its recipient and a report's status, and the task its task, so who said what survives a cleaned file"},
 	{Word: "spawn", Means: "an agent was started (Claude Code only): the subagent's id and type, its parent (the agent that started it, or session for the person's own session) and the tool_use_id of the call that started it, so the tree of agents survives a cleaned state file"},
+	{Word: "bug", Means: "bonsai bug wrote a bug file: the target is the bug's id, the kind its subcommand (add, fix, wontfix, watch, reopen, edit), the reason what changed (a move as its two statuses, a carry-over with its old id), and the task and role whoever ran it, so every move of a bug is on the log with who made it"},
 	{Word: "usage", Means: "an agent's token counts at its end (Claude Code only): one record for each model in its transcript, its totals over the whole transcript in usage and the model in model; kind unknown with its reason when the transcript could not be read"},
 }
 
