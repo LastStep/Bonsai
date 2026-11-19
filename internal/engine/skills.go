@@ -132,6 +132,13 @@ func WorkspaceSkill() []byte {
 	rows, maps := fieldRows(f, c)
 	for _, r := range rows {
 		line(r)
+		if strings.HasPrefix(r, "| `documents.protocols` |") {
+			// Bonsai's two bug kinds are optional entries held under documents' further keys, so the schema's properties
+			// do not list them (BugKindComments, set 14): their rows follow the other places.
+			for _, k := range BugKindComments {
+				line(bugKindRow(k.Key))
+			}
+		}
 	}
 	line("")
 	line("## The template")
@@ -153,6 +160,21 @@ func WorkspaceSkill() []byte {
 	line("```")
 	b.WriteString(mappingsSection("`bonsai.yaml`", maps))
 	return []byte(b.String())
+}
+
+// bugKindRows are the fields table's meaning and example for each of Bonsai's two bug kinds, by key.
+var bugKindRows = map[string][2]string{
+	"bug": {"Bonsai's bug files' folder, from Bonsai 1.1.0: one file per bug, named BUG-<number>.md (bonsai.bug/1); " +
+		"optional: absent, it is bugs/ beside the bugs page (skill base:bug)", "work/bugs"},
+	"bugs": {"Bonsai's bugs page, from Bonsai 1.1.0: generated from the bug files by bonsai check --write (bonsai.bugs/1), " +
+		"and only while it carries its generated marker, so a register kept by hand there is left as it is; optional: " +
+		"absent, work/bugs.md (skill base:bug)", "work/bugs.md"},
+}
+
+// bugKindRow is the fields table's row for one of them; its allowed values are those of the other places.
+func bugKindRow(key string) string {
+	r := bugKindRows[key]
+	return "| `documents." + key + "` | " + r[0] + " | text matching `^[^/\\\\:][^\\\\:]*$` | `\"" + r[1] + "\"` |"
 }
 
 // StateSkill is base's state skill (StateSkillPath): STATE's template as init writes it, from StateTemplate,

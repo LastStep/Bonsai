@@ -34,6 +34,8 @@ description: "bonsai.yaml, this project's Bonsai settings: what each field means
 | `documents.answers` | The file for answers to questions that name no file of their own | text matching `^[^/\\:][^\\:]*$` | `"work/answers.md"` |
 | `documents.memory` | The memory notes' folder, with their INDEX.md, which the block in CLAUDE.md imports | text matching `^[^/\\:][^\\:]*$` | `"work/memory"` |
 | `documents.protocols` | The folder the packs' always-on protocol files go to; the block in CLAUDE.md imports each | text matching `^[^/\\:][^\\:]*$` | `"work/protocols"` |
+| `documents.bug` | Bonsai's bug files' folder, from Bonsai 1.1.0: one file per bug, named BUG-<number>.md (bonsai.bug/1); optional: absent, it is bugs/ beside the bugs page (skill base:bug) | text matching `^[^/\\:][^\\:]*$` | `"work/bugs"` |
+| `documents.bugs` | Bonsai's bugs page, from Bonsai 1.1.0: generated from the bug files by bonsai check --write (bonsai.bugs/1), and only while it carries its generated marker, so a register kept by hand there is left as it is; optional: absent, work/bugs.md (skill base:bug) | text matching `^[^/\\:][^\\:]*$` | `"work/bugs.md"` |
 | `protected` | Paths (globs) an agent changes only while its running task lists them in bonsai.allows | a list of text matching `^[^/\\:][^\\:]*$` | as in the template |
 | `person_only` | Of those, the paths only a person grants (an approve or grant tap) | a list of text matching `^[^/\\:][^\\:]*$` | `[".claude/**","bonsai.yaml",".bonsai/lock.json"]` |
 | `never_edit` | Paths no agent changes: deny rules Edit(/<path>), anchored at the project's top folder; e.g. ["ledger.json"] | a list of text matching `^[^/\\:~()][^\\:()]*$` | `["work/ledger.json"]` |
