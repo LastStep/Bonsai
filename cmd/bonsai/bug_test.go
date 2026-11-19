@@ -243,3 +243,26 @@ func TestBugRefusals(t *testing.T) {
 		t.Errorf("a refusal wrote a file: %v", files)
 	}
 }
+
+// In command mode (this machine's status_writes: command) bonsai bug writes every move itself, as in agents mode: the
+// switch is for tasks only, and no refusal names the status command.
+func TestBugMovesInCommandMode(t *testing.T) {
+	c := newCLI(t)
+	t.Setenv(asks.SessionEnv, "")
+	t.Setenv("BONSAI_ROLE", "")
+	bugClockAt(t)
+	c.link()
+	c.commit("link")
+	if code, out, errOut := c.run("", "settings", "set", "status_writes=command", "status_command=studio task move"); code != exitOK {
+		t.Fatalf("command mode: %d %s%s", code, out, errOut)
+	}
+	c.bugDoc(0, "bug", "add", "--title", "One")
+	c.bugDoc(0, "bug", "wontfix", "BUG-001", "--why", "by design")
+	doc := c.bugDoc(0, "bug", "reopen", "BUG-001")
+	if b := bugOf(t, doc, 0); b.String("status") != "open" {
+		t.Errorf("reopen in command mode: %s", schema.Show(doc))
+	}
+	if raw := c.read("work/bugs/BUG-001.md"); strings.Contains(raw, "studio") {
+		t.Errorf("the status command reached a bug file:\n%s", raw)
+	}
+}
