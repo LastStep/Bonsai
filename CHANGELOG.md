@@ -7,13 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - YYYY-MM-DD
+
+> Bugs become Bonsai's own documents: one file each, one command to change them, one generated page. Formats set 14
+> adds `bonsai.bug/1`, `bonsai.bugs/1` and `bonsai.buglist/1` and a `bug` event in the log; every file written by 1.0.3
+> reads as before, and a register kept by hand is left exactly as it is until its project moves it. Needs base 1.1.0
+> for the skill that says how; the workflow pack's own `bugs` kind goes from its release 1.1.0.
+
 ### Added
+- **Each bug is its own file** (`bonsai.bug/1`, `BUG-012.md`): what goes wrong, where, who found and who filed it,
+  where it stands (`open`, `fixed`, `wontfix` or `watched`), the commits that fixed it and the days, with a free body
+  for how to repeat it. They live in the folder `bonsai.yaml` names under `documents.bug` (absent: `bugs/` beside the
+  bugs page; `bonsai init` writes both lines). `bonsai check` holds each file to its format, and two files with one id,
+  or a fixed bug with no closed day (unless it was carried over from an old register), are findings.
+- **`bonsai bug`**: `add` files a bug at the next free id (an id is never reused); `fix`, `wontfix`, `watch` and
+  `reopen` move it and write the status, the day and who in one step; `edit` changes its text; `list` and `show` read
+  them (`--json`: `bonsai.buglist/1`). `fix --commit` refuses a commit the repository lacks. Every write lands in the
+  main checkout's folder wherever it runs, under a lock, and is logged with who made it. It is the one way a bug's
+  status changes, in every project, whatever `status_writes` says (that switch is for tasks only).
+- **The bugs page is generated**: `bonsai check --write` builds it from the bug files at `documents.bugs`'s place
+  (`work/bugs.md` by default), as Open, Watched, Fixed and Won't fix tables, newest first. It is written only while it
+  is missing or carries its generated marker (`format: bonsai.bugs/1`): a register kept by hand is never overwritten,
+  and `bonsai check` names it with the warning `bugs-not-moved` (never a finding). A marked page that is out of date
+  is the `tables` warning.
+- **The guard holds bugs**: a hand edit of a bug file's status line is refused in every project, naming `bonsai bug`,
+  and a new bug file by hand starts at `open` only; the generated page is refused to hand edits and deletes, and to an
+  agent's shell write, while it carries its marker. A role that changes nothing cannot use `bonsai bug` to change a
+  file.
+- **A `bug` event in the log** for each add, carry-over, field change and move, with the bug's id, what changed and who.
+- **`status --json` lists both kinds** under `documents` (`bug` and `bugs`).
+- **base's `bug` skill** (`base:bug`): the bug file's fields and an example, every `bonsai bug` subcommand, and the
+  steps for moving an old hand-kept register to bug files, row by row, with a check that every old id has a file before
+  the old page is deleted. There is no import command: each project's own agent moves its register by the skill. The
+  fields table of base's `workspace` skill gains `documents.bug` and `documents.bugs`.
 - **Bonsai installs in one command** (T-6020): `install/get-bonsai.sh` (Linux and WSL) and `install/get-bonsai.ps1`
   (Windows PowerShell 5.1), fetched from main's raw files, take the newest release or a named one, check the
   archive's SHA-256 against its `checksums.txt` and its provenance with `gh attestation verify` as the install page's
   lines do, and only then run the release's own installer. Each refuses, naming its next step, when `gh` is missing,
   older than 2.97 or not logged in, for a version that is not one, a machine with no build, and (the sh one) under
   `sudo`. No option skips a check. `docs/install.md` and the README name them; the manual lines are as they were.
+
+### Changed
+- **The workflow pack's `bugs` kind is Bonsai's own now**: a pack that still declares it (workflow 1.0.2) is not refused;
+  its declaration is set aside with the warning `kind-set-aside`, naming `bonsai pack set`, and Bonsai's kinds are in
+  force. Taken to workflow 1.1.0, the pack declares no `bugs` kind and its `bugs` skill points to `base:bug`.
+- **base's block** names `base:bug` among the skills a session opens for a document's template.
 
 ## [1.0.3] - 2026-11-06
 
