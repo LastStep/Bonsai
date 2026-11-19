@@ -67,6 +67,10 @@ func CommitStaged(tmp, path string) error {
 	return renameRetry(tmp, path)
 }
 
+// RenameRetry renames from to to, retrying while Windows reports the target busy (renameRetry), for a caller that moves
+// a file aside rather than staging one.
+func RenameRetry(from, to string) error { return renameRetry(from, to) }
+
 // RemoveFile removes a file, retrying while Windows reports it busy, as renameRetry does; a file already gone is
 // no error.
 func RemoveFile(path string) error {

@@ -280,3 +280,123 @@ func TestBy(t *testing.T) {
 		}
 	}
 }
+
+// Takers racing over a stale lock: exactly one holds it at a time. Before the takeover was made under its own O_EXCL
+// file, a taker that had judged the lock stale could remove the fresh lock another had just taken, and two held it.
+func TestStaleTakeoverHasOneHolder(t *testing.T) {
+	p := place(t)
+	file := filepath.Join(p.Main, filepath.FromSlash(LockFile))
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for trial := 0; trial < 10; trial++ {
+		if err := os.WriteFile(file, []byte("pid 1 (dead)\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		past := time.Now().Add(-2 * time.Minute)
+		if err := os.Chtimes(file, past, past); err != nil {
+			t.Fatal(err)
+		}
+		var mu sync.Mutex
+		holders, most := 0, 0
+		var wg sync.WaitGroup
+		errs := make(chan *Error, 8)
+		for i := 0; i < 8; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				release, e := lock(p)
+				if e != nil {
+					errs <- e
+					return
+				}
+				mu.Lock()
+				holders++
+				if holders > most {
+					most = holders
+				}
+				mu.Unlock()
+				time.Sleep(2 * time.Millisecond)
+				mu.Lock()
+				holders--
+				mu.Unlock()
+				release()
+			}()
+		}
+		wg.Wait()
+		close(errs)
+		for e := range errs {
+			t.Fatalf("trial %d: a taker refused: %v", trial, e)
+		}
+		if most != 1 {
+			t.Fatalf("trial %d: %d takers held the lock at once", trial, most)
+		}
+		for _, f := range []string{file, file + ".takeover"} {
+			if _, err := os.Stat(f); !os.IsNotExist(err) {
+				t.Fatalf("trial %d: %s left: %v", trial, f, err)
+			}
+		}
+		if left, _ := filepath.Glob(file + ".takeover.stale-*"); len(left) != 0 {
+			t.Fatalf("trial %d: left aside: %v", trial, left)
+		}
+	}
+	// A takeover file its taker left (it died between its stat and its remove) is moved aside once it is stale.
+	tk := file + ".takeover"
+	for _, f := range []string{file, tk} {
+		if err := os.WriteFile(f, []byte("dead\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		past := time.Now().Add(-2 * time.Minute)
+		if err := os.Chtimes(f, past, past); err != nil {
+			t.Fatal(err)
+		}
+	}
+	release, e := lock(p)
+	if e != nil {
+		t.Fatalf("past a stale takeover file: %v", e)
+	}
+	release()
+	if _, err := os.Stat(tk); !os.IsNotExist(err) {
+		t.Errorf("the stale takeover file is left: %v", err)
+	}
+}
+
+// The window the takeover closes, made to happen: a taker judges the lock stale, another takes it over and holds it
+// fresh, then the first goes on. It must not remove the fresh lock (two holders): it waits, and is refused bug-busy.
+func TestATakerNeverRemovesAFreshLock(t *testing.T) {
+	p := place(t)
+	file := filepath.Join(p.Main, filepath.FromSlash(LockFile))
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(file, []byte("pid 1 (dead)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	past := time.Now().Add(-2 * time.Minute)
+	if err := os.Chtimes(file, past, past); err != nil {
+		t.Fatal(err)
+	}
+	old, oldWait := judgedStale, LockWait
+	LockWait = 100 * time.Millisecond
+	t.Cleanup(func() { judgedStale, LockWait = old, oldWait })
+	var inner func()
+	once := false
+	judgedStale = func() {
+		if once {
+			return
+		}
+		once = true
+		release, e := lock(p) // the other taker, in the window
+		if e != nil {
+			t.Fatalf("the other taker: %v", e)
+		}
+		inner = release
+	}
+	if _, e := lock(p); e == nil || e.Code != "bug-busy" {
+		t.Fatalf("the first taker, after the other took the lock fresh: %v, want bug-busy", e)
+	}
+	if _, err := os.Stat(file); err != nil {
+		t.Fatalf("the other taker's fresh lock was removed: %v", err)
+	}
+	inner()
+}

@@ -235,8 +235,11 @@ func lock(p Place) (func(), *Error) {
 			return nil, refuse("write-failed", 3, "check that the main checkout's .bonsai/local/ can be written, then run the command again",
 				"the bug lock %s cannot be made: %s", LockFile, oneLine(err.Error()))
 		}
-		if st, serr := os.Stat(file); serr == nil && time.Since(st.ModTime()) > StaleLock {
-			_ = workspace.RemoveFile(file) // stale: its writer died; the next try takes it
+		if stale(file) {
+			if judgedStale != nil {
+				judgedStale()
+			}
+			takeOver(file) // stale: its writer died; one taker removes it, and the next try takes it
 			continue
 		}
 		if time.Now().After(deadline) {
@@ -247,6 +250,41 @@ func lock(p Place) (func(), *Error) {
 		if delay < 160*time.Millisecond {
 			delay *= 2
 		}
+	}
+}
+
+// judgedStale, when set (by a test), runs between a taker's judging the lock stale and its takeover: where another
+// taker takes the lock in that window.
+var judgedStale func()
+
+// stale reports a lock file older than StaleLock.
+func stale(file string) bool {
+	st, err := os.Stat(file)
+	return err == nil && time.Since(st.ModTime()) > StaleLock
+}
+
+// takeOver removes a stale lock so that exactly one taker does: the removal is made only while holding the takeover
+// file (<lock>.takeover, made with O_EXCL), and the lock is judged stale again under it. A lock another taker made
+// fresh in the meantime is then not stale, and is left; a lock is only ever replaced after its removal, which only the
+// takeover's holder makes. A takeover file is held for a stat and a remove; one older than StaleLock (its taker died
+// in that window) is renamed aside to a name of this taker's own (renames retried on Windows' busy errors), so only
+// one taker moves it, then removed. Every outcome returns to lock's loop, which takes the lock with O_EXCL or waits.
+func takeOver(file string) {
+	tk := file + ".takeover"
+	f, err := os.OpenFile(tk, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if err != nil {
+		if stale(tk) {
+			aside := fmt.Sprintf("%s.stale-%d-%d", tk, os.Getpid(), time.Now().UnixNano())
+			if workspace.RenameRetry(tk, aside) == nil {
+				_ = workspace.RemoveFile(aside)
+			}
+		}
+		return // another taker is at work, or was: try the lock again
+	}
+	_ = f.Close()
+	defer func() { _ = workspace.RemoveFile(tk) }()
+	if stale(file) {
+		_ = workspace.RemoveFile(file)
 	}
 }
 
