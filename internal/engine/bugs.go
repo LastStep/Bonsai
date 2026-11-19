@@ -30,13 +30,17 @@ import (
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
-// bugDoc is one bug file as read: its path, and its frontmatter, nil when it does not read.
+// bugDoc is one bug file as read: its path, its bytes, and its frontmatter (nil, with the refusal, when it does not
+// read).
 type bugDoc struct {
 	path string
+	raw  []byte
 	bug  *format.Bug
+	err  error
 }
 
-// readBugFiles reads the bug files in main's folder dir (project-relative), sorted by path.
+// readBugFiles reads the bug files in main's folder dir (project-relative), sorted by path: each file read once and
+// parsed once.
 func readBugFiles(main, dir string) ([]bugDoc, error) {
 	files, err := workspace.DocFiles(main, workspace.DocKind{Kind: "bug", Path: dir, ID: workspace.BugIDPattern})
 	if err != nil {
@@ -52,12 +56,58 @@ func readBugFiles(main, dir string) ([]bugDoc, error) {
 			continue
 		}
 		b, err := format.ReadBug(raw)
-		if err != nil {
-			b = nil
-		}
-		out = append(out, bugDoc{path: p, bug: b})
+		out = append(out, bugDoc{path: p, raw: raw, bug: b, err: err})
 	}
 	return out, nil
+}
+
+// bugFiles is readBugFiles once a check: a checkout's bug folder is read once, whichever of check's parts (the
+// documents, bug-id and bug-closed, the page) asks first, so check reads each bug file once and parses it once.
+func (r *CheckResult) bugFiles(root, dir string) ([]bugDoc, error) {
+	key := root + "\x00" + dir
+	if m, ok := r.bugMemo[key]; ok {
+		return m.docs, m.err
+	}
+	docs, err := readBugFiles(root, dir)
+	if r.bugMemo == nil {
+		r.bugMemo = map[string]bugMemo{}
+	}
+	r.bugMemo[key] = bugMemo{docs: docs, err: err}
+	return docs, err
+}
+
+// bugMemo is one bug folder as bugFiles read it.
+type bugMemo struct {
+	docs []bugDoc
+	err  error
+}
+
+// checkBugDocuments is checkDocument for each bug file, from the one read: the format (a file that does not read is
+// checkDocument's finding, its words the same), its labels, its fields' paths and its stamps, from the frontmatter as
+// parsed.
+func (r *CheckResult) checkBugDocuments(k workspace.DocKind, defs map[string]labelDef) {
+	docs, err := r.bugFiles(r.Root, k.Path)
+	if err != nil {
+		r.add("document", strings.TrimSuffix(k.Path, "/"), "", "the "+k.Kind+" documents ("+k.Path+") cannot be read: "+oneLine(err.Error()),
+			"check the folder's permissions, then run: bonsai check")
+		return
+	}
+	f := format.MustLookup("bug")
+	for _, d := range docs {
+		if d.bug == nil {
+			r.checkDocument("bug", k.Kind, d.path, d.raw, defs) // the finding document, worded as for every kind
+			continue
+		}
+		r.checkLabels(k.Kind, d.path, d.bug.Labels, defs)
+		if fields, err := f.Document(d.bug); err == nil {
+			r.checkAbsolute(d.path, fields)
+		}
+		values := map[string]string{"created": d.bug.Created}
+		if d.bug.Closed != nil {
+			values["closed"] = *d.bug.Closed
+		}
+		r.checkStampValues(d.path, values, workspace.BonsaiStamps("bug"))
+	}
 }
 
 // bugNumber is a bug id's number: BUG-0145 is 145.
@@ -73,6 +123,11 @@ func BuildBugsPage(main, dir string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return bugsPageOf(docs)
+}
+
+// bugsPageOf builds the page from bug files as read.
+func bugsPageOf(docs []bugDoc) ([]byte, error) {
 	section := map[string]int{}
 	for i, s := range format.BugSections {
 		section[s.Status] = i
@@ -180,13 +235,17 @@ func (r *CheckResult) checkBugsPage(next string) {
 	case bugsTooNew:
 		return // the document finding names it
 	case bugsMissing:
-		if docs, err := readBugFiles(r.Main, folder); err != nil || len(docs) == 0 {
+		if docs, err := r.bugFiles(r.Main, folder); err != nil || len(docs) == 0 {
 			return
 		}
 		r.add("tables", file, "", whose+" is missing, and there are bug files in "+folder, next)
 		return
 	}
-	want, err := BuildBugsPage(r.Main, folder)
+	docs, err := r.bugFiles(r.Main, folder)
+	if err != nil {
+		return
+	}
+	want, err := bugsPageOf(docs)
 	if err != nil {
 		return
 	}
@@ -204,7 +263,7 @@ func lfBytes(b []byte) []byte { return []byte(strings.ReplaceAll(string(b), "\r\
 // another id than its own) and bug-closed (a fixed or wontfix bug with no closed day, its was not set). A file that
 // does not read is the document finding's.
 func (r *CheckResult) checkBugFiles(k workspace.DocKind) {
-	docs, err := readBugFiles(r.Root, k.Path)
+	docs, err := r.bugFiles(r.Root, k.Path)
 	if err != nil {
 		return
 	}

@@ -25,7 +25,9 @@ package guard
 //
 // Only documents are read this way (documentOf: a task or run report in bonsai.yaml's task or run folder, named by
 // its kind's id; .bonsai/STATE.md; a memory note in the memory folder, named by its id, judged for its stamp only; a
-// document of a kind a pack declares, at its place), so every other call pays nothing; the mode is read only for a
+// bug file in the bug folder, named by its id, judged in every mode by its status line and never by command mode's
+// tripwires (bugStatus: bonsai bug alone moves a bug, set 14); a document of a kind a pack declares, at its place), so
+// every other call pays nothing; the mode is read only for a
 // document. Before the mode is read, every document's fresh stamps are judged in every mode (stamps.go, time-not-now). The lock is read in full, and this machine's labels, only when a
 // document's labels change, or a new document of a pack's kind needs its kind's first status.
 

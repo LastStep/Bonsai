@@ -93,9 +93,10 @@ type CheckResult struct {
 	Missing        int // files the lock lists that are gone
 	Format0Changed int
 
-	history bool           // CheckOptions.History
-	gitBash func() GitBash // CheckOptions.GitBash
-	version string         // CheckOptions.Version
+	bugMemo map[string]bugMemo // each bug folder as read, once a check (bugs.go's bugFiles)
+	history bool               // CheckOptions.History
+	gitBash func() GitBash     // CheckOptions.GitBash
+	version string             // CheckOptions.Version
 }
 
 // Check checks the workspace holding dir, every finding and warning but the two that ask Claude Code. Its error is

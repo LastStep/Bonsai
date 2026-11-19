@@ -162,6 +162,7 @@ func TestBugFileFindings(t *testing.T) {
 	writeFile(t, root, "work/bugs/BUG-153.md", bugFile("BUG-153", "wontfix", "", "TB-153"))
 	writeFile(t, root, "work/bugs/BUG-154.md", strings.Replace(bugFile("BUG-154", "open", "", ""), "status: open", "status: closed", 1))
 	writeFile(t, root, "work/bugs/BUG-155.md", bugFile("BUG-155", "open", "2099-01-01", ""))
+	writeFile(t, root, "work/bugs/BUG-156.md", strings.Replace(bugFile("BUG-156", "open", "", ""), "where: internal/guard/x.go:1", `where: "/srv/example/a.go:1"`, 1))
 	r, err := checkLocal(t, root, e.home)
 	if err != nil {
 		t.Fatal(err)
@@ -169,6 +170,7 @@ func TestBugFileFindings(t *testing.T) {
 	want := []string{
 		"document work/bugs/BUG-154.md",     // a status the format does not have
 		"future-stamp work/bugs/BUG-155.md", // a closed day ahead of the UTC today
+		"absolute-path work/bugs/BUG-156.md", // a field holding an absolute path (read from the one parse, as every kind's)
 		"bug-id work/bugs/BUG-150.md",       // named for BUG-150, holding BUG-151
 		"bug-closed work/bugs/BUG-152.md",   // fixed with no closed day and no was (BUG-153 has was: no finding)
 		"bug-id work/bugs/BUG-145.md",       // two files hold BUG-145

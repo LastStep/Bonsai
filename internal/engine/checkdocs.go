@@ -183,6 +183,11 @@ func (r *CheckResult) checkDocuments() {
 			continue
 		}
 		short := strings.TrimPrefix(k.Format, "bonsai.")
+		if short == "bug" {
+			r.checkBugDocuments(k, defs) // each bug file read and parsed once (bugs.go)
+			r.checkBugFiles(k)
+			continue
+		}
 		files, err := workspace.DocFiles(r.Root, k)
 		if err != nil {
 			r.add("document", strings.TrimSuffix(k.Path+k.File, "/"), "", "the "+k.Kind+" documents ("+k.Path+k.File+") cannot be read: "+oneLine(err.Error()),
@@ -207,9 +212,6 @@ func (r *CheckResult) checkDocuments() {
 			if short == "memory" || short == "state" {
 				named = append(named, p)
 			}
-		}
-		if short == "bug" {
-			r.checkBugFiles(k)
 		}
 	}
 	// A pack's kinds: only their stamps (their format is the pack's).
@@ -304,7 +306,11 @@ func (r *CheckResult) checkStamps(p string, raw []byte, fields []workspace.Stamp
 	if len(fields) == 0 {
 		return
 	}
-	values := frontValues(raw)
+	r.checkStampValues(p, frontValues(raw), fields)
+}
+
+// checkStampValues is checkStamps on a document's fields as text, read already.
+func (r *CheckResult) checkStampValues(p string, values map[string]string, fields []workspace.StampField) {
 	at := now()
 	for _, f := range fields {
 		if why := workspace.FutureStamp(f, values[f.Name], at); why != "" {
