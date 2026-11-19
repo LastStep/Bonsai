@@ -193,8 +193,12 @@ func (j *judge) tripwire(c change, x judged) (Decision, bool) {
 		return stamp, stampOK // a memory note is judged for its stamp only, never by command mode's tripwires
 	}
 	if doc.kind == "bug" {
-		// Every mode: a bug's status is bonsai bug's to write (bugStatus), and command mode's tripwires are for tasks.
+		// Every mode: a bug's status is bonsai bug's to write (bugStatus). Of command mode's tripwires only bad-format
+		// meets a bug file (bugFormat); the others are for tasks.
 		if d, ok := j.bugStatus(c, x); !ok {
+			return d, false
+		}
+		if d, ok := j.bugFormat(c, x); !ok {
 			return d, false
 		}
 		return stamp, stampOK
@@ -330,6 +334,29 @@ func (j *judge) bugStatus(c change, x judged) (Decision, bool) {
 	return Decision{}, true
 }
 
+// bugFormat is command mode's bad-format for a bug file: a write that leaves it failing bonsai.bug/1 is refused, as a
+// task's is. In agents mode, and where what the change leaves is unknown, it passes (bonsai check names a broken file).
+func (j *judge) bugFormat(c change, x judged) (Decision, bool) {
+	ms, err := j.modeOf(x.p)
+	if err != nil || ms.StatusWrites != workspace.StatusWritesCommand {
+		return Decision{}, true // a mode that cannot be read is judged where tasks are; here nothing more is asked
+	}
+	before, err := j.readBefore(x.abs)
+	exists := err == nil
+	after, known := afterOf(c.in, before, exists)
+	if !known {
+		return Decision{}, true
+	}
+	if err := bonsaiFormat("bug", after); err != nil {
+		d := deny(RuleBadFormat, fmt.Sprintf("%s of %s refused: in command mode (this machine's status_writes), the bug "+
+			"would fail its format (%s)", c.tool, quote(x.rel, 120), oneLine(err.Error())),
+			"fix the text so it passes its format (bonsai check --schema bonsai.bug lists every field), or "+bugNext)
+		d.Target = target(j.recordIn(x.chain), []string{x.abs})
+		return d, false
+	}
+	return Decision{}, true
+}
+
 // tripBug is the refusal of a bug's status line: in every mode, its rule status-line.
 func (j *judge) tripBug(c change, x judged, why string) Decision {
 	shown := quote(x.rel, 120)
@@ -444,6 +471,8 @@ func bonsaiFormat(kind string, raw []byte) error {
 		_, err = format.ReadRun(raw)
 	case "state":
 		_, err = format.ReadState(raw)
+	case "bug":
+		_, err = format.ReadBug(raw)
 	}
 	return err
 }

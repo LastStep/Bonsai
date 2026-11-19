@@ -134,7 +134,7 @@ var Rules = []Rule{
 	{RuleLaneLine, false, "command mode: an edit of a task's lane line"},
 	{RuleGrantPersonOnly, false, "command mode: an edit that puts a person-only path into a task's bonsai.allows"},
 	{RuleOutsideLabel, false, "command mode: an edit that sets a label whose definition reads set_by: outside"},
-	{RuleBadFormat, false, "command mode: a write of a task, run report or STATE that fails its format"},
+	{RuleBadFormat, false, "command mode: a write of a task, run report, STATE or bug file that fails its format"},
 	{RuleBadSettings, false, "this machine's settings for the workspace cannot be read when a judgment needs its mode"},
 	{RuleTimeNotNow, false, "every mode: an Edit or Write of a fresh stamp not of Bonsai's clock (a task's created, started " +
 		"or finished, a run report's started or finished, STATE's or a memory note's updated, a pack kind's stamp field): " +

@@ -51,6 +51,12 @@ func TestABugsStatusLineInEveryMode(t *testing.T) {
 			wantRule(t, dir, writeOf(dir, "work/bugs/BUG-002.md", bugText("BUG-002", "open")), RuleNotProtected)
 			wantRule(t, dir, writeOf(dir, "work/bugs/BUG-003.md", bugText("BUG-003", "fixed")), RuleStatusLine)
 			wantRule(t, dir, bashIn(dir, "Bash", "rm "+bugFile), RuleDeleteProtected) // judged as an edit: status-line
+			// A broken bug file: command mode's bad-format, as a task's; free in agents mode (check names it).
+			formatWant := RuleNotProtected
+			if mode == "command" {
+				formatWant = RuleBadFormat
+			}
+			wantRule(t, dir, editIn(dir, bugFile, "title: One", "title: [One"), formatWant)
 			// A file in the folder not named by a bug id is no bug file: free.
 			wantRule(t, dir, writeOf(dir, "work/bugs/notes.md", "status: fixed\n"), RuleNotProtected)
 			// Tasks' rule is as it was: free in agents mode, the status command's in command mode.
