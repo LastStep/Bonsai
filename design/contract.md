@@ -631,10 +631,24 @@ workspace holds is **declared**, by Bonsai for its core kinds and by packs for t
 
 Bonsai declares `task` (its moves are the rules in §10.2; `stamp` `{"running": "started", "done": "finished", "cut":
 "finished"}`, `started` only when empty), `run`, `state` (the fixed file `.bonsai/STATE.md`), `answers` (the file for
-answers to asks that name no file; today `studio/answers.md`), `memory` (§7.4), and the two generated tables `tasks`
-and `sessions` (fixed files, no statuses, §7.5). Rohan's workflow pack declares the rest: plans, one-pagers, decision
-records, specs, playtests, briefs, the bugs file. Each project keeps its other folder names in `bonsai.yaml`; this repo
-and Mimas keep `studio/`. Rows the studio parses out of a pack document's body (the bugs table) are not contract.
+answers to asks that name no file; today `studio/answers.md`), `memory` (§7.4), the two generated tables `tasks`
+and `sessions` (fixed files, no statuses, §7.5), and, from formats set 14 (the director, 19 Nov: plan P-T-6023 and
+`OPT-0003`), the two bug kinds:
+- **`bug`** (`bonsai.bug/1`): one file per bug, `<id>.md` or `<id>-<slug>.md`, in the folder `bonsai.yaml` names under
+  `documents.bug`; id `BUG-` and 3 to 6 digits in every project, never reused, an old register's id kept in `was`;
+  statuses `open`, `fixed`, `wontfix`, `watched`, a new bug at `open`; every move an agent's (open to fixed, wontfix or
+  watched; watched to open or fixed; fixed and wontfix to open); `stamp` `{"fixed": "closed", "wontfix": "closed"}`.
+  `bonsai check` holds each file to its format and no two files to one id. `status --json` lists the kind, its place
+  and its statuses; it reads no bug.
+- **`bugs`** (`bonsai.bugs/1`): the one page a person reads, generated from the bug files (§7.5), at `documents.bugs`'s
+  place, the path the project's hand-kept register had.
+
+Both places are optional in `bonsai.yaml` (every file before set 14 lacks them): `bug` absent, the folder is `bugs/`
+beside the page; both absent, `work/bugs.md` and `work/bugs/`. Rohan's workflow pack declares the rest: plans,
+one-pagers, decision records, specs, playtests, briefs; its old `bugs` kind (one file, before its 1.1.0) is set aside,
+never refused, so a project on it still links (a `bonsai check` warning names the step to a release without it).
+Each project keeps its other folder names in `bonsai.yaml`; this repo and Mimas keep `studio/`. A bug's fields are
+read from its file, never from the page.
 
 ### 7.4 Memory (option D)
 
@@ -644,7 +658,7 @@ Rohan, 7 Oct (`q-memory`): "D: Bonsai index plus notes in the repo, plus a perso
 - **The personal layer** (facts about Rohan for every project) is machine-side, never in a project, never forwarded.
 - The index's format, its size budget, and where the personal layer lives are the Bonsai spec's.
 
-### 7.5 The generated tables (`bonsai.tasks/1`, `bonsai.sessions/1`)
+### 7.5 The generated tables (`bonsai.tasks/1`, `bonsai.sessions/1`) and the bugs page (`bonsai.bugs/1`)
 
 Rohan, 7 Oct (format review 3.2 and 5.3, round 1): data gathered from many files lives in one folder Bonsai decides.
 **Written by** `bonsai check --write` only, in the main checkout (who runs it and when: Bonsai spec §6); never by hand
@@ -662,10 +676,19 @@ Rohan, 7 Oct (format review 3.2 and 5.3, round 1): data gathered from many files
   recorder found it at the start (`target`, §8.1). Its role: `role` for a session, `subagent_type` for a subagent run.
   Rows are only added, so a row outlives the log file it came from (§8.5). It replaces the run report's "Sessions"
   table.
-- **The task files and the log stay the truth. A table never grants anything:** the guard, rung 0, the stop gate and
-  the active-task rule (§13) read the task files; nothing reads a table to decide.
-- **Stale is a warning, everywhere** (a tasks table that differs from what `--write` would write, or a sessions table
-  that lacks a row for an ended session or subagent run in the log): `bonsai check` warns in the main checkout, a
+- **The bugs page** (from set 14, §7.3): a generated page **outside `.bonsai/`**, at its declared place
+  (`documents.bugs`), so the links to a project's old register keep working. Frontmatter `format: bonsai.bugs/1`, the
+  **generated marker**; then four sections, Open, Watched, Fixed and Won't fix, one row per bug file: id, title, area,
+  where, found by, fixed in, task, closed, why, newest id first. Built from the main checkout's bug files by `bonsai
+  check --write`, **only while the page carries the marker, or is missing while there are bug files**. An unmarked
+  file there is a hand-kept register not moved yet: an ordinary file, edited and deleted as before, never overwritten,
+  never a finding (a warning names base's bug skill). The guard refuses a hand edit or delete of the page, and rung 0
+  a branch that changes it, **only while it carries the marker**; rung 0 reads the marker from main's copy, so a
+  branch that adds it passes and one that strips it is refused.
+- **The task files, the bug files and the log stay the truth. A table never grants anything:** the guard, rung 0, the
+  stop gate and the active-task rule (§13) read the task files; nothing reads a table or the bugs page to decide.
+- **Stale is a warning, everywhere** (a tasks table that differs from what `--write` would write, a sessions table
+  that lacks a row for an ended session or subagent run in the log, or a marked bugs page that differs from a rebuild): `bonsai check` warns in the main checkout, a
   worktree and CI alike; it never changes an exit code, never turns a rung red and is never one of `status --json`'s
   `problems` (§12). The tables lag between moves by design; the next `--write` rebuilds them. Branches never change a
   table (rung 0 refuses one).
@@ -835,7 +858,9 @@ the allowance leaves it working, else by the guard: a tripwire either way). Bons
 
 Rohan, 7 Oct (`q-status`): "bonsai is there to provide the task templates ... bonsai gives a structure, while studio
 applies the actions." Confirmed the same day: the studio applies status moves, approvals and protected-path grants,
-and dispatches agents; Bonsai has no apply and no task-status command; one write path, "a small studio command that
+and dispatches agents; Bonsai has no apply and no task-status command (from Bonsai 1.1.0 it has a bug command, `bonsai
+bug`, the one way a bug's status moves in every project, with or without the studio: the director, 19 Nov, "always
+bonsai bug"; a task's moves stay the studio's or the agents', below); one write path, "a small studio command that
 agents and the Desk both use, checked against Bonsai's format"; a project without the studio still works. This
 replaces Q3 ("Bonsai applies it at once") and decision 5's "Trinetra writes only labels". What stays of Q3: taps are
 instant.
