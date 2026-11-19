@@ -70,13 +70,6 @@ func (p Place) now() time.Time {
 	return time.Now()
 }
 
-func (p Place) getenv(k string) string {
-	if p.Getenv != nil {
-		return p.Getenv(k)
-	}
-	return os.Getenv(k)
-}
-
 // Error is a refusal or failure: its error word (format.ErrorWords), the exit code, what went wrong and the next step.
 type Error struct {
 	Code string
