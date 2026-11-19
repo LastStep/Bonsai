@@ -658,6 +658,16 @@ func (s *shellRole) mayWrite(dir, p, word string, role, attr, lost bool) Decisio
 				d.Target = target(j.session, []string{abs})
 				return d
 			}
+			// The bugs page while it carries its generated marker, held as the tables are (markedBugsPage); an unmarked
+			// page, a register not moved yet, is an ordinary file.
+			if j.markedBugsPage(judged{abs: abs, chain: chain, p: proj, rel: rel, fold: caseInsensitive(proj.root)}) {
+				d := deny(RuleBonsaiFiles, fmt.Sprintf("%s refused: %s %s %s, the bugs page, generated from the bug files: it "+
+					"carries the generated marker, and no agent changes it by a shell line, whatever its task grants",
+					s.rr.in.Tool, word, writes, quote(rel, 120)), "file or move a bug with bonsai bug; bonsai check --write, run in "+
+					"the main checkout, rebuilds the page from the bug files")
+				d.Target = target(j.session, []string{abs})
+				return d
+			}
 		}
 		if role && s.changesNothing() && len(chain) > 0 && lost {
 			d := deny(RuleRoleWritesNothing, fmt.Sprintf("%s refused: %s %s %s, read in the folder the command started in "+

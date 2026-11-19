@@ -6,6 +6,7 @@ package guard
 // bonsai bug's writing subcommands refused to a role that changes nothing.
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -117,6 +118,29 @@ func TestBugWritesForARoleThatChangesNothing(t *testing.T) {
 	for _, c := range []string{"bonsai bug list --json", "bonsai bug show BUG-001", "bonsai bug --help"} {
 		if code, s := runs(t, dir, verifier(c), agent, "1"); code != 0 {
 			t.Errorf("a verifier, %s: exit %d: %s", c, code, s)
+		}
+	}
+}
+
+// An agent's shell write onto the bugs page (a redirect, sed -i, cp, mv onto it), where the lock declares roles: refused
+// while the page carries its generated marker, as a write onto .bonsai/tasks.md is; an unmarked page is free.
+func TestTheBugsPageOnAnAgentsShellLine(t *testing.T) {
+	lines := []string{"echo x > " + bugsPage, "echo x >> " + bugsPage, "sed -i s/x/y/ " + bugsPage, "cp free.txt " + bugsPage,
+		"mv free.txt " + bugsPage}
+	marked := rolesProject(t, map[string]string{bugsPage: markedTop})
+	for i, line := range lines {
+		rule := RuleBonsaiFiles
+		if strings.HasPrefix(line, "mv ") {
+			rule = RuleDeleteProtected // the delete check judges a move's destination first
+		}
+		wantAnswer(t, marked, shellAs(marked, fmt.Sprint("m", i), "workflow:lead", line, false), 2, rule)
+		wantAnswer(t, marked, shellAs(marked, "", "", line, false), 2, rule, RoleEnv, "lead")
+	}
+	unmarked := rolesProject(t, map[string]string{bugsPage: handKept})
+	for _, line := range lines {
+		// A named lead's session (a lead that writes): the page is an ordinary file to it.
+		if code, s := runs(t, unmarked, shellAs(unmarked, "", "", line, false), RoleEnv, "lead"); code != 0 {
+			t.Errorf("an unmarked page, %s: exit %d: %s", line, code, s)
 		}
 	}
 }
