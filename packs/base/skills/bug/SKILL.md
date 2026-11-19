@@ -127,7 +127,7 @@ that names the old id still finds it through `bonsai bug show TB-012`.
 
    A row of a **Fixed** table (or a row that says it was fixed) carries its status, its commit and its days where the
    row names them, with `--commit` as the cell gave it (a sha, with its words if it has them; one that names no commit
-   is kept as text), `--created` and `--closed` the days the row names (else the day of the move, and no closed day):
+   is kept as text; a sha this repository does not hold is accepted here, since only `fix` checks), `--created` and `--closed` the days the row names (else the day of the move, and no closed day):
 
    ```bash
    bonsai bug add --by <role>@<task> --was TB-012 --number 12 --status fixed --commit '0a1b2c3d (the words)' \
@@ -136,7 +136,7 @@ that names the old id still finds it through `bonsai bug show TB-012`.
 
    A row in a list of **Watched** bugs is `--status watched --why '<its reason>'`; a row of **Won't fix** the same with
    `--status wontfix --why '<its reason>'`. Always give `--why` for those two. A title or cell with a quote goes in
-   single quotes, a single quote inside as `'\''`.
+   single quotes, a single quote inside as `'\''`. In a table cell `\|` is a plain `|`: write it so. Markdown in a cell (backquotes, bold) is kept as it is, minus the bold on the id.
 4. **The list "Known, not bugs"** (behaviour that looks wrong and is meant) has no old ids, so a carry-over (`--was`)
    does not fit: file each item after every numbered row is in, then move it, so it takes a free number and keeps its
    reason:
