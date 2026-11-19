@@ -168,12 +168,12 @@ func TestBugFileFindings(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"document work/bugs/BUG-154.md",     // a status the format does not have
-		"future-stamp work/bugs/BUG-155.md", // a closed day ahead of the UTC today
+		"document work/bugs/BUG-154.md",      // a status the format does not have
+		"future-stamp work/bugs/BUG-155.md",  // a closed day ahead of the UTC today
 		"absolute-path work/bugs/BUG-156.md", // a field holding an absolute path (read from the one parse, as every kind's)
-		"bug-id work/bugs/BUG-150.md",       // named for BUG-150, holding BUG-151
-		"bug-closed work/bugs/BUG-152.md",   // fixed with no closed day and no was (BUG-153 has was: no finding)
-		"bug-id work/bugs/BUG-145.md",       // two files hold BUG-145
+		"bug-id work/bugs/BUG-150.md",        // named for BUG-150, holding BUG-151
+		"bug-closed work/bugs/BUG-152.md",    // fixed with no closed day and no was (BUG-153 has was: no finding)
+		"bug-id work/bugs/BUG-145.md",        // two files hold BUG-145
 	}
 	if got := codes(r.Findings); got != strings.Join(want, "; ") {
 		t.Errorf("findings:\n%s\nwant\n%s", strings.ReplaceAll(got, "; ", "\n"), strings.Join(want, "\n"))
