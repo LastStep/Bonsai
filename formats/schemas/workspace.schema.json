@@ -253,7 +253,7 @@
       }
     },
     "documents": {
-      "description": "Where this project keeps the documents Bonsai knows (contract §7.3), by kind: a folder (one file per document, top level only) or a single file, project-relative with forward slashes. Bonsai's own kinds come first and are always written; a pack's document kind (its pack.yaml documents, bonsai.pack/1) takes an entry under the kind's name, which init writes from the pack's default. STATE (.bonsai/STATE.md) and the two generated tables (.bonsai/tasks.md, .bonsai/sessions.md) have fixed places and no entry (contract §3).",
+      "description": "Where this project keeps the documents Bonsai knows (contract §7.3), by kind: a folder (one file per document, top level only) or a single file, project-relative with forward slashes. Bonsai's own kinds come first and are always written; a pack's document kind (its pack.yaml documents, bonsai.pack/1) takes an entry under the kind's name, which init writes from the pack's default. STATE (.bonsai/STATE.md) and the two generated tables (.bonsai/tasks.md, .bonsai/sessions.md) have fixed places and no entry (contract §3). From set 14, two of Bonsai's own kinds take optional entries, held under further keys since every bonsai.yaml before it lacks them: bug, the bug files' folder (bonsai.bug/1, one file per bug), and bugs, the bugs page generated from them (bonsai.bugs/1). With bug absent, the folder is bugs/ beside bugs's file; with both absent, work/bugs.md and work/bugs/. bonsai init writes both. An entry bugs that a project wrote for the workflow pack's old bugs kind names the same file: Bonsai's page, kept as it is until it carries the generated marker.",
       "examples": [
         {
           "task": "work/tasks",

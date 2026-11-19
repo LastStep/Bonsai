@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.bugs/1",
+  "description": "The bugs page (contract §7.3, §7.5; plan P-T-6023): one row per bug, built from the bug files (bonsai.bug/1), for a person to read on one page. It lives at the place bonsai.yaml names under documents.bugs (work/bugs.md when absent), the path the project's old hand-kept register had, so links to it keep working. Generated: written only by bonsai check --write, in the main checkout, and only while the file is missing or carries this format line (the generated marker); a page without it, a register not moved yet, is left as it is and named by the warning bugs-not-moved. Read by people, agents and the studio, which knows by its format to read the bug files instead. The bug files stay the truth: nothing reads the page to decide, and it grants nothing. A page that differs from a rebuild is the warning tables, never a finding. A markdown file whose frontmatter holds format and whose body holds the rest; a JSON Schema cannot describe a markdown table, so this schema describes what a reader returns (the frontmatter's fields, then what it reads from the body), and the body's lines and column order are formats/README.md's. A writer writes every field below, in this order, null or [] where it does not apply (contract §2.2); a reader treats a missing field as null, keeps an unknown one and refuses a duplicate key.",
+  "type": "object",
+  "required": [
+    "format",
+    "bugs"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, the frontmatter's only key (contract §2.2); it carries a comment saying the file is generated and never edited by hand. It is the generated marker: a page whose format line is not bonsai.bugs/ (a hand-kept register, before its project moved it to bug files) is never overwritten by check --write and is an ordinary file to the guard and to rung 0.",
+      "examples": [
+        "bonsai.bugs/1"
+      ],
+      "const": "bonsai.bugs/1"
+    },
+    "bugs": {
+      "description": "One row per bug file in the project's bug folder that parses, grouped by status, the open ones first (open, watched, fixed, wontfix: the sections Open, Watched, Fixed and Won't fix), newest id first in each (by its number); [] for none. A bug file that does not parse under its format gives no row: check reports it as a finding.",
+      "examples": [
+        [
+          {
+            "id": "BUG-145",
+            "title": "The sessions cache's version number is not tied to the build",
+            "status": "open",
+            "area": null,
+            "where": "internal/sessions/cache.go:41 (pointed)",
+            "found_by": "verifier@T-6016 M-2026-11-06-fb3e78c1",
+            "fixed_in": null,
+            "task": null,
+            "closed": null,
+            "why": null
+          }
+        ],
+        []
+      ],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "area",
+          "where",
+          "found_by",
+          "fixed_in",
+          "task",
+          "closed",
+          "why"
+        ],
+        "properties": {
+          "id": {
+            "description": "The bug's id.",
+            "examples": [
+              "BUG-145"
+            ],
+            "type": "string",
+            "pattern": "^BUG-[0-9]{3,6}$"
+          },
+          "title": {
+            "description": "The bug's title.",
+            "examples": [
+              "The sessions cache's version number is not tied to the build"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "The bug's status, read from the section its row is in: bonsai.bug/1's closed list (its one home, bug.schema.json).",
+            "examples": [
+              "open",
+              "fixed"
+            ],
+            "type": "string"
+          },
+          "area": {
+            "description": "Its area, or null for none.",
+            "examples": [
+              "the guard",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "where": {
+            "description": "Where it goes wrong, or null.",
+            "examples": [
+              "internal/sessions/cache.go:41 (pointed)",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "found_by": {
+            "description": "Who or what found it, or null.",
+            "examples": [
+              "verifier@T-6016 M-2026-11-06-fb3e78c1",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fixed_in": {
+            "description": "The commit or commits that fixed it, or null.",
+            "examples": [
+              "fee1e13a",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "task": {
+            "description": "The task that fixed it, or null.",
+            "examples": [
+              "T-6010",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "closed": {
+            "description": "The day it was fixed or set wontfix, as its file gives it (YYYY-MM-DD, the UTC day, contract §23); null while it is open or watched, or when an old register named no day.",
+            "examples": [
+              "2026-11-07",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "why": {
+            "description": "Why it is wontfix or watched, or null.",
+            "examples": [
+              "A deliberate fail-closed over-refusal",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

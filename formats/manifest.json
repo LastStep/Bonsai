@@ -1,10 +1,10 @@
 {
   "about": "The formats set's manifest: the set version and the SHA-256 of every file's raw bytes in formats/, all but this file and the Go files, sorted by path. Every field is described in README.md.",
-  "set": 13,
+  "set": 14,
   "files": [
     {
       "path": "README.md",
-      "sha256": "85e91be849ad839f3ddf435197c310683317280229dd9f44cc25d5022532cafb"
+      "sha256": "8d9a49fdccea4b97024840b2b459ef19a7e2564b7f4a4fe881fa0afd76c48ae9"
     },
     {
       "path": "active-task/answers.json",
@@ -295,6 +295,22 @@
       "sha256": "36589aefd5c546e32e8ef19f1b64ee6a9c28e3a8c80920d71d3a30905ef3d127"
     },
     {
+      "path": "examples/bug.json",
+      "sha256": "fe5765a69e06bd1c97df46e6d1bef1193c3a3fa01d7fbe67ec87bbc22252bce0"
+    },
+    {
+      "path": "examples/bug.md",
+      "sha256": "d65fbe38453e90c059b8ece665e3a1060e4fb8babd9f64080eb213522b6e6ac7"
+    },
+    {
+      "path": "examples/bugs.json",
+      "sha256": "1d3612ff127c48ffee178ced4f16f32d40240d485dd62571979bc634e6611857"
+    },
+    {
+      "path": "examples/bugs.md",
+      "sha256": "165d285f588b6e64a341bc03ee1ef5cfed334b54cafb9e5bda980ccc107337f6"
+    },
+    {
       "path": "examples/changes.json",
       "sha256": "6f5bdba068a5a7b992f5b54a10e18434fbb72bfd3786346bf62eb85911e09741"
     },
@@ -444,7 +460,7 @@
     },
     {
       "path": "expect.json",
-      "sha256": "1d86e21d89f51254fc55b7f2ec13ec147e24e3cf4ecfbf06e3716864d18e5384"
+      "sha256": "1278a553d0c11a5647648b4a3ff8809238af23624e2f8db05a04056412a15f78"
     },
     {
       "path": "schemas/agents.schema.json",
@@ -461,6 +477,14 @@
     {
       "path": "schemas/attach.schema.json",
       "sha256": "90716e293dd23ee0fb926dc940b9edb06598167e9d02e973f2fde5980cbe8178"
+    },
+    {
+      "path": "schemas/bug.schema.json",
+      "sha256": "cbfbf4d8f8de3d81b64da9725de9ad5962b22084588ee73f8ea930d08bb4d499"
+    },
+    {
+      "path": "schemas/bugs.schema.json",
+      "sha256": "1fa9b9bd42caf8b8efd409ec639063b96ecb2c93e51a7bf44fbfc651f4d47903"
     },
     {
       "path": "schemas/changes.schema.json",
@@ -552,7 +576,7 @@
     },
     {
       "path": "schemas/status.schema.json",
-      "sha256": "76d6d0408d1e11bdd2c10a675bdd230d1dd1a67be29b98e2b2e3ee74c9010f2b"
+      "sha256": "7d3da43784d54e79bc78295a8988fb5e03e192e1608790fae37e4c32ea906ef3"
     },
     {
       "path": "schemas/task.schema.json",
@@ -564,7 +588,7 @@
     },
     {
       "path": "schemas/workspace.schema.json",
-      "sha256": "bf97c446106247b691fe899e2f979a442f352da7009b3bcefecff933d785ddff"
+      "sha256": "0c7f7e5489f46f5bb8b7655c9a208ef75102498673352ac7e0f2434179f2f538"
     },
     {
       "path": "trick/message-1/message-address/case.md",

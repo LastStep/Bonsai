@@ -5,7 +5,7 @@ of the formats contract (`design/contract.md` §2), the eight that set 4 added (
 the one that set 5 added (`help`, plan-5 5.1.10), the two that set 6 added (`asks` and `logs`, plan-5 5.2.0), the
 one that set 7 added (`climb`, plan-5 5.4.0), the three that set 8 added (`message`, `messages` and `agents`, plan-5
 5.5.9) the three that set 10 added (`settings`, `attach` and `line`, plan-5 5.6.0), the one that set 11 added (`now`,
-plan P-T-5795, contract §23) and the one that set 13 added (`packs`, plan P-T-6009), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
+plan P-T-5795, contract §23) the one that set 13 added (`packs`, plan P-T-6009) and the two that set 14 added (`bug` and `bugs`, plan P-T-6023), one example document for each, the **trick files**: small, deliberately tricky YAML and markdown files (and,
 from set 8, message files; from set 11, run reports), each with the one right outcome a reader must reach (accepted with this value, or refused
 for this reason), and contract §13's
 **active-task fixtures**, each with the answer every reader of the active task must give. `manifest.json` fixes every
@@ -26,9 +26,10 @@ formats/
   embed.go                  embeds the schemas for Bonsai's code, formats.Schema(<name>) (not in the manifest)
   schemas/<name>.schema.json    one JSON Schema per format: task, labels, lanes, run, state, log, ask, ladder,
                                 status, lock; workspace, pack, tasks, sessions, memory, error, check, changes; help;
-                                asks, logs; climb; message, messages, agents; settings, attach, line; now; packs
+                                asks, logs; climb; message, messages, agents; settings, attach, line; now; packs;
+                                bug, bugs
   examples/<name>.json      one valid document per format, as a reader returns it
-  examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory, message (markdown) and labels, lanes,
+  examples/<name>.md|.yaml  for task, run, state, tasks, sessions, memory, message, bug, bugs (markdown) and labels, lanes,
                             workspace, pack (YAML): the source file, also a case
   trick/yaml-1/<case>/case.md|.yaml   a case for one rule of the format-1 YAML grammar (contract §2.4)
   trick/yaml-0/<case>/case.md|.yaml   one of today's format-0 oddities
@@ -62,7 +63,11 @@ the `--json` of `bonsai settings show` and `set`: this machine's settings, for t
 and `line` (`bonsai.line/1`, the `--json` of `bonsai status --line`: the statusline's workspace half as fields); and,
 from set 11, `now` (`bonsai.now/1`, the `--json` of `bonsai now`: the time now in every form a document or a record
 takes, contract §23); and, from set 13, `packs` (`bonsai.packs/1`, the `--json` of `bonsai pack outdated` and `bonsai
-pack show`: each locked pack, what it brings and whether a newer release exists). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
+pack show`: each locked pack, what it brings and whether a newer release exists); and, from set 14, `bug`
+(`bonsai.bug/1`, a bug file: one known defect, its status and who found, filed and fixed it, one markdown file per
+bug in the folder `bonsai.yaml` names under `documents.bug`) and `bugs` (`bonsai.bugs/1`, the bugs page `bonsai check
+--write` builds from the bug files at `documents.bugs`'s place, only while the page is missing or carries its format
+line, the generated marker). Each documents itself: a top-level `description` (what the format is for, who writes and reads it,
 where it lives) and a `description` and `examples` on every property. Later steps add their commands' outputs
 the same way, each a new schema file: an addition.
 
@@ -385,18 +390,19 @@ the same way, each a new schema file: an addition.
 ## The examples
 
 `examples/<name>.json` is one made-up, valid document per format, stored as the JSON a reader returns; its schema
-validates it, and its fields keep the schema's order. For the eleven YAML and markdown formats (`task`, `labels`,
-`lanes`, `run`, `state`, `workspace`, `pack`, `tasks`, `sessions`, `memory`, `message`) the source sits beside it
+validates it, and its fields keep the schema's order. For the thirteen YAML and markdown formats (`task`, `labels`,
+`lanes`, `run`, `state`, `workspace`, `pack`, `tasks`, `sessions`, `memory`, `message`, `bug`, `bugs`) the source sits
+beside it
 (`<name>.md` or `<name>.yaml`) and is also a case in `expect.json`: its format-1 value is exactly `<name>.json`,
-except for the two tables and a message, whose format-1 value is their frontmatter, `<name>.json` without the fields a
-reader reads from the body or makes (`active` and `tasks`; `sessions` and `hours`; `body` and `trust`), which come
-last. So the test checks every schema without a reader,
+except for the two tables, the bugs page and a message, whose format-1 value is their frontmatter, `<name>.json`
+without the fields a reader reads from the body or makes (`active` and `tasks`; `sessions` and `hours`; `bugs`; `body`
+and `trust`), which come last. So the test checks every schema without a reader,
 and a reader proves the YAML. The pack files (`labels.yaml`, `lanes.yaml`, `pack.yaml`) document themselves in `#`
 comments, as every pack file does (contract §2.8), and `workspace.yaml` has a comment on every line, as `init`
 writes `bonsai.yaml` (format review 1.4); the markdown examples carry the one-line pointer on their `format:` line
 that a file made from a template carries, and the tables a line saying they are generated.
 
-**The two tables' bodies**, which a JSON Schema cannot describe; the writer writes them so, and a reader reads them so:
+**The two tables' bodies** (and, from set 14, the bugs page's), which a JSON Schema cannot describe; the writer writes them so, and a reader reads them so:
 - `tasks.md`: after the frontmatter, the line `Active task when none is named: <id>`, or `Active task when none is
   named: none (<why>)`; a blank line; then the table `| Task | Title | Status | Lane | Started | Finished |`, its
   `|---|` line, and one row per task, newest id first.
@@ -405,7 +411,13 @@ that a file made from a template carries, and the tables a line saying they are 
   row per session or subagent run; a blank line; the line `Hours per task and role (a
   subagent run lies inside its session's row, so the two are never added):`; a blank line; then the table `| Task |
   Role | Kind | Hours |`, its `|---|` line and one row per task, role and kind.
-- In both, a `null` is an empty cell, a `|` inside a cell is written `\|`, and nothing else is escaped.
+- `bugs.md` (set 14): after the frontmatter, the line `# Bugs`, a blank line, the line `Generated from the bug files;
+  never edit by hand. To file a bug or move one: bonsai bug (skill base:bug).`, a blank line; then four sections, the
+  open ones first, each always written: `## Open`, `## Watched`, `## Fixed` and `## Won't fix`, each
+  followed by a blank line, the table `| Bug | Title | Area | Where | Found by | Fixed in | Task | Closed | Why |`, its
+  `|---|` line and one row per bug of that status, newest id first, and (but after the last) a blank line. A row's
+  status is its section's.
+- In all three, a `null` is an empty cell, a `|` inside a cell is written `\|`, and nothing else is escaped.
 - A task file that does not parse under its format gives no row in `tasks.md`: `bonsai check` reports it as a
   finding (spec §6), and the active line says none, naming it (contract §13: such a file makes the answer none).
 
@@ -465,7 +477,7 @@ One file, UTF-8, LF, giving every case two outcomes (and a message's or a run re
 | Field | Meaning |
 |---|---|
 | `about` | What the file is. |
-| `cases` | One entry per case, sorted by `path`; every file under `trick/` and the eleven example sources has one. |
+| `cases` | One entry per case, sorted by `path`; every file under `trick/` and the thirteen example sources has one. |
 | `path` | The input file, relative to `formats/`, forward slashes. |
 | `rule` | The rule the case tests: one of the rule names the Go test lists (`rules` in `formats_test.go`; a message's start with `message-`), or `example`. |
 | `settled_by` | `rule` when contract §2.4's words decide the format-1 outcome; `libraries` when they do not and §2.4's own test decides it: accepted only if a YAML 1.1 and a YAML 1.2 library both read the file and read the same value, otherwise refused (plan part 0). |

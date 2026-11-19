@@ -232,7 +232,7 @@
       }
     },
     "documents": {
-      "description": "Every document kind the workspace declares, Bonsai's and its packs' (contract §7.3). Each entry holds the §7.3 fields that apply: kind, from, path or file, id, format, statuses, person, agent, stamp, task_field. Only kind and from are required: §7.3 leaves which of the others are always written open (formats/README.md). null on exit 3.",
+      "description": "Every document kind the workspace declares, Bonsai's and its packs' (contract §7.3). Each entry holds the §7.3 fields that apply: kind, from, path or file, id, format, statuses, person, agent, stamp, task_field. Only kind and from are required: §7.3 leaves which of the others are always written open (formats/README.md). From set 14, Bonsai's kinds include bug (the bug files' folder, its statuses, agent moves and stamp) and bugs (the bugs page, one file, format bonsai.bugs: generated from the bug files, so a reader reads the files, never the page); nothing is read per bug. null on exit 3.",
       "examples": [
         [
           {

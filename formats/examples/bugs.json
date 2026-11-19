@@ -1,0 +1,41 @@
+{
+  "format": "bonsai.bugs/1",
+  "bugs": [
+    {
+      "id": "BUG-014",
+      "title": "The title screen's build number overlaps the logo on a narrow window",
+      "status": "open",
+      "area": "title screen",
+      "where": "src/title/layout.ts:30 (said)",
+      "found_by": "the project's owner, 11 Oct",
+      "fixed_in": null,
+      "task": null,
+      "closed": null,
+      "why": null
+    },
+    {
+      "id": "BUG-013",
+      "title": "TestSaveRoundTrip failed once on CI's Windows job",
+      "status": "watched",
+      "area": "tests",
+      "where": "src/settings/store_test.ts:12",
+      "found_by": "CI run 101",
+      "fixed_in": null,
+      "task": null,
+      "closed": null,
+      "why": "Passed in every later run; fix it if it repeats"
+    },
+    {
+      "id": "BUG-012",
+      "title": "The settings page forgets the dark mode switch after a restart",
+      "status": "fixed",
+      "area": "settings",
+      "where": "src/settings/store.ts:88 (pointed)",
+      "found_by": "verifier@T-0901 M-2026-10-09-1a2b3c4d",
+      "fixed_in": "0a1b2c3d (the switch is saved before the page closes)",
+      "task": "T-0904",
+      "closed": "2026-10-10",
+      "why": null
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bonsai.bug/1",
+  "description": "A bug (contract §7.3; plan P-T-6023): one known defect someone has seen or proven, where it stands, and who found, filed and fixed it. One markdown file per bug, named <id>.md or <id>-<slug>.md, in the folder bonsai.yaml names under documents.bug (absent: bugs/ beside documents.bugs's file; both absent, work/bugs/). This schema describes its YAML frontmatter as a reader returns it (JSON); the body is free text: how to repeat it, what was seen, notes. Written by agents (bonsai bug, from Bonsai 1.1.0, writes every move and its fields); read by Bonsai (bonsai check holds each file to this schema and no two files to one id; check --write builds the bugs page, bonsai.bugs/1, from them), the studio and agents. A writer writes every field below, in this order, null or {} where it does not apply (contract §2.2); a reader treats a missing field as null and keeps an unknown one. The frontmatter follows the format-1 YAML rules (contract §2.4).",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "title",
+    "status",
+    "area",
+    "where",
+    "found_by",
+    "filed_by",
+    "fixed_by",
+    "fixed_in",
+    "task",
+    "was",
+    "why",
+    "created",
+    "closed",
+    "labels"
+  ],
+  "properties": {
+    "format": {
+      "description": "The version line, always the first key. A reader that meets a newer major (bonsai.bug/2) says \"format too new\" and reads nothing else (contract §2.2). In a file made from a template the line carries a one-line pointer back as a trailing comment (contract §2.8), which is a comment and not part of the value.",
+      "examples": [
+        "bonsai.bug/1"
+      ],
+      "const": "bonsai.bug/1"
+    },
+    "id": {
+      "description": "The bug's id: BUG- and 3 to 6 digits, unique in the workspace and never reused, in every project (one prefix; an old id from a register with another prefix is kept in was). The file is named after it, <id>.md or <id>-<slug>.md; written plain, never quoted.",
+      "examples": [
+        "BUG-145",
+        "BUG-012"
+      ],
+      "type": "string",
+      "pattern": "^BUG-[0-9]{3,6}$"
+    },
+    "title": {
+      "description": "What goes wrong, as a person sees it, on one line.",
+      "examples": [
+        "The sessions cache's version number is not tied to the build"
+      ],
+      "type": "string",
+      "pattern": "^[^\\r\\n]*$"
+    },
+    "status": {
+      "description": "Where the bug stands. A closed list: open (seen or proven, not fixed), fixed (a commit fixed it: fixed_in), wontfix (known, not a bug, or not to be fixed: why), watched (seen once and not repeated, a flaky test among them: why). A new bug starts at open. Agents make every move: open to fixed, wontfix or watched; watched to open or fixed; fixed and wontfix back to open (it came back). Its line carries no comment in format 1.",
+      "examples": [
+        "open",
+        "fixed"
+      ],
+      "enum": [
+        "open",
+        "fixed",
+        "wontfix",
+        "watched"
+      ]
+    },
+    "area": {
+      "description": "The part of the project it is in, a few words, as the project names its parts; null for none.",
+      "examples": [
+        "the guard",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[^\\r\\n]*$"
+    },
+    "where": {
+      "description": "Where it goes wrong: a file and line, a command, a screen; with how sure the finder was where it helps (pointed: the line was read; said: only a report says so). null when not known.",
+      "examples": [
+        "internal/sessions/cache.go:41 (pointed)",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "found_by": {
+      "description": "Who or what found it: a role and task, a message id, a person, a CI run. null when not known (a bug carried over from an old register that named no one).",
+      "examples": [
+        "verifier@T-6016 M-2026-11-06-fb3e78c1",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "filed_by": {
+      "description": "Who wrote this file: an agent's address (role@task, or a role), or person. null for a bug carried over from an old register that did not say.",
+      "examples": [
+        "builder@T-6024",
+        "person",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fixed_by": {
+      "description": "Who marked it fixed, in the same form as filed_by; null while it is not fixed, and for a carried-over bug that did not say.",
+      "examples": [
+        "builder@T-6025",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "fixed_in": {
+      "description": "The commit or commits that fixed it, with a few words on how where it helps; null while it is not fixed.",
+      "examples": [
+        "fee1e13a (a record whose newest is older is read again)",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "task": {
+      "description": "The task that fixed it, or the task it is being fixed under; null for none.",
+      "examples": [
+        "T-6010",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^T-[0-9]{4,6}$"
+    },
+    "was": {
+      "description": "Its id in the register it was carried over from, when that id was another (TB-012 became BUG-012); null for a bug filed here.",
+      "examples": [
+        "TB-012",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[^\\r\\n]*$"
+    },
+    "why": {
+      "description": "Why it is wontfix or watched, one sentence; null for an open or fixed bug, unless a reason helps.",
+      "examples": [
+        "A deliberate fail-closed over-refusal, documented in the guard's tests",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created": {
+      "description": "The day the bug was filed, YYYY-MM-DD as text (a date stays text to every contract reader, contract §2.4), the UTC day (contract §23), taken from bonsai now --day. A bug carried over from an old register keeps the day its row named, else the day of the move (with was set).",
+      "examples": [
+        "2026-11-06"
+      ],
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "closed": {
+      "description": "The day it was fixed or set wontfix (the kind's stamp: fixed and wontfix set it), YYYY-MM-DD as text (a date stays text to every contract reader, contract §2.4), the UTC day (contract §23), taken from bonsai now --day; null while it is open or watched. A fixed or wontfix bug with no closed day is allowed only with was set (a carried-over bug whose old row named no day): bonsai check holds that.",
+      "examples": [
+        "2026-11-07",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "labels": {
+      "description": "Everything else, as a map of label name to value (contract §5): each name is <namespace>.<name> with one dot; each value is of its definition's kind, or null when empty. {} when the bug carries none.",
+      "examples": [
+        {
+          "workflow.milestone": "1.1"
+        },
+        {}
+      ],
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      }
+    }
+  }
+}

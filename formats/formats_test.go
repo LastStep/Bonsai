@@ -49,6 +49,8 @@ var sourceExamples = map[string]string{
 	"sessions":  "examples/sessions.md",
 	"memory":    "examples/memory.md",
 	"message":   "examples/message.md",
+	"bug":       "examples/bug.md",
+	"bugs":      "examples/bugs.md",
 }
 
 // bodyFields are, for the two generated tables and a message, the fields a reader reads from the markdown body (or,
@@ -58,6 +60,7 @@ var bodyFields = map[string][]string{
 	"tasks":    {"active", "tasks"},
 	"sessions": {"sessions", "hours"},
 	"message":  {"body", "trust"},
+	"bugs":     {"bugs"},
 }
 
 // The rules of contract §2.4 (and the format-0 oddities and dispatch cases plan part 0 names). Every rule here needs
