@@ -93,6 +93,26 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 - Cleaned: never: the table is rebuilt whole.
 - Rule in bonsai.yaml: none; this kind takes no rule.
 
+### `bugs`
+
+- What: the bugs page, one row per bug file (set 14).
+- Where it lives: the bugs page's place (documents.bugs, work/bugs.md by default).
+- Written by: bonsai check --write, from the bug files (documents.bug), only while the page carries its generated marker or is missing with bug files there; a hand-kept register without the marker is never written.
+- Default: a rebuild: nothing to clean.
+- Never cleaned: -.
+- Cleaned: never: the page is rebuilt whole, and the bug files it comes from are committed documents, never cleaned.
+- Rule in bonsai.yaml: none; this kind takes no rule.
+
+### `bug-lock`
+
+- What: the lock bonsai bug holds while it takes the next free bug id (from Bonsai 1.1.0).
+- Where it lives: .bonsai/local/bug.lock.
+- Written by: bonsai bug add, in the main checkout, removed when the add ends.
+- Default: a rebuild: nothing to clean.
+- Never cleaned: -.
+- Cleaned: never by the cleaner: bonsai bug add removes it; one older than a minute is stale, and the next add takes it over.
+- Rule in bonsai.yaml: none; this kind takes no rule.
+
 ### `cache`
 
 - What: the sessions cache: each session log file's spans, by the file's size and modification time, so a run reads again only the log files that changed.

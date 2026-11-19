@@ -101,6 +101,10 @@ documents:
   memory: work/memory
   # the folder the packs' always-on protocol files go to; the block in CLAUDE.md imports each
   protocols: work/protocols
+  # the bug files' folder: one file per bug, BUG-<number>.md (bonsai.bug/1); absent: bugs/ beside the page
+  bug: work/bugs
+  # the bugs page, generated from the bug files by bonsai check --write (bonsai.bugs/1)
+  bugs: work/bugs.md
 # paths (globs) an agent changes only while its running task lists them in bonsai.allows
 protected: [".claude/**", "bonsai.yaml", ".bonsai/lock.json"]
 # of those, the paths only a person grants (an approve or grant tap)

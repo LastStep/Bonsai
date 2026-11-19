@@ -99,6 +99,7 @@ error words.
 - packs: command
 - packs: packs[].newer.state
 - packs: error.next.who
+- bug: status
 
 ## Exit codes
 
@@ -237,7 +238,11 @@ error words.
 | `plugin-trust` | warning | person | yes | Claude Code has not registered the workspace's marketplace, which a Claude Code session in the checkout does once a person has trusted the folder (first-time trust, spec section 5), so the lock's plugin cannot be installed yet |
 | `plugin-unchecked` | warning | person | yes | this machine's plugins were not compared with the lock (Claude Code not on the PATH, its answer unread, a local settings file unread) |
 | `cache` | warning | person | yes | a lock written before an older Bonsai names a pack this machine's cache lacks, so Bonsai's lines in .claude/settings.json were not checked |
-| `tables` | warning | agent | - | a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
+| `tables` | warning | agent | - | a generated table in the main checkout is stale: the tasks table (.bonsai/tasks.md) differs from a rebuild of the task files, or the sessions table (.bonsai/sessions.md) lacks a row for an ended session or subagent run in the log, or either is missing, or (set 14) the bugs page (documents.bugs) carries its generated marker and differs from a rebuild of the bug files, or is missing while there are bug files; the message names which; the tables lag between moves by design and grant nothing (spec section 6; contract section 7.5) |
+| `bugs-not-moved` | warning | agent | - | the bugs page's place (documents.bugs) holds a file with no generated marker (its format line, format: bonsai.bugs/1): a hand-kept bugs register, not moved to bug files yet; check --write leaves it as it is and it is never a finding; base's bug skill says how to move it (set 14) |
+| `bug-id` | finding | agent | - | two bug files hold one id, or a bug file's name names another id than its own (bonsai.bug/1: an id is one bug's, never reused, and names its file) |
+| `bug-closed` | finding | agent | - | a fixed or wontfix bug has no closed day, and was is not set: only a bug carried over from an old register whose row named no day may lack one (bonsai.bug/1) |
+| `kind-set-aside` | warning | agent | - | a locked pack (or, under check --pack, the pack checked) declares a document kind that is Bonsai's own now, bugs from set 14: its declaration is set aside, never refused, and Bonsai's kind is in force; the next step moves the pack to a release without it |
 | `local-unchecked` | warning | agent | - | git ls-files failed, so files from .bonsai/local/ in git's index were not looked for |
 | `own-hooks` | warning | person | yes | Bonsai's own hook lines in .claude/settings.json are not this build's (the project was linked or last updated by another Bonsai), while Bonsai's lines are otherwise as the lock says; a new hook line runs code, so update writes them only with a person's --allow-exec (spec section 7) |
 
@@ -505,6 +510,8 @@ error words.
 | `messages` | .bonsai/local/messages/ | messages between agents | bonsai message, one file per message, one folder per recipient, created new and never overwritten | 30 days after a thread's last message | an open thread (a brief with no report after it), whatever its age: it stays listed until a report answers it | at a session's end, with the log, within the same budget | yes |
 | `agents` | .bonsai/local/agents/ | each agent's state | the guard: one folder per session, one file per agent with one line a call, and a tie file per brief | 30 days after a session folder's last line | a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept | at a session's end, with the log, within the same budget | yes |
 | `tasks` | .bonsai/tasks.md | the tasks table | bonsai check --write, from the task files | a rebuild: nothing to clean | - | never: the table is rebuilt whole | no |
+| `bugs` | the bugs page's place (documents.bugs, work/bugs.md by default) | the bugs page, one row per bug file (set 14) | bonsai check --write, from the bug files (documents.bug), only while the page carries its generated marker or is missing with bug files there; a hand-kept register without the marker is never written | a rebuild: nothing to clean | - | never: the page is rebuilt whole, and the bug files it comes from are committed documents, never cleaned | no |
+| `bug-lock` | .bonsai/local/bug.lock | the lock bonsai bug holds while it takes the next free bug id (from Bonsai 1.1.0) | bonsai bug add, in the main checkout, removed when the add ends | a rebuild: nothing to clean | - | never by the cleaner: bonsai bug add removes it; one older than a minute is stale, and the next add takes it over | no |
 | `cache` | .bonsai/local/cache/sessions.json | the sessions cache: each session log file's spans, by the file's size and modification time, so a run reads again only the log files that changed | bonsai check (and check --write, and bonsai status, which runs it), rewritten whole when a log file changed | a rebuild: nothing to clean | - | never by the cleaner: it is rebuilt from the log; deleting it is safe and costs only one slower run, which reads the whole log and writes it again | no |
 
 ## Bonsai's document kinds
@@ -514,7 +521,7 @@ error words.
 - Printed in a project by: none.
 - The kinds of Bonsai's own documents, in contract section 7.3's order; no pack may declare one of these names, and a pack's own kinds are the open part.
 
-Values, in order: `task`, `run`, `state`, `answers`, `memory`, `tasks`, `sessions`.
+Values, in order: `task`, `run`, `state`, `answers`, `memory`, `tasks`, `sessions`, `bug`, `bugs`.
 
 ## Pack file kinds
 
@@ -1320,3 +1327,11 @@ Values: `newer`, `current`, `stale`.
 - Printed in a project by: `bonsai check --schema bonsai.packs`.
 
 Values: `agent`, `person`.
+
+## bug: status
+
+- Closed list.
+- Defined in: formats/schemas/bug.schema.json (`status`).
+- Printed in a project by: `bonsai check --schema bonsai.bug`.
+
+Values: `open`, `fixed`, `wontfix`, `watched`.
