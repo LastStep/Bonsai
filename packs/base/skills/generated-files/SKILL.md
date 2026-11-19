@@ -105,12 +105,12 @@ cleaned and when cleaning happens. Bonsai deletes only what this skill says it m
 
 ### `bug-lock`
 
-- What: the lock bonsai bug holds while it takes the next free bug id (from Bonsai 1.1.0).
+- What: the lock bonsai bug holds while it writes a bug file (an add takes the next free bug id under it; from Bonsai 1.1.0).
 - Where it lives: .bonsai/local/bug.lock.
-- Written by: bonsai bug add, in the main checkout, removed when the add ends.
+- Written by: every writing subcommand of bonsai bug (add, fix, wontfix, watch, reopen, edit), in the main checkout, removed when the write ends.
 - Default: a rebuild: nothing to clean.
 - Never cleaned: -.
-- Cleaned: never by the cleaner: bonsai bug add removes it; one older than a minute is stale, and the next add takes it over.
+- Cleaned: never by the cleaner: bonsai bug removes it; one older than a minute is stale, and the next write takes it over.
 - Rule in bonsai.yaml: none; this kind takes no rule.
 
 ### `cache`

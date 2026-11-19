@@ -102,6 +102,21 @@ func BonsaiKind(name string) bool {
 	return false
 }
 
+// BonsaiDocKind gives one of Bonsai's own kinds as DocKinds gives it with no bonsai.yaml and no lock (its id pattern,
+// statuses, agent moves and stamp: the bug kind's moves for bonsai bug); false for a name that is not Bonsai's.
+func BonsaiDocKind(name string) (DocKind, bool) {
+	kinds, err := DocKinds(&format.Workspace{}, nil)
+	if err != nil {
+		return DocKind{}, false
+	}
+	for _, k := range kinds {
+		if k.Kind == name {
+			return k, true
+		}
+	}
+	return DocKind{}, false
+}
+
 // SetAsideKind reports whether a pack's document kind is set aside rather than refused: bugs, which the workflow pack
 // declared (one file, its hand-kept register) until it became Bonsai's own in set 14. A pack that still declares it
 // links and checks as before; its declaration is left out of the kinds in force (DocKinds, the guard), and bonsai

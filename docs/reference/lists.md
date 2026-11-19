@@ -100,6 +100,7 @@ error words.
 - packs: packs[].newer.state
 - packs: error.next.who
 - bug: status
+- buglist: error.next.who
 
 ## Exit codes
 
@@ -179,6 +180,11 @@ error words.
 | `message-not-found` | agent | bonsai message --show, --thread or --reply-to names an id that no message under .bonsai/local/messages/ has: nothing was written or shown (exit 4) |
 | `namespace-taken` | person | bonsai labels attach was given definitions whose namespace is bonsai or a locked pack's, which only that pack defines (contract section 5.1): nothing was written (exit 4) |
 | `label-redefined` | person | bonsai labels attach would change a definition already attached: a definition changed or removed, or other content at the same or an older version (contract section 5.1: a definition may be added, never redefined). Nothing was written (exit 4); the person's step is bonsai labels detach <namespace> and then the attach again |
+| `bug-not-found` | agent | bonsai bug names an id (or an old id, its was) that no bug file in the main checkout's bug folder has, or that two files share: nothing was written or shown (exit 4) |
+| `bug-move` | agent | bonsai bug fix, wontfix, watch or reopen asks for a move the bug kind does not make from where the bug stands (open to fixed, wontfix or watched; watched to open or fixed; fixed and wontfix back to open): nothing was written (exit 4) |
+| `bug-id-taken` | agent | bonsai bug add --number names an id a bug file holds already, or --was an old id carried over already: an id is one bug's, never reused, and nothing was written (exit 4) |
+| `bug-busy` | agent | another bonsai bug held the bug lock (.bonsai/local/bug.lock) for longer than the wait: run the command again in a few seconds; a lock older than a minute is taken over. Nothing was written (exit 3) |
+| `commit-not-found` | agent | bonsai bug fix --commit names a commit the repository does not hold, or a name that is not a commit's hex name: nothing was written (exit 2) |
 | `partly-written` | agent | the command stopped part-way through writing, the lock not yet written (unlink: not yet removed): the same command again finishes the rest |
 | `unexpected` | agent | something failed that Bonsai does not expect (no random number from the system, its own document not fitting its schema): run it again, and report it if it repeats |
 
@@ -511,7 +517,7 @@ error words.
 | `agents` | .bonsai/local/agents/ | each agent's state | the guard: one folder per session, one file per agent with one line a call, and a tie file per brief | 30 days after a session folder's last line | a session's folder while its log file is kept or a brief one of its agents tied is kept; a brief's tie file while its thread is kept | at a session's end, with the log, within the same budget | yes |
 | `tasks` | .bonsai/tasks.md | the tasks table | bonsai check --write, from the task files | a rebuild: nothing to clean | - | never: the table is rebuilt whole | no |
 | `bugs` | the bugs page's place (documents.bugs, work/bugs.md by default) | the bugs page, one row per bug file | bonsai check --write, from the bug files (documents.bug), only while the page carries its generated marker or is missing with bug files there; a hand-kept register without the marker is never written | a rebuild: nothing to clean | - | never: the page is rebuilt whole, and the bug files it comes from are committed documents, never cleaned | no |
-| `bug-lock` | .bonsai/local/bug.lock | the lock bonsai bug holds while it takes the next free bug id (from Bonsai 1.1.0) | bonsai bug add, in the main checkout, removed when the add ends | a rebuild: nothing to clean | - | never by the cleaner: bonsai bug add removes it; one older than a minute is stale, and the next add takes it over | no |
+| `bug-lock` | .bonsai/local/bug.lock | the lock bonsai bug holds while it writes a bug file (an add takes the next free bug id under it; from Bonsai 1.1.0) | every writing subcommand of bonsai bug (add, fix, wontfix, watch, reopen, edit), in the main checkout, removed when the write ends | a rebuild: nothing to clean | - | never by the cleaner: bonsai bug removes it; one older than a minute is stale, and the next write takes it over | no |
 | `cache` | .bonsai/local/cache/sessions.json | the sessions cache: each session log file's spans, by the file's size and modification time, so a run reads again only the log files that changed | bonsai check (and check --write, and bonsai status, which runs it), rewritten whole when a log file changed | a rebuild: nothing to clean | - | never by the cleaner: it is rebuilt from the log; deleting it is safe and costs only one slower run, which reads the whole log and writes it again | no |
 
 ## Bonsai's document kinds
@@ -673,6 +679,7 @@ Values, in order: `source`, `name`, `plugins`, `owner`.
 | `clean` | a generated file Bonsai deleted; the target is its project-relative path and the reason the rule that cleaned it (contract section 8.5) |
 | `message` | a message between agents was written by bonsai message (bonsai.message/1); the target is its id, the text its kind, its recipient and a report's status, and the task its task, so who said what survives a cleaned file |
 | `spawn` | an agent was started (Claude Code only): the subagent's id and type, its parent (the agent that started it, or session for the person's own session) and the tool_use_id of the call that started it, so the tree of agents survives a cleaned state file |
+| `bug` | bonsai bug wrote a bug file: the target is the bug's id, the kind its subcommand (add, fix, wontfix, watch, reopen, edit), the reason what changed (a move as its two statuses, a carry-over with its old id), and the task and role whoever ran it, so every move of a bug is on the log with who made it |
 | `usage` | an agent's token counts at its end (Claude Code only): one record for each model in its transcript, its totals over the whole transcript in usage and the model in model; kind unknown with its reason when the transcript could not be read |
 
 ## Log categories
@@ -1335,3 +1342,11 @@ Values: `agent`, `person`.
 - Printed in a project by: `bonsai check --schema bonsai.bug`.
 
 Values: `open`, `fixed`, `wontfix`, `watched`.
+
+## buglist: error.next.who
+
+- Closed list.
+- Defined in: formats/schemas/buglist.schema.json (`error.next.who`).
+- Printed in a project by: `bonsai check --schema bonsai.buglist`.
+
+Values: `agent`, `person`.

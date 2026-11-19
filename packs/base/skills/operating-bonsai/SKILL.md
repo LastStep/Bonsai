@@ -82,6 +82,14 @@ Types: Answer, Decide, Look, Play. `bonsai asks --json` lists the open asks. Nev
 is the person's (`answer-own-session`). The person may answer a Decide by an option's letter or number
 (`bonsai answer <key> --choice B`); `bonsai ask --status <key>` shows the letters.
 
+## Bugs
+
+`bonsai bug` is the one way a bug's status changes; never edit a status line by hand (`status-line`). File one:
+`bonsai bug add --title "<what goes wrong>" --json`. Move one: `bonsai bug fix <id> --commit <sha>`,
+`bonsai bug wontfix <id> --why "<why>"`, `bonsai bug watch <id> --why "<why>"`, `bonsai bug reopen <id>`. Its text:
+`bonsai bug edit <id> --where "<file:line>"`. Read: `bonsai bug list --json`, `bonsai bug show <id> --json`. Writes
+land in the main checkout. More: `base:bug`.
+
 ## Brief and report (where a pack declares roles)
 
 Fields and templates: `base:message`. An address is `<role>@<task>`; the person's session's is its role's name.
