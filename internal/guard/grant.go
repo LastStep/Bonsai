@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	"github.com/LastStep/Bonsai/internal/format"
+	"github.com/LastStep/Bonsai/internal/schema"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
 
@@ -99,10 +100,25 @@ func (j *judge) readGrant(p *linkedProject) *taskGrant {
 // (format.Task.Allows, the read's one home).
 func allowsOf(t *format.Task) ([]string, bool) { return t.Allows() }
 
-// docPlace is the place bonsai.yaml's documents names for a kind, "" for none.
+// docPlace is the place bonsai.yaml's documents names for a kind, "" for none; for the bug kinds (bug, bugs) their
+// default places when it names none.
 func docPlace(cfg *workspace.Config, kind string) string {
 	if cfg == nil {
 		return ""
+	}
+	if kind == "bug" || kind == "bugs" {
+		// Bonsai's two bug kinds (set 14) have their places when bonsai.yaml names neither: format.Documents' methods,
+		// their one home (bug/ beside the page, the page at work/bugs.md).
+		d := format.Documents{}
+		for _, e := range cfg.Documents {
+			if e.Kind == "bug" || e.Kind == "bugs" {
+				d.Extra = append(d.Extra, schema.Member{Key: e.Kind, Value: e.Path})
+			}
+		}
+		if kind == "bug" {
+			return d.BugFolder()
+		}
+		return d.BugsFile()
 	}
 	for _, d := range cfg.Documents {
 		if d.Kind == kind {

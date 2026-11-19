@@ -33,7 +33,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
+	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -95,6 +97,11 @@ func (j *judge) documentOf(x judged) *docKind {
 	}
 	if same(x.rel, workspace.StateFile, x.fold) {
 		return &docKind{kind: "state"}
+	}
+	if dir := docPlace(l.cfg, "bug"); dir != "" && inFolder(x.rel, dir, x.fold) {
+		if re := idPatterns()["bug"]; re != nil && workspace.NameID(path.Base(x.rel), re) != "" {
+			return &docKind{kind: "bug", status: true}
+		}
 	}
 	if dir := docPlace(l.cfg, "memory"); dir != "" && inFolder(x.rel, dir, x.fold) {
 		if re := idPatterns()["memory"]; re != nil && workspace.NameID(path.Base(x.rel), re) != "" {
@@ -183,6 +190,13 @@ func (j *judge) tripwire(c change, x judged) (Decision, bool) {
 	if doc.kind == "memory" {
 		return stamp, stampOK // a memory note is judged for its stamp only, never by command mode's tripwires
 	}
+	if doc.kind == "bug" {
+		// Every mode: a bug's status is bonsai bug's to write (bugStatus), and command mode's tripwires are for tasks.
+		if d, ok := j.bugStatus(c, x); !ok {
+			return d, false
+		}
+		return stamp, stampOK
+	}
 	ms, err := j.modeOf(x.p)
 	if err != nil {
 		next := "tell the person: a person fixes this machine's settings for the workspace"
@@ -270,6 +284,90 @@ func (j *judge) tripwire(c change, x judged) (Decision, bool) {
 		}
 	}
 	return Decision{}, true
+}
+
+// bugNext is the next step of a refusal of a bug's status line.
+const bugNext = "move the bug with bonsai bug (fix <id> --commit <sha>, wontfix <id> --why <text>, watch <id> --why <text>, " +
+	"reopen <id>), file one with bonsai bug add, and keep a hand edit to the file's other lines"
+
+// bugStatus is the bug's status-line rule (plan P-T-6023, step 9; contract section 10), in every mode, whatever this
+// machine's status_writes reads: bonsai bug writes a bug's status, as a program, so a file tool's edit of a bug file
+// that changes its status line is refused, and a new bug file made by hand starts at open, the kind's first status.
+// What the change leaves unknown (a delete or move, a NotebookEdit, an old_string not in the file) refuses a bug
+// file that has a status line. Rung 0 on the base branch (onBase) does not judge it: the main checkout's bug files
+// are where bonsai bug writes, and its moves are logged.
+func (j *judge) bugStatus(c change, x judged) (Decision, bool) {
+	if j.onBase {
+		return Decision{}, true
+	}
+	before, err := j.readBefore(x.abs)
+	exists := err == nil
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return j.tripBug(c, x, "the guard cannot read the bug file ("+oneLine(err.Error())+"), so it cannot tell whether the "+
+			"change keeps its status line"), false
+	}
+	after, known := afterOf(c.in, before, exists)
+	if !known {
+		if exists && readDoc(before).hasStatus {
+			return j.tripBug(c, x, "the guard cannot tell what the change leaves in the bug's status line (a delete or move, "+
+				"a NotebookEdit, or an old_string not in the file as written)"), false
+		}
+		return Decision{}, true
+	}
+	af := readDoc(after)
+	switch {
+	case exists:
+		if bf := readDoc(before); bf.status != af.status {
+			return j.tripBug(c, x, fmt.Sprintf("it changes the bug's status line (%s to %s)", quote(bf.status, 40), quote(af.status, 40))), false
+		}
+	case af.hasStatus:
+		if first := bonsaiDocKinds()["bug"].Statuses; len(first) > 0 && af.status != first[0] {
+			return j.tripBug(c, x, fmt.Sprintf("a new bug starts at %s, not %s", quote(first[0], 40), quote(af.status, 40))), false
+		}
+	}
+	return Decision{}, true
+}
+
+// tripBug is the refusal of a bug's status line: in every mode, its rule status-line.
+func (j *judge) tripBug(c change, x judged, why string) Decision {
+	shown := quote(x.rel, 120)
+	if len(x.chain) > 1 {
+		shown += " (in the project " + quote(path.Base(strings.ReplaceAll(x.p.root, `\`, "/")), 60) + ")"
+	}
+	d := deny(RuleStatusLine, fmt.Sprintf("%s of %s refused: a bug's status changes only by bonsai bug, in every project "+
+		"and whatever status_writes reads, and %s", c.tool, shown, why), bugNext)
+	d.Target = target(j.recordIn(x.chain), []string{x.abs})
+	return d
+}
+
+// markedBugsPage reports whether a judged path is its project's bugs page (documents.bugs's place) and the file there
+// carries the generated marker (format.BugsMarked, read from the file on disk as the call is judged: for rung 0, the
+// main checkout's copy). A page without it is a hand-kept register, an ordinary file (plan P-T-6023, step 9).
+func (j *judge) markedBugsPage(x judged) bool {
+	l := j.listsOf(x.p)
+	if l.err != nil || l.cfg == nil {
+		return false
+	}
+	if page := docPlace(l.cfg, "bugs"); page == "" || !same(x.rel, page, x.fold) {
+		return false
+	}
+	raw, err := readHead(x.abs)
+	return err == nil && format.BugsMarked(raw)
+}
+
+// readHead reads the first bytes of a file, enough for its format line.
+func readHead(abs string) ([]byte, error) {
+	f, err := os.Open(abs)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	buf := make([]byte, 128)
+	n, err := io.ReadFull(f, buf)
+	if err == io.ErrUnexpectedEOF || err == io.EOF {
+		err = nil
+	}
+	return buf[:n], err
 }
 
 // trip is the refusal of a tripwire.

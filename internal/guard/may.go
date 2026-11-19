@@ -34,6 +34,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/LastStep/Bonsai/internal/format"
 	"github.com/LastStep/Bonsai/internal/hookin"
 	"github.com/LastStep/Bonsai/internal/workspace"
 )
@@ -236,6 +237,12 @@ func (j *judge) form(c change, abs string, chain []*linkedProject) (Decision, *l
 			}
 			hits = append(hits, hit{x: x, rule: f.Class, on: f.Why, glob: f.Glob, next: next, floor: true})
 		}
+		if j.markedBugsPage(x) {
+			hits = append(hits, hit{x: x, rule: RuleBonsaiFiles, glob: x.rel, floor: true,
+				on: "the bugs page, generated from the bug files: it carries the generated marker (format: bonsai.bugs/...)",
+				next: "leave the page as it is: file or move a bug with bonsai bug, and bonsai check --write, run in the main " +
+					"checkout, rebuilds the page from the bug files"})
+		}
 		for _, li := range j.listsOf(x.p).all() {
 			for _, g := range li.globs {
 				if matchGlob(g, x.rel, x.fold) {
@@ -370,6 +377,13 @@ func (j *judge) judgedRoots() []judgedRoot {
 		if l := j.listsOf(s); l.err == nil {
 			for _, li := range l.all() {
 				globs = append(globs, li.globs...)
+			}
+			// The bugs page while it carries its generated marker (markedBugsPage): a delete of a folder holding it.
+			if page := docPlace(l.cfg, "bugs"); page != "" {
+				abs := filepath.Join(s.root, filepath.FromSlash(page))
+				if raw, err := readHead(abs); err == nil && format.BugsMarked(raw) {
+					globs = append(globs, page)
+				}
 			}
 		}
 		add(judgedRoot{Dir: s.root, Globs: globs, Own: true})

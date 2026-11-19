@@ -38,6 +38,10 @@
 //     are committed (spec §6: "committed, and never on a branch"), so a change to them there is not a task's. Not on
 //     the base means any checkout whose branch is not the base branch, a detached HEAD and a run with no base among
 //     them (fail closed);
+//   - the bugs page (set 14) and the bug files' status lines, on the base: the page is a generated page there as the
+//     tables are, and the bug files are where bonsai bug writes, every move logged (the guard holds a hand edit of
+//     either). On a branch the page is judged while main's copy carries its generated marker (the guard's
+//     bonsai-files), and a bug file's status line always (status-line);
 //   - a file under .bonsai/local/ that git tracks or has staged, anywhere: bonsai check's own local finding (below)
 //     counts it, once; such paths are not judged again by the guard's function, so a branch that takes one out of git
 //     is not refused for the deletion.
@@ -184,9 +188,14 @@ func judge(ctx context.Context, in Input) Outcome {
 	}
 	named := grantsOf(in.Active)
 	j := guard.NewChangeJudge(in.Home, in.Main, named, !samePlace(top, in.Main))
+	page := ""
+	if onBase {
+		j.OnBase()
+		page = bugsPage(in.Main)
+	}
 	var refused []Refusal
 	for _, c := range changed {
-		if underLocal(c.path) || (onBase && table(c.path)) {
+		if underLocal(c.path) || (onBase && (table(c.path) || c.path == page)) {
 			continue
 		}
 		d := j.Judge(g.change(c, from))
@@ -358,6 +367,16 @@ func firstOther(refused []Refusal) string {
 // finding counts those it tracks or has staged).
 func underLocal(p string) bool {
 	return p == workspace.LocalDir || strings.HasPrefix(p, workspace.LocalDir+"/")
+}
+
+// bugsPage is the main checkout's bugs page (documents.bugs's place, format.Documents.BugsFile), "" when its
+// bonsai.yaml does not read: on the base it is where bonsai check --write rebuilds the page, as the tables are.
+func bugsPage(main string) string {
+	cfg, err := workspace.LoadConfigFull(main)
+	if err != nil || cfg.Full == nil {
+		return ""
+	}
+	return cfg.Full.Documents.BugsFile()
 }
 
 // table reports one of the generated tables (spec §6), as git names it.

@@ -105,6 +105,20 @@ func packOpenSub(args []string, literal bool) bool {
 	return !literal && !listHas(packSubs, packSub(args))
 }
 
+// bugReads are bonsai bug's subcommands that write nothing; every other (add, fix, wontfix, watch, reopen, edit) writes a
+// bug file of the main checkout.
+var bugReads = []string{"list", "show"}
+
+// bugWrites reports a bonsai bug call that writes a bug file, or whose subcommand cannot be told from its words (one
+// not literal): what a role that changes nothing may not run. bonsai bug alone, or with --help, writes nothing.
+func bugWrites(args []string, literal bool) bool {
+	sub := packSub(args)
+	if !literal {
+		return true
+	}
+	return sub != "" && !listHas(bugReads, sub)
+}
+
 // yesArg reports --yes in any form among a call's words (as preview reads it).
 func yesArg(args []string) bool {
 	for _, a := range args {
@@ -282,7 +296,7 @@ func (j *judge) preview(word string, args []string, literal bool) bool {
 }
 
 // roleCommand judges a bonsai call for the roles' rules (rolecmds.go): bonsai message's --from and --kind brief; bonsai
-// init, update, unlink and check --write refused to a role that changes nothing; and bonsai ladder --task <id> noted for
+// init, update, unlink, check --write and bonsai bug's writing subcommands refused to a role that changes nothing; and bonsai ladder --task <id> noted for
 // the agent's red runs once the call is allowed.
 func (j *judge) roleCommand(rs *shellRole, word string, argv []string, literal bool) Decision {
 	args := argv[1:]
@@ -290,7 +304,8 @@ func (j *judge) roleCommand(rs *shellRole, word string, argv []string, literal b
 	case word == "message":
 		return rs.messageCall(argv)
 	case rs.changesNothing() && (listHas(ownWrites, word) || word == "check" && hasArg(args, "--write") ||
-		word == "pack" && (listHas(ownPackWrites, packSub(args)) || packOpenSub(args, literal))):
+		word == "pack" && (listHas(ownPackWrites, packSub(args)) || packOpenSub(args, literal)) ||
+		word == "bug" && bugWrites(args, literal)):
 		return deny(RuleRoleWritesNothing, fmt.Sprintf("bonsai %s refused: it writes the project's files, and %s changes nothing "+
 			"(its role's writes: false)", oneLine(word), rs.w.shown()), "put what you would change in your report")
 	case word == "ladder" && rs.w.counted:

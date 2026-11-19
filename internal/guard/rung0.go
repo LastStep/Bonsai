@@ -105,6 +105,11 @@ func (c *ChangeJudge) grantsOf(p *linkedProject) *taskGrant {
 	return &taskGrant{task: n.ID, globs: globs}
 }
 
+// OnBase says the climb is on the base branch: there a bug file's status line is not judged (the main checkout's bug
+// files are where bonsai bug writes, every move logged; the guard holds a hand edit), as the generated tables and the
+// bugs page are not (internal/rung0).
+func (c *ChangeJudge) OnBase() { c.j.onBase = true }
+
 // Judge judges one change by the one function (this file's comment). A refusal's Why names the change by
 // ChangeTool, and the grant it lacks by the named task.
 func (c *ChangeJudge) Judge(ch Change) Decision {

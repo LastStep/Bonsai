@@ -113,7 +113,8 @@ var Rules = []Rule{
 	{RuleNeverGranted, false, "a path of the floor no grant opens: .claude/settings.json, .claude/settings.local.json and .git at a " +
 		"checkout's top, and a .git at any depth (for a delete, the project's own top .git only)"},
 	{RuleBonsaiFiles, false, "Bonsai's own files, in every mode and under any grant: .bonsai/local/, .bonsai/.gitignore, the two " +
-		"tables (.bonsai/tasks.md, .bonsai/sessions.md), and anything in Bonsai's home (from WSL, a Windows user's too); where " +
+		"tables (.bonsai/tasks.md, .bonsai/sessions.md), the bugs page (documents.bugs's place) while it carries its " +
+		"generated marker, and anything in Bonsai's home (from WSL, a Windows user's too); where " +
 		"the lock declares roles, an agent's shell write onto one, or the lock, and a change of the permissions, owner, ACL or " +
 		"attributes of one, of a folder holding one, or by a glob that may name one (chmod, chown, chattr, setfacl, attrib, " +
 		"icacls, Set-ItemProperty, Set-Acl and their kind)"},
@@ -129,7 +130,7 @@ var Rules = []Rule{
 	{RuleOutside, true, "a path in no linked project, in every form it takes"},
 	{RuleTaskOutsideMain, false, "command mode: an edit of a task file outside the main checkout"},
 	{RuleStatusLine, false, "command mode: an edit of a declared document's status line (a new document may start at its kind's " +
-		"first status only)"},
+		"first status only); and in every mode, a bug file's (bonsai bug alone moves a bug; a new bug file starts at open)"},
 	{RuleLaneLine, false, "command mode: an edit of a task's lane line"},
 	{RuleGrantPersonOnly, false, "command mode: an edit that puts a person-only path into a task's bonsai.allows"},
 	{RuleOutsideLabel, false, "command mode: an edit that sets a label whose definition reads set_by: outside"},
@@ -177,7 +178,8 @@ var Rules = []Rule{
 	{RuleRoleWritesNothing, false, "where the lock declares roles: a role that changes nothing (writes: false, every undeclared type " +
 		"among them) calling Edit, Write, MultiEdit or NotebookEdit, or a shell write the guard can read into a linked project " +
 		"(a redirect, tee, cp, ln or sed -i onto a path there; rm or mv of one; a change of its permissions, owner, ACL or " +
-		"attributes; git's words that change the checkout or its history; bonsai init, update, unlink, check --write); a relative " +
+		"attributes; git's words that change the checkout or its history; bonsai init, update, unlink, check --write, and " +
+		"bonsai bug but its list and show); a relative " +
 		"path after a cd the guard cannot follow is read in the folder the command started in, and its refusal says so"},
 	{RuleBudgetSpent, false, "where the lock declares roles: an agent past a limit in force (its minutes, actions or red runs), or " +
 		"whose window is held spent (its state moved aside a second time), or whose call the guard cannot count (its line or " +

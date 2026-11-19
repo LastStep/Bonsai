@@ -66,6 +66,7 @@ type judge struct {
 	before  func() ([]byte, error)
 	outside bool
 	noClock bool // rung 0's: the fresh-stamp check (stamps.go) judges a call as it is made, never finished work
+	onBase  bool // rung 0's on the base branch: a bug's moves there are bonsai bug's own (tripwire.go's bug rule)
 
 	// The roles' part (roles.go), the guard's alone: its clock, whether it runs as the second line, the roles' run of
 	// this call (nil where they do not apply) and its shell part.
