@@ -166,7 +166,7 @@ var bugEditWord = &Word{
 	Summary:  "change a bug's text fields or body",
 	Args:     "<id> [flags]",
 	About:    "It changes the fields given (\"\" sets one to none) and leaves the rest as they are; a move is fix,\nwontfix, watch or reopen.\n",
-	Flags:    append(append([]Flag{{Name: "--title", Value: "TEXT", Help: "the new title, on one line"}}, bugTextFlags...), bugBy, bugJSON),
+	Flags:    append(append([]Flag{{Name: "--title", Value: "TEXT", Help: "the new title, on one line"}}, bugTextFlags...), bugJSON),
 	Notes:    bugWriteNotes,
 	Exits:    bugExits,
 	Examples: []string{`bonsai bug edit BUG-012 --where "src/settings/store.ts:91 (pointed)"`},
@@ -434,9 +434,6 @@ func runBugEdit(c *call) int {
 	}
 	fields, e := c.bugFields()
 	if e != nil {
-		return c.refuse(e)
-	}
-	if _, e := c.bugByOf(); e != nil {
 		return c.refuse(e)
 	}
 	s, e := bugPlace()
