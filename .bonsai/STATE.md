@@ -31,8 +31,8 @@ Rewritten, never appended (`base:state`). Last rewritten 24 Nov 2026 (the direct
 - **Open from it:** BUG-158 (base:bug's eight migration gaps, from its first real use) and BUG-159 (the guard does not
   judge a shell write onto a bug's status line). The studio's reply on bug rows: sent by the director (the block in
   this session's chat). Each other project's register moves when the director tells its agent.
-- **Not this session's:** `records/tasks/T-6029-check-every-finding.md` (written 19 Nov by another session,
-  uncommitted, left as it is) and `design/pi-bonsai-work.md` (untracked).
+- **Not this session's:** a task T-6029 (bonsai check listing every field finding; written 19 Nov by another
+  session, uncommitted, left as it is) and an untracked design note on pi work in design/.
 
 ## 6 Nov: Bonsai 1.0.3, base 1.0.3 and workflow 1.0.2 released; one-command installers on main; the scratch folders cleaned
 
