@@ -11,12 +11,12 @@ packs:                                # the packs this repository takes (step 5.
   - id: base                          # Bonsai's own pack: its skills, the walls on secret files, the four labels
     source: "https://github.com/LastStep/Bonsai.git"   # this repository, public
     path: packs/base                  # the pack's folder in it
-    ref: "base-v1.0.3"                # base's release, moved 6 Nov (T-6021) on the director's word; a move: bonsai pack set
+    ref: "base-v1.1.0"                # base's release, moved 6 Nov (T-6021) on the director's word; a move: bonsai pack set
     roles: null                       # base declares no roles
   - id: workflow                      # the six roles, lanes and templates (the director's yes, 16 Oct 09:30)
     source: "https://github.com/LastStep/bonsai-workflow.git"   # its own public repository
     path: null                        # the pack is the repository's top
-    ref: "v1.0.2"                     # the workflow pack's release, moved 6 Nov (T-6021) on the director's word
+    ref: "v1.1.0"                     # the workflow pack's release, moved 6 Nov (T-6021) on the director's word
     roles:                            # Bonsai's own limits where the pack's would cut a run it needed; the rest the pack's
       builder:
         minutes:                      # builders ran 230 and 416 minutes in 5.4-5.5 (the log's count, 16 Oct)
@@ -35,7 +35,8 @@ documents:                            # where this repository keeps the document
   spec: records/specs                # workflow's design specs
   playtest: records/playtests        # workflow's play-session records
   brief: records/briefs              # workflow's daily briefs
-  bugs: records/bugs.md              # workflow's register of known bugs, one file
+  bugs: records/bugs.md              # the bugs page, generated from the bug files by bonsai check --write (bonsai.bugs/1)
+  bug: records/bugs                  # the bug files' folder: one file per bug, BUG-<number>.md (bonsai.bug/1)
 # protected: the paths an agent changes only while its running task lists them in bonsai.allows. Left off on
 # purpose: formats/ (the schema compare and the manifest test hold it), design/plan*.md, .bonsai/STATE.md, records/ and
 # every code folder (the rungs prove them). The guard's floor adds .git, .bonsai/ and any nested bonsai.yaml.

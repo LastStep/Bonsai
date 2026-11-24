@@ -337,14 +337,14 @@
   },
   "disableAllHooks": false,
   "enabledPlugins": {
-    "base@bonsai-bonsai-57c7dc9a": true,
-    "workflow@bonsai-bonsai-57c7dc9a": true
+    "base@bonsai-bonsai-ab111c58": true,
+    "workflow@bonsai-bonsai-ab111c58": true
   },
   "extraKnownMarketplaces": {
-    "bonsai-bonsai-57c7dc9a": {
+    "bonsai-bonsai-ab111c58": {
       "source": {
         "source": "settings",
-        "name": "bonsai-bonsai-57c7dc9a",
+        "name": "bonsai-bonsai-ab111c58",
         "plugins": [
           {
             "name": "base",
@@ -352,7 +352,7 @@
               "source": "git-subdir",
               "url": "https://github.com/LastStep/Bonsai.git",
               "path": "packs/base",
-              "sha": "00126a52401fa9e0166d904a3c787d4ec2c038e0"
+              "sha": "a03dbeff2fa6bed9a0d77cb355809f2f8d24ae01"
             }
           },
           {
@@ -360,7 +360,7 @@
             "source": {
               "source": "github",
               "repo": "LastStep/bonsai-workflow",
-              "sha": "ac89ce3e779c76b54cb4ba8442eb10f4afcba2cf"
+              "sha": "205b6f51b03c552d48aa702763167ee0baffd934"
             }
           }
         ],

@@ -240,7 +240,7 @@ pre-release on, the one they had is kept in `~/bonsai-checks/prerelease/previous
   you finish. Never kill what you did not start: another agent's run looks the same.
 
 <!-- bonsai:block start: written by bonsai init and update from bonsai.yaml and each pack's bonsai/block.md (its docs); edit those, not this block. -->
-This project is linked to Bonsai as workspace bonsai; its packs: base 1.0.3, workflow 1.0.2.
+This project is linked to Bonsai as workspace bonsai; its packs: base 1.1.0, workflow 1.1.0.
 Always-on protocols, read in full: @records/protocols/session-start.md
 Project memory, an index of notes kept in records/memory: @records/memory/INDEX.md
 Labels a document may carry under its labels: field (name: the value it takes; the documents it goes on; who sets it):
@@ -254,10 +254,10 @@ Labels a document may carry under its labels: field (name: the value it takes; t
 - workflow.milestone: text, at most 60 characters; on task, state, feature; agents set it. The milestone this counts toward, by the project's own name for it.
 - workflow.spec: text matching ^SPEC-[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$; on task; agents set it. The spec (kind spec) this task carries out, by its id.
 - workflow.estimate_h: a number; on task; agents set it. The task's estimate in hours, written with the task.
-Bonsai's documents have their templates in base's skills; open the one you need before writing or checking such a file: base:task, base:run (a run report), base:memory (a memory note and its index), base:message (a brief or a report, written with bonsai message), base:state (.bonsai/STATE.md), base:workspace (bonsai.yaml), base:ci (a CI workflow that runs bonsai check).
+Bonsai's documents have their templates in base's skills; open the one you need before writing or checking such a file: base:task, base:run (a run report), base:memory (a memory note and its index), base:bug (a bug: its file, the bonsai bug command, moving an old register), base:message (a brief or a report, written with bonsai message), base:state (.bonsai/STATE.md), base:workspace (bonsai.yaml), base:ci (a CI workflow that runs bonsai check).
 What Bonsai generates in this project, and how long it keeps each kind: base:generated-files.
 Open base:operating-bonsai before you run any bonsai command, and whenever Bonsai or its guard refuses something.
 Open base:operating-setup before you link or update a project, edit bonsai.yaml or change a pack's version.
 Roles (workflow): the session the person talks to is the orchestrator and opens `workflow:orchestrate` when work starts; builder and verifier (leads) and researcher, auditor and runner (helpers) are called with their brief, or started as `claude --agent workflow:<role>`.
-Lanes light, full and director, each with its pipeline: `workflow:lanes`. Document templates: `workflow:plan`, `workflow:feature`, `workflow:decision`, `workflow:options`, `workflow:spec` and `workflow:bugs`. A pack that declares more kinds brings their templates.
+Lanes light, full and director, each with its pipeline: `workflow:lanes`. Document templates: `workflow:plan`, `workflow:feature`, `workflow:decision`, `workflow:options`, and `workflow:spec`; bugs are Bonsai's own documents, filed and moved with `bonsai bug` (`base:bug`). A pack that declares more kinds brings their templates.
 <!-- bonsai:block end -->

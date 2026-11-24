@@ -1,13 +1,13 @@
 {
   "format": "bonsai.lock/1",
-  "written_by": "1.0.3",
+  "written_by": "1.1.0",
   "packs": [
     {
       "id": "base",
       "source": "https://github.com/LastStep/Bonsai.git",
-      "version": "1.0.3",
-      "commit": "00126a52401fa9e0166d904a3c787d4ec2c038e0",
-      "sha256": "9ddd892d3598c303b3051f323af52a09c5c124d66b270b646a78fa6abed7035e",
+      "version": "1.1.0",
+      "commit": "a03dbeff2fa6bed9a0d77cb355809f2f8d24ae01",
+      "sha256": "8291b8488a77ed2f139f1a638a5f521b720fe55763cb56ded0a41f97899a5022",
       "declares": {
         "labels": {
           "namespace": "bonsai",
@@ -682,9 +682,9 @@
     {
       "id": "workflow",
       "source": "https://github.com/LastStep/bonsai-workflow.git",
-      "version": "1.0.2",
-      "commit": "ac89ce3e779c76b54cb4ba8442eb10f4afcba2cf",
-      "sha256": "b1fc8c8a21813b32c8ed8903f13c818ea194e98162381b2fac87f8ffd7aeed2a",
+      "version": "1.1.0",
+      "commit": "205b6f51b03c552d48aa702763167ee0baffd934",
+      "sha256": "7fc9b179f31908ba9831416f0e68b74f66f4830370192dbf0c5ba69cbc919728",
       "declares": {
         "lanes": [
           {
@@ -882,17 +882,6 @@
             "stamp": {
               "approved": "approved"
             },
-            "task_field": null
-          },
-          {
-            "kind": "bugs",
-            "path": null,
-            "file": "work/bugs.md",
-            "id": null,
-            "statuses": [],
-            "person": [],
-            "agent": [],
-            "stamp": {},
             "task_field": null
           }
         ],
@@ -1129,12 +1118,12 @@
     ".claude/settings.json": {
       "kind": "keys",
       "pack": "base",
-      "sha256": "c22b12e170f06ec51be79986826b3ce51a4c51dc8a81ee388c3c3841e9cd73bc"
+      "sha256": "61bde578c9bc3f799b30dcb1a5d5bdc5f5bfff3cec6c992b66d6287b692332c2"
     },
     "CLAUDE.md": {
       "kind": "block",
       "pack": "base",
-      "sha256": "a0410280574f07bb0777e0c5227fa563dfee7208f4bccd0f6cc71d5b8f3f295e"
+      "sha256": "ecd11557c21770166b370311d29df02ca4b9a5c1bdbe817d97bc13091717f000"
     },
     "records/protocols/session-start.md": {
       "kind": "pack",
