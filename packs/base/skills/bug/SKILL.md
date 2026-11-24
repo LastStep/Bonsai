@@ -115,8 +115,11 @@ that names the old id still finds it through `bonsai bug show TB-012`.
    goes wrong in a person's words (`What goes wrong`, `What a player sees`, a fixed table's `Was`: the column named `Was`
    there is the text, not `was` the field) is `--title`; `Where` is `--where`; `Found by` is `--found-by`; a task column
    is `--task`; a `Fixed in` cell is `--commit`. An area heading above a table (`### the guard`) is `--area` for every
-   row under it. A cell that is long, or holds several lines or links, goes whole into the body (`--body-file`), with a
-   short title (its first sentence): the title is one line and nothing is cut.
+   row under it. A cell that is long (more than 200 characters or more than one sentence), or holds several lines or links,
+   goes whole into the body (`--body-file`), with a short title (its first sentence, cut at a word if there is no
+   sentence break; aim for under 200 characters): the title is one line and nothing is cut. **`bonsai check` reads a
+   bug's title and every field for absolute paths** (a home folder, a drive path): reword that text with `~/...` or
+   `%USERPROFILE%`, and keep the old words whole in the body.
 3. **Every row by one `bonsai bug add`.** An id's prefix and number: `TB-012` is `--was TB-012 --number 12`. A row of
    an Open table:
 
@@ -127,19 +130,27 @@ that names the old id still finds it through `bonsai bug show TB-012`.
 
    A row of a **Fixed** table (or a row that says it was fixed) carries its status, its commit and its days where the
    row names them, with `--commit` as the cell gave it (a sha, with its words if it has them; one that names no commit
-   is kept as text; a sha this repository does not hold is accepted here, since only `fix` checks), `--created` and `--closed` the days the row names (else the day of the move, and no closed day):
+   is kept as text; a sha this repository does not hold is accepted here, since only `fix` checks), `--created` and `--closed` the days the row names *as that bug's own opened and closed days* (a day the row
+   names for something else, such as the day a rule began or when a failure started, is not one: it stays in the body;
+   with no such day, `--created` is the day of the move and there is no closed day):
 
    ```bash
    bonsai bug add --by <role>@<task> --was TB-012 --number 12 --status fixed --commit '0a1b2c3d (the words)' \
      --created 2026-10-09 --closed 2026-10-10 --title '<what went wrong>' --where '<where>' --found-by '<found by>'
    ```
 
-   A row in a list of **Watched** bugs is `--status watched --why '<its reason>'`; a row of **Won't fix** the same with
-   `--status wontfix --why '<its reason>'`. Always give `--why` for those two. A title or cell with a quote goes in
+   A task cell that is not a task id (`before the register`, `task not read`, `T-55xx (5.5's labels)`) has no
+   `--task`: pass `--task` only for a real id, and put the rest of the cell in the body.
+
+   A row in a list of **Watched** bugs that has an old id is `--was <id> --number <n> --status watched --why '<its
+   reason>'`; a row of **Won't fix** the same with `--status wontfix --why '<its reason>'`. Always give `--why` for
+   those two. `--status` needs `--was`, so a row with no old id is filed as step 4 says (add it, then `bonsai bug
+   watch <the printed id> --by <role>@<task> --why '<its reason>'`). A title or cell with a quote goes in
    single quotes, a single quote inside as `'\''`. In a table cell `\|` is a plain `|`: write it so. Markdown in a cell (backquotes, bold) is kept as it is, minus the bold on the id.
-4. **The list "Known, not bugs"** (behaviour that looks wrong and is meant) has no old ids, so a carry-over (`--was`)
-   does not fit: file each item after every numbered row is in, then move it, so it takes a free number and keeps its
-   reason:
+4. **The list "Known, not bugs"** (behaviour that looks wrong and is meant). An item that carries an old id is a
+   carry-over as won't fix, keeping that id: `--was <id> --number <n> --status wontfix --why '<why it is meant>'`, as
+   in step 3. An item with no id takes a free number, so file each after every numbered row is in, then move it,
+   so it keeps its reason:
 
    ```bash
    bonsai bug add --by <role>@<task> --title '<the behaviour>' --area '<heading>'
@@ -149,7 +160,9 @@ that names the old id still finds it through `bonsai bug show TB-012`.
 5. **Text that is no row.** A note under a table about one bug goes into that bug's body (`bonsai bug edit <id>
    --body-file <path>`, written with its old body first if `show` printed one). A note about the register as a whole,
    or the intro that only explained how to use the old page, goes into a memory note (`base:memory`) when it holds a
-   fact a later session needs, and is dropped when the generated page's own intro says it. **Nothing else is dropped:**
+   fact a later session needs, and is dropped when the generated page's own intro says it. The mover's task must
+   allow the memory folder; if it does not, the mover hands the note's text to its caller in its report, and the old
+   page is not deleted (step 7) until the note is filed. **Nothing else is dropped:**
    if you cannot say where a line went, it is not moved.
 6. **Check that nothing is missing.** Every old id must have a file, and the counts must meet:
 
@@ -157,6 +170,9 @@ that names the old id still finds it through `bonsai bug show TB-012`.
    for id in <every old id, as found in step 1>; do bonsai bug show "$id" --json > /dev/null || echo "missing: $id"; done
    bonsai bug list --json
    ```
+
+   A row carried over as fixed by `add` has no `fixed_by`: an old row does not say who fixed it, so leave it empty
+   (or name the person in the body if the row does).
 
    The files hold one bug per old row plus one per "Known, not bugs" item, and nothing is printed as missing. Read two or
    three files (`bonsai bug show <id>`) against their old rows, one of each shape.
