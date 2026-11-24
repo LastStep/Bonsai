@@ -5,6 +5,7 @@ Active task when none is named: none (no task reads running)
 
 | Task | Title | Status | Lane | Started | Finished |
 |---|---|---|---|---|---|
+| T-6030 | BUG-158: base:bug's "Moving an old register" steps made whole from their first real use; CLAUDE.md's pointer to the bugs moved to records/bugs/ | done | light | 2026-11-24 | 2026-11-24 |
 | T-6029 | bonsai check lists every field finding in a file, not the first only (the studio's ask 27) | todo | | | |
 | T-6028 | Bonsai's own bugs register moved to bug files by base:bug | done | | 2026-11-24 | 2026-11-24 |
 | T-6027 | Bonsai's own repo on base 1.1.0 and workflow 1.1.0, with its documents.bug line | done | | 2026-11-24 | 2026-11-24 |

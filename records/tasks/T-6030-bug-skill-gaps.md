@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6030
 title: "BUG-158: base:bug's \"Moving an old register\" steps made whole from their first real use; CLAUDE.md's pointer to the bugs moved to records/bugs/"
-status: running
+status: done
 lane: light
 done_when:
   - "Each of BUG-158's eight gaps answered in packs/base/skills/bug/SKILL.md (or, where the right answer is the command's, in the command with a test), as the T-6028 run report's \"What did not work\" names them"
@@ -12,7 +12,7 @@ depends_on: []
 blocked_by: null
 created: 2026-11-24
 started: 2026-11-24
-finished: null
+finished: 2026-11-24
 labels:
   bonsai.ladder: []
   bonsai.allows: ["CLAUDE.md"]

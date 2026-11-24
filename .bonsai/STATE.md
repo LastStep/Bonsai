@@ -28,7 +28,8 @@ Rewritten, never appended (`base:state`). Last rewritten 24 Nov 2026 (the direct
     old `bonsai-bonsai-57c7dc9a` still registered: remove it once nothing uses it). `T-6028`: Bonsai's own register
     moved by `base:bug` (157 bug files in `records/bugs/`, the page generated; its intro in the memory note
     `M-bug-register-history`, the folder's first).
-- **Open from it:** BUG-158 (base:bug's eight migration gaps, from its first real use) and BUG-159 (the guard does not
+- **Open from it:** BUG-158 fixed 24 Nov (`T-6030`, `7d94c8ee`: base:bug's steps made whole, in base's text; it
+  reaches other projects with base 1.1.1, the director's tag; CLAUDE.md's bug row now names records/bugs/). BUG-159 (the guard does not
   judge a shell write onto a bug's status line). The studio's reply on bug rows: sent by the director (the block in
   this session's chat). Each other project's register moves when the director tells its agent.
 - **Not this session's:** a task T-6029 (bonsai check listing every field finding; written 19 Nov by another
