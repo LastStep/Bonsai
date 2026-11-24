@@ -56,19 +56,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\get-bonsai.ps1
 **Or one line at a time:**
 
 > [!NOTE]
-> These lines install 1.0.3. For another release or a pre-release, put its version from the
-> [releases page](https://github.com/LastStep/Bonsai/releases) (`1.0.0-rc.1`) in place of `1.0.3` on every line.
+> These lines install 1.1.0. For another release or a pre-release, put its version from the
+> [releases page](https://github.com/LastStep/Bonsai/releases) (`1.0.0-rc.1`) in place of `1.1.0` on every line.
 
 <details>
 <summary>Linux and WSL</summary>
 
 ```bash
 cd "$(mktemp -d)"
-curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.3/bonsai_1.0.3_linux_amd64.tar.gz
-curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.3/checksums.txt
+curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.1.0/bonsai_1.1.0_linux_amd64.tar.gz
+curl -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.1.0/checksums.txt
 sha256sum -c --ignore-missing checksums.txt
-gh attestation verify bonsai_1.0.3_linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.3 --deny-self-hosted-runners
-tar -xzf bonsai_1.0.3_linux_amd64.tar.gz
+gh attestation verify bonsai_1.1.0_linux_amd64.tar.gz -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.1.0 --deny-self-hosted-runners
+tar -xzf bonsai_1.1.0_linux_amd64.tar.gz
 sh install.sh
 ```
 
@@ -79,11 +79,11 @@ sh install.sh
 
 ```powershell
 cd (New-Item -ItemType Directory (Join-Path $env:TEMP ("bonsai-" + [guid]::NewGuid())))
-curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.3/bonsai_1.0.3_windows_amd64.zip
-curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.0.3/checksums.txt
-(Get-FileHash bonsai_1.0.3_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.0.3_windows_amd64.zip).Line -split ' ')[0]
-gh attestation verify bonsai_1.0.3_windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.0.3 --deny-self-hosted-runners
-Expand-Archive bonsai_1.0.3_windows_amd64.zip -DestinationPath . -Force
+curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.1.0/bonsai_1.1.0_windows_amd64.zip
+curl.exe -fsSLO https://github.com/LastStep/Bonsai/releases/download/v1.1.0/checksums.txt
+(Get-FileHash bonsai_1.1.0_windows_amd64.zip -Algorithm SHA256).Hash -eq ((Select-String -Path checksums.txt -SimpleMatch bonsai_1.1.0_windows_amd64.zip).Line -split ' ')[0]
+gh attestation verify bonsai_1.1.0_windows_amd64.zip -R LastStep/Bonsai --signer-workflow LastStep/Bonsai/.github/workflows/release.yml --source-ref refs/tags/v1.1.0 --deny-self-hosted-runners
+Expand-Archive bonsai_1.1.0_windows_amd64.zip -DestinationPath . -Force
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
@@ -105,7 +105,7 @@ the pack needs). On a new machine, give git your name first: `git config --globa
    mkdir demo && cd demo && git init -b main
    ```
 
-2. Link it to Bonsai's own pack, `base`. Its ref is a release tag (`base-v1.0.3`) or a 40-character
+2. Link it to Bonsai's own pack, `base`. Its ref is a release tag (`base-v1.1.0`) or a 40-character
    commit; until the tag exists, take `main`'s commit, the first word the first line prints:
 
    ```bash
