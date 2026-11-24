@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6023
 title: "Bugs as Bonsai's own documents: one file per bug, a generated register, the bonsai bug command (the studio's ask for bug rows as JSON, 19 Nov)"
-status: approved
+status: done
 lane: full
 done_when:
   - "The director has chosen in records/options/OPT-0003-bug-rows.md (done 19 Nov: a bugs system, BUG- ids only, no import)"
@@ -11,8 +11,8 @@ done_when:
 depends_on: []
 blocked_by: null
 created: 2026-11-19
-started: null
-finished: null
+started: 2026-11-19
+finished: 2026-11-24
 labels:
   bonsai.ladder: []
   bonsai.allows: []

@@ -1,32 +1,38 @@
 ---
 format: bonsai.state/1   # fields: bonsai check --schema bonsai.state; how to fill: skill base:state
-updated: 2026-11-19
+updated: 2026-11-24
 updated_by: orchestrator (opus)
 labels: {}
 ---
 
 # Bonsai: where it stands
 
-Rewritten, never appended (`base:state`). Last rewritten 19 Nov 2026 (the director present).
+Rewritten, never appended (`base:state`). Last rewritten 24 Nov 2026 (the director present).
 
-## Now (19 Nov): bugs as Bonsai's own documents (T-6023), stages 1 and 2 on main; stage 3 (the packs) next
+## Now (24 Nov): Bonsai 1.1.0, base 1.1.0 and workflow 1.1.0 released; bugs are Bonsai's own documents
 
-- **The studio's ask** (19 Nov, pasted by the director): a project's bug rows as JSON. The director chose a proper
-  bugs system (`records/options/OPT-0003-bug-rows.md`, decided): one file per bug (`bonsai.bug/1`), the register
-  generated (`bonsai.bugs/1`, only once it carries its marker: a hand-kept register is never touched), `BUG-` ids
-  only (an old id kept in `was`), no import (each project's agent moves its register by base's coming `bug` skill),
-  and "always bonsai bug": `bonsai bug` is the one way a bug's status changes, in every project; `status_writes` is
-  for tasks only. The plan `records/plans/P-T-6023.md` (approved 19 Nov after three plan reviews). Run report
-  `records/runs/R-2026-11-19-T-6023-bug-rows.md`.
-- **Landed** as one batch at `b0529acc` (CI 9 of 9 on the branch): `T-6024` stage 1 (formats set 14, the kinds,
-  check, the page, status; a fresh Opus verifier's PASS `M-2026-11-19-3b3c825f`) and `T-6025` stage 2 (`bonsai bug
-  add|fix|wontfix|watch|reopen|edit|list|show`, its log records, the guard on bug status lines and the marked page;
-  verifier FAIL then PASS `M-2026-11-19-abd6f08b`). Not released: the installed bonsai is still 1.0.3.
-- **Next:** `T-6026` stage 3 (base:bug and base 1.1.0, the workflow pack's bugs kind out and its v1.1.0,
-  CHANGELOG 1.1.0); then the director's three tags in order (Bonsai `v1.1.0`, `base-v1.1.0`, the workflow repo's
-  `v1.1.0`); then `T-6027` (Bonsai's repo on the 1.1.0 packs) and `T-6028` (Bonsai's own register moved). Proposed
-  by the builders: the guard judging shell writes onto a bug's status line (as for tasks today, only rung 0 on a
-  branch catches it); BUG-137 still sits in Open though T-6016 fixed it.
+- **Bugs as Bonsai's own documents** (`T-6023`, done; the studio's ask of 19 Nov for bug rows as JSON). The director
+  chose a proper bugs system (`records/options/OPT-0003-bug-rows.md`): one file per bug (`bonsai.bug/1`, in
+  `documents.bug`), the page generated from them (`bonsai.bugs/1`, only while it carries its marker: a hand-kept
+  register is never touched), `BUG-` ids only (an old id in `was`), no import (each project's agent moves its own
+  register by `base:bug`), and "always bonsai bug": `bonsai bug add|fix|wontfix|watch|reopen|edit|list|show` is the
+  one way a bug's status changes, in every project (`status_writes` is for tasks only). Plan
+  `records/plans/P-T-6023.md` (three plan reviews); run report `records/runs/R-2026-11-19-T-6023-bug-rows.md`.
+  - `T-6024` stage 1 and `T-6025` stage 2 landed as one batch at `b0529acc` (fresh Opus verifiers' PASS
+    `M-2026-11-19-3b3c825f`, and FAIL then PASS `M-2026-11-19-abd6f08b`); `T-6026` the packs' text, base 1.1.0
+    (`a03dbeff`) and workflow 1.1.0 (its main `205b6f51`).
+  - **Released:** Bonsai `v1.1.0` (tag at `a577335a`, published 19 Nov 14:39 UTC, read back: checksums, attestation,
+    `bonsai 1.1.0`), installed on both sides 24 Nov; `base-v1.1.0` and the workflow repo's `v1.1.0` (published 24 Nov
+    10:40 UTC), tagged by the director. The way back: 1.0.3 in `~/bonsai-checks/prerelease/previous/`.
+  - `T-6027`: Bonsai's repo on base 1.1.0 and workflow 1.1.0 (`be6a0d33`, marketplace `bonsai-bonsai-ab111c58`; the
+    old `bonsai-bonsai-57c7dc9a` still registered: remove it once nothing uses it). `T-6028`: Bonsai's own register
+    moved by `base:bug` (157 bug files in `records/bugs/`, the page generated; its intro in the memory note
+    `M-bug-register-history`, the folder's first).
+- **Open from it:** BUG-158 (base:bug's eight migration gaps, from its first real use) and BUG-159 (the guard does not
+  judge a shell write onto a bug's status line). The studio's reply on bug rows: sent by the director (the block in
+  this session's chat). Each other project's register moves when the director tells its agent.
+- **Not this session's:** `records/tasks/T-6029-check-every-finding.md` (written 19 Nov by another session,
+  uncommitted, left as it is) and `design/pi-bonsai-work.md` (untracked).
 
 ## 6 Nov: Bonsai 1.0.3, base 1.0.3 and workflow 1.0.2 released; one-command installers on main; the scratch folders cleaned
 
@@ -432,8 +438,9 @@ allowed unguarded (rule `tool-not-judged`); a pulled `running` task leaves the g
 
 ## Known bugs
 
-**Every known bug, open and fixed, is in `records/bugs.md`** (the register, skill `workflow:bugs`; 19 Oct: 63 open,
-22 fixed, from the audit `M-2026-10-18-39aecfea`). This page keeps no bug list. Not bugs, kept here: `bonsai init
+**Every known bug is a file in `records/bugs/`** (one per bug, `bonsai bug list`, skill `base:bug`; the page
+`records/bugs.md` is generated from them; 24 Nov: 68 open, 69 fixed, 18 won't fix, 4 watched). This page keeps no bug
+list. Not bugs, kept here: `bonsai init
 --allow-exec` and `update` run `claude plugin install` on the person's machine (on Windows a warm session first).
 
 **Housekeeping:**

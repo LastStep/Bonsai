@@ -2,15 +2,15 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6028
 title: "Bonsai's own bugs register moved to bug files by base:bug"
-status: todo
+status: done
 lane: null
 done_when:
   - "Every row of records/bugs.md carried to a bug file (Open, Fixed, Known not bugs, Watched), nothing dropped, the old page replaced by the generated one, bonsai check clean"
 depends_on: [T-6027]
 blocked_by: null
 created: 2026-11-19
-started: null
-finished: null
+started: 2026-11-24
+finished: 2026-11-24
 labels:
   bonsai.ladder: []
   bonsai.allows: []

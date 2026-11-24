@@ -2,7 +2,7 @@
 format: bonsai.task/1   # fields: bonsai check --schema bonsai.task; how to fill: skill base:task
 id: T-6026
 title: "Bugs stage 3: base:bug and base 1.1.0, the workflow pack's bugs kind out and v1.1.0, CHANGELOG 1.1.0"
-status: todo
+status: done
 lane: null
 done_when:
   - "The plan's steps 11 to 13 (up to the tags) built, in packs/base and in the workflow repo's local copy"
@@ -11,11 +11,12 @@ done_when:
 depends_on: [T-6025]
 blocked_by: null
 created: 2026-11-19
-started: null
-finished: null
+started: 2026-11-19
+finished: 2026-11-24
 labels:
   bonsai.ladder: []
   bonsai.allows: ["packs/base/bonsai/pack.yaml"]
+  bonsai.branch: t-6026-base-1-1-0
   workflow.model: sonnet
 ---
 
